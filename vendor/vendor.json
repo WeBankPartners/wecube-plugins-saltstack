@@ -1,0 +1,42 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "Z7rkupTQRAZzzTCqDLiSbNR70to=",
+			"path": "github.com/konsorten/go-windows-terminal-sequences",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "RVCdFtLmioV9OqsNDZsbS8gJogw=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "162BZV7nIgqzmfYoYFqXVBLoZ/k=",
+			"path": "github.com/snowzach/rotatefilehook",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "8iDRMd1IFU/NY9TKVBq0ZmBgm0s=",
+			"path": "golang.org/x/crypto/ssh/terminal",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "GVl3dSoPekJDB2YhyTmx4AiW6wE=",
+			"path": "golang.org/x/sys/unix",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "xj0Idw5980dQirNqr2aPEMr2XrI=",
+			"path": "golang.org/x/sys/windows",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "GD/tP00KmteOc9TsOtTcrfKw3KA=",
+			"path": "gopkg.in/natefinch/lumberjack.v2",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/WeBankPartners/wecube-plugins-deploy"
+}
