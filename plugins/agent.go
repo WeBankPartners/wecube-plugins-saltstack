@@ -2,8 +2,8 @@ package plugins
 
 import (
 	"fmt"
+        "errors"
 	"os/exec"
-    "errors "
 	"github.com/sirupsen/logrus"
 )
 
