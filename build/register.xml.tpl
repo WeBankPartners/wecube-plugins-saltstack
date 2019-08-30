@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <package name="salt-stack-deployment" version="{{PLUGIN_VERSION}}">
-    <docker-image-file>wecube-plugins-deploy.tar</docker-image-file>
-    <docker-image-repository>wecube-plugins-deploy</docker-image-repository>
+    <docker-image-file>wecube-plugins-saltstack.tar</docker-image-file>
+    <docker-image-repository>wecube-plugins-saltstack</docker-image-repository>
     <docker-image-tag>{{IMAGE_TAG}}</docker-image-tag>
     <container-port>8082</container-port>
-    <container-config-directory>/home/app/wecube-plugins-deploy/conf</container-config-directory>
-    <container-log-directory>/home/app/wecube-plugins-deploy/logs</container-log-directory>
-    <container-start-param>-e minion_master_ip={{HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-deploy/logs:/home/app/wecube-plugins-deploy/logs -v /home/app/data:/home/app/data </container-start-param>
+    <container-config-directory>/home/app/wecube-plugins-saltstack/conf</container-config-directory>
+    <container-log-directory>/home/app/wecube-plugins-saltstack/logs</container-log-directory>
+    <container-start-param>-e minion_master_ip={{HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data </container-start-param>
     <plugin id="file" name="File Operation" >
         <interface name="copy" path="/v1/deploy/file/copy">
             <input-parameters>

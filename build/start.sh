@@ -2,7 +2,7 @@
 set -e
 
 #chkconfig: 2345 20 80
-#description: wecube-plugins-deploy
+#description: wecube-plugins-saltstack
 TEMPLATE_DIR="/conf/template/"
 function replaceFiles()
 {
@@ -33,9 +33,9 @@ if [ ! -f $runReplaceOkFile ];then
     touch $runReplaceOkFile
 fi
 
-cd /home/app/wecube-plugins-deploy
+cd /home/app/wecube-plugins-saltstack
 mkdir -p logs
-./wecube-plugins-deploy&
+./wecube-plugins-saltstack&
 /usr/bin/salt-master&
 httpd&
 /usr/bin/salt-api 

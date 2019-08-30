@@ -32,7 +32,7 @@ hostsArray=(${hosts//,/ })
 
 for host in ${hostsArray[@]} 
 do
-   salt-ssh '*'  --roster-file $targetFile  -i -r "docker exec wecube-plugins-deploy salt-key -d $host -y"
+   salt-ssh '*'  --roster-file $targetFile  -i -r "docker exec wecube-plugins-saltstack salt-key -d $host -y"
 done
 
 

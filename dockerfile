@@ -1,12 +1,12 @@
 FROM  ccr.ccs.tencentyun.com/wecube/salt-master-base:v1
 LABEL maintainer = "Webank CTB Team"
 
-ENV APP_HOME=/home/app/wecube-plugins-deploy
+ENV APP_HOME=/home/app/wecube-plugins-saltstack
 ENV LOG_PATH=$APP_HOME/logs
 
 RUN mkdir -p $APP_HOME $LOG_PATH
 
-ADD wecube-plugins-deploy $APP_HOME/
+ADD wecube-plugins-saltstack $APP_HOME/
 ADD build/start.sh /start.sh
 ADD scripts/salt/minions /srv/salt/minions
 ADD conf/s3conf /conf/s3conf

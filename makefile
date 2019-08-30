@@ -3,7 +3,7 @@ current_dir=$(shell pwd)
 version=$(shell ./build/version.sh)
 project_name=$(shell basename "${current_dir}" )
 
-APP_HOME=src/github.com/WeBankPartners/wecube-plugins-deploy
+APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
 
 archive:
 	tar cvfz source.tar.gz *
@@ -18,7 +18,7 @@ archive:
 	cp -R scripts target
 	cp -R conf    target
 	cd target && chmod -R 755 *.sh
-	cp $(APP_HOME)/wecube-plugins-deploy target
+	cp $(APP_HOME)/wecube-plugins-saltstack target
 	cd target && tar cvfz $(PKG_NAME) *
 
 clean:

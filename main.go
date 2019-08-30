@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/WeBankPartners/wecube-plugins-deploy/plugins"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
 	"github.com/sirupsen/logrus"
 	"github.com/snowzach/rotatefilehook"
 )
@@ -29,7 +29,7 @@ func main() {
 }
 
 func initLogger() {
-	fileName := "logs/wecube-plugins-deploy.log"
+	fileName := "logs/wecube-plugins-saltstack.log"
 	logrus.SetReportCaller(true)
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0666)
 	if err == nil {
