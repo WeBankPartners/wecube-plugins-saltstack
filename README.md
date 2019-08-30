@@ -1,5 +1,5 @@
 # saltstack插件
-saltstack插件里包含salt-master服务，wecube部署完saltstack插件后，对于新创建的机器，可以通过salt-master里的初始化接口来安装salt-stack的agent，一旦安装完agent，可通过saltstack插件让机器执行相关脚本命令。
+saltstack插件里包含salt-master服务，wecube部署完saltstack插件后，对于新创建的机器，可通过该插件里的初始化接口来安装saltstack的agent，一旦安装完agent，可通过saltstack插件让机器执行相关脚本命令。
 
 该插件包的开发语言为golang，开发过程中每加一个新的资源管理接口，同时需要修改build下的register.xm.tpl文件，在里面同步更新相关接口的url、入参和出参。
 
@@ -18,7 +18,7 @@ yum install -y git
 yum install -y make
 ```
 
-4. 确认主机
+4. 通过netstat命令确认主机上的这几个端口未被占用: 9099,9090,4505,4506
 
 ## 插件包的制作
 1. 使用git命令拉取插件包:
