@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kill -9 `pidof wecube-plugins-deploy`
+kill -9 `pidof wecube-plugins-saltstack`

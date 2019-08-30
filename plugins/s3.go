@@ -53,7 +53,7 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 		return "", fmt.Errorf("template execution error: %s", err)
 	}
 
-	sh := "s3cmd -c /home/app/wecube-plugins-deploy/minioconf put "
+	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf put "
 	sh += UPLOADS3FILE_DIR + Info[len(Info)-1] + " s3:/" + minioStoragePath
 	cmd := exec.Command("/bin/sh", "-c", sh)
 
@@ -91,7 +91,7 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	for i := 1; i < len(Info); i++ {
 		storagePath += "/" + Info[i]
 	}
-	sh := "s3cmd -c /home/app/wecube-plugins-deploy/minioconf get "
+	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get "
 	sh += " s3:/" + storagePath + " " + UPLOADS3FILE_DIR + Info[len(Info)-1]
 
 	cmd := exec.Command("/bin/sh", "-c", sh)
@@ -130,7 +130,7 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 		return fmt.Errorf("parsing error: %s", err)
 	}
 
-	f, err := os.OpenFile("/home/app/wecube-plugins-deploy/minioconf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	f, err := os.OpenFile("/home/app/wecube-plugins-saltstack/minioconf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("open file error: %s", err)
 	}
