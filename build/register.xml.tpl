@@ -17,8 +17,10 @@
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
+                <!--
                 <parameter datatype="string">result_code</parameter>
                 <parameter datatype="string">result_message</parameter>
+                 -->
             </output-parameters>
         </interface>
     </plugin>
@@ -32,8 +34,10 @@
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
+                <!--
                 <parameter datatype="string">result_code</parameter>
                 <parameter datatype="string">result_message</parameter>
+                -->
             </output-parameters>
         </interface>
     </plugin>
@@ -49,7 +53,9 @@
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
+                 <!--
                 <parameter datatype="string">detail</parameter>
+                -->
             </output-parameters>
         </interface>
     </plugin>
@@ -64,7 +70,9 @@
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
+            <!--
                 <parameter datatype="string">detail</parameter>
+            -->
             </output-parameters>
         </interface>
     </plugin>
@@ -80,7 +88,9 @@
                 <parameter datatype="string">homeDir</parameter>
             </input-parameters>
             <output-parameters>
+             <!--
                 <parameter datatype="string">detail</parameter>
+             -->
             </output-parameters>
         </interface>
         <interface name="remove" path="/v1/deploy/user/remove">
@@ -89,7 +99,9 @@
                 <parameter datatype="string">userName</parameter>
             </input-parameters>
             <output-parameters>
+              <!--
                 <parameter datatype="string">detail</parameter>
+              -->
             </output-parameters>
         </interface>
     </plugin>
@@ -109,35 +121,13 @@
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
+                <!--
                 <parameter datatype="string">detail</parameter>
+                 -->
             </output-parameters>
         </interface>
     </plugin>
-     <plugin id="released-package" name="Release Package Management">
-        <interface name="listCurrentDir" path="/v1/deploy/released-package/listCurrentDir">
-            <input-parameters>
-                <parameter datatype="string">endpoint</parameter>
-                <!-- <parameter datatype="string">accessKey</parameter>
-                <parameter datatype="string">secretKey</parameter> -->
-                <parameter datatype="string">currentDir</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">name</parameter>
-                <parameter datatype="bool">isDir</parameter>
-            </output-parameters>
-        </interface>
-        <interface name="getConfigFileKey" path="/v1/deploy/released-package/getConfigFileKey">
-            <input-parameters>
-                <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">file_path</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">FilePath</parameter>
-                <parameter datatype="string">config_key_infos</parameter>
-            </output-parameters>
-        </interface>
-    </plugin>
-
+     
      <plugin id="disk" name="Storage Disk Operation" >
         <interface name="getUnformatedDisk" path="/v1/deploy/disk/getUnformatedDisk">
             <input-parameters>
@@ -155,7 +145,9 @@
                 <parameter datatype="string">mountDir</parameter>
             </input-parameters>
             <output-parameters>
+            <!--
                 <parameter datatype="string">detail</parameter>
+             -->
             </output-parameters>
         </interface>
     </plugin>
