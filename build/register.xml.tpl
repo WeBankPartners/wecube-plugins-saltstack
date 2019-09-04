@@ -108,7 +108,6 @@
                 <parameter datatype="string">databaseName</parameter>
             </input-parameters>
             <output-parameters>
-                <parameter datatype="string">detail</parameter>
             </output-parameters>
         </interface>
     </plugin>
