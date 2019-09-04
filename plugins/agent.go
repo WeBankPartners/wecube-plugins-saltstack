@@ -18,7 +18,6 @@ type AgentPlugin struct {
 
 func (plugin *AgentPlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := AgentActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("Agent plugin,action = %s not found", actionName)
 	}
