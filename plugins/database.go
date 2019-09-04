@@ -20,7 +20,6 @@ type DatabasePlugin struct {
 
 func (plugin *DatabasePlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := DatabasePluginActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("database plugin,action = %s not found", actionName)
 	}
@@ -50,6 +49,7 @@ type RunDatabaseScriptOutputs struct {
 }
 
 type RunDatabaseScriptOutput struct {
+	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -157,6 +157,7 @@ func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error
 
 		output := RunDatabaseScriptOutput{
 			Detail: result,
+			Guid:   input.Guid,
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
