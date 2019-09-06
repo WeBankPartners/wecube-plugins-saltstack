@@ -6,7 +6,7 @@
     <container-port>8082</container-port>
     <container-config-directory>/home/app/wecube-plugins-saltstack/conf</container-config-directory>
     <container-log-directory>/home/app/wecube-plugins-saltstack/logs</container-log-directory>
-    <container-start-param>-e minion_master_ip={{HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data </container-start-param>
+    <container-start-param>-v /etc/localtime:/etc/localtime -e minion_master_ip={{HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data </container-start-param>
     <plugin id="file" name="File Operation" >
         <interface name="copy" path="/v1/deploy/file/copy">
             <input-parameters>
