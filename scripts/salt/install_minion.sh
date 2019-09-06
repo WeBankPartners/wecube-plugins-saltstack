@@ -8,7 +8,7 @@ fi
 targetFile=/etc/salt/roster
 rm -rf ${targetFile}
 
-echo "minion_$1:">> ${targetFile}
+echo "$1:">> ${targetFile}
 echo "  port: {{minion_port}} ">> ${targetFile}
 echo "  host: $1" >> ${targetFile}
 echo "  user: root" >> ${targetFile}
@@ -27,7 +27,7 @@ hostsArray=(${hosts//,/ })
 
 for host in ${hostsArray[@]} 
 do
-  echo "minion_$host:">> ${targetFile}
+  echo "$host:">> ${targetFile}
   echo "  host: $host" >> ${targetFile}
   echo "  user: root" >> ${targetFile}
   echo "  passwd: Ab888888" >> ${targetFile}
