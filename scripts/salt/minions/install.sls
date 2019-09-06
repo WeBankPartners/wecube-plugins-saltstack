@@ -26,7 +26,7 @@ salt_minion_conf:
     - mode: 640
     - template: jinja
     - defaults:
-      minion_id: {{ grains['ipv4'][0]}}
+      minion_id: {{grains['id']}}
     - require:
       - pkg: salt_minion_install
 salt_minion_service:
