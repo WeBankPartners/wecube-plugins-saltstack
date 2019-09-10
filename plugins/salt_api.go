@@ -103,14 +103,6 @@ func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (*Salt
 		return nil, err
 	}
 
-	saltResult,err:=parseSaltApiCallResult(result)
-	if err != nil {
-		return nil, err
-	}
-	if len(saltResult.Results)== 0 {
-		return nil,fmt.Errorf("salt api:no target match %v,please check if salt-agent installed on target",input.Target)
-	}
-
 	output := SaltApiCallOutput{}
 	output.Guid = input.Guid
 	output.Detail = result

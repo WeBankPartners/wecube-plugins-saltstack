@@ -152,5 +152,15 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 
 	logrus.Infof("call salt api response = %v", result)
 
+	saltResult,err:=parseSaltApiCallResult(result)
+	if err != nil {
+		logrus.Infof("parseSaltApiCallResult meet error=%v ", err)
+		return "", err
+	}
+	
+	if len(saltResult.Results) == 0 {
+		return "",fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v",request)
+	}
+
 	return result, nil
 }
