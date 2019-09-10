@@ -158,7 +158,7 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 		return "", err
 	}
 	
-	if len(saltResult.Results) == 0 {
+	if len(saltResult.Results) == 0  || len(saltResult.Results[0]) == 0 {
 		return "",fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v",request)
 	}
 
