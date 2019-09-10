@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"encoding/json"
 	"fmt"
 	"encoding/json"
 	"github.com/sirupsen/logrus"

@@ -117,7 +117,7 @@ type SaltApiRequest struct {
 }
 
 type callSaltApiResults struct {
-	Results []map[string]interface `json:"return,omitempty"`
+	Results []map[string]interface{} `json:"return,omitempty"`
 }
 
 func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
