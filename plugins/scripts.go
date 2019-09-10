@@ -221,6 +221,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		err, stdOut := downLoadAndRunScript(input)
 		if err != nil {
 			output.RetCode = 1
+			return outputs,err
 		}
 		output.Detail = stdOut
 
