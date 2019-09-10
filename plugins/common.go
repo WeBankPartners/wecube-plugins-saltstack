@@ -116,6 +116,10 @@ type SaltApiRequest struct {
 	Args       []string `json:"arg,omitempty"`
 }
 
+type callSaltApiResults struct {
+	Results []map[string]interface `json:"return,omitempty"`
+}
+
 func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	logrus.Infof("call salt api request = %v", request)
 
@@ -147,18 +151,16 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	result := string(body)
-
 	logrus.Infof("call salt api response = %v", result)
 
-	saltResult,err:=parseSaltApiCallResult(result)
-	if err != nil {
-		logrus.Infof("parseSaltApiCallResult meet error=%v ", err)
-		return "", err
+	apiResult:=callSaltApiResults{}
+	if err := json.Unmarshal([]byte(result), &apiResult);err != nil {
+		logrus.Infof("callSaltApi unmarshal result meet error=%v ", err)
+		return "",err
 	}
 	
-	if len(saltResult.Results) == 0  || len(saltResult.Results[0]) == 0 {
+	if len(apiResult.Results) == 0  || len(apiResult.Results[0]) == 0 {
 		return "",fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v",request)
 	}
 
