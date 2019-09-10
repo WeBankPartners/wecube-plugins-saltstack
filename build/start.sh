@@ -33,6 +33,7 @@ if [ ! -f $runReplaceOkFile ];then
     touch $runReplaceOkFile
 fi
 
+rm -rf /var/run/httpd/httpd.pid 
 cd /home/app/wecube-plugins-saltstack
 mkdir -p logs
 ./wecube-plugins-saltstack&
