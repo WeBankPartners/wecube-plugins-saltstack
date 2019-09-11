@@ -153,8 +153,9 @@
                 <parameter datatype="string">fileSystemType</parameter>
                 <parameter datatype="string">mountDir</parameter>
             </input-parameters>
-                <parameter datatype="string">guid</parameter>
+
             <output-parameters>
+              <parameter datatype="string">guid</parameter>
             <!--
                 <parameter datatype="string">detail</parameter>
              -->
