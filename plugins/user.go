@@ -30,6 +30,7 @@ type AddUserInputs struct {
 }
 
 type AddUserInput struct {
+	Guid         string `json:"guid,omitempty"`
 	Target    string `json:"target,omitempty"`
 	UserName  string `json:"userName,omitempty"`
 	UserId    string `json:"userId,omitempty"`
@@ -44,6 +45,7 @@ type AddUserOutputs struct {
 }
 
 type AddUserOutput struct {
+	Guid         string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -112,6 +114,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		output := AddUserOutput{
 			Detail: result,
+			Guid:   input.Guid,
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
@@ -124,6 +127,7 @@ type RemoveUserInputs struct {
 }
 
 type RemoveUserInput struct {
+	Guid         string `json:"guid,omitempty"`
 	Target   string `json:"target,omitempty"`
 	UserName string `json:"userName,omitempty"`
 }
@@ -134,6 +138,7 @@ type RemoveUserOutputs struct {
 
 type RemoveUserOutput struct {
 	Detail string `json:"detail,omitempty"`
+	Guid         string `json:"guid,omitempty"`
 }
 
 type RemoveUserAction struct {
@@ -181,6 +186,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 
 		output := RemoveUserOutput{
 			Detail: result,
+			Guid:   input.Guid,
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
