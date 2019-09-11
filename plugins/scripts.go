@@ -39,6 +39,7 @@ type RunScriptInputs struct {
 }
 
 type RunScriptInput struct {
+	Guid         string `json:"guid,omitempty"`
 	EndPoint string `json:"endpoint,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
@@ -56,6 +57,7 @@ type RunScriptOutput struct {
 	Target  string `json:"target"`
 	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
+	Guid         string `json:"guid,omitempty"`
 }
 
 type RunScriptAction struct {
@@ -224,6 +226,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 			return outputs,err
 		}
 		output.Detail = stdOut
+		output.Guid = input.Guid
 
 		outputs.Outputs = append(outputs.Outputs, output)
 	}

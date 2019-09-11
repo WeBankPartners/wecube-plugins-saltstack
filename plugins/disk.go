@@ -35,6 +35,7 @@ type GetUnformatedDiskInputs struct {
 }
 
 type GetUnformatedDiskInput struct {
+	Guid         string `json:"guid,omitempty"`
 	Target string `json:"target,omitempty"`
 }
 
@@ -43,6 +44,7 @@ type GetUnformatedDiskOutputs struct {
 }
 
 type GetUnformatedDiskOutput struct {
+	Guid         string `json:"guid,omitempty"`
 	UnformatedDisks []string `json:"unformatedDisks,omitempty"`
 }
 
@@ -86,7 +88,9 @@ func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error
 			return nil, err
 		}
 
-		output := GetUnformatedDiskOutput{}
+		output := GetUnformatedDiskOutput{
+			Guid : input.Guid,
+		}
 		for k, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
 				logrus.Errorf("GetUnformatedDiskAction ip=%v,stderr=%v", k, v.Stderr)
@@ -109,6 +113,7 @@ type FormatAndMountDiskInputs struct {
 }
 
 type FormatAndMountDiskInput struct {
+	Guid         string `json:"guid,omitempty"`
 	Target         string `json:"target,omitempty"`
 	DiskName       string `json:"diskName,omitempty"`
 	FileSystemType string `json:"fileSystemType,omitempty"`
@@ -120,6 +125,7 @@ type FormatAndMountDiskOutputs struct {
 }
 
 type FormatAndMountDiskOutput struct {
+	Guid         string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -185,7 +191,9 @@ func (action *FormatAndMountDiskAction) Do(input interface{}) (interface{}, erro
 			return nil, err
 		}
 
-		output := FormatAndMountDiskOutput{}
+		output := FormatAndMountDiskOutput{
+			Guid: input.Guid,
+		}
 		for k, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
 				logrus.Errorf("FormatAndMountDiskAction ip=%v,stderr=%v", k, v.Stderr)
