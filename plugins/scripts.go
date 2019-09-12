@@ -13,6 +13,9 @@ import (
 
 const (
 	SCRIPT_SAVE_PATH = "/srv/salt/base/"
+
+	END_POINT_TYPE_S3    = "S3"
+	END_POINT_TYPE_LOCAL = "LOCAL"
 )
 
 var ScriptPluginActions = make(map[string]Action)
@@ -39,7 +42,8 @@ type RunScriptInputs struct {
 }
 
 type RunScriptInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
+	EndPointType string `json:"end_point_type,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
+	EndPoint     string `json:"end_point,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 
@@ -54,7 +58,7 @@ type RunScriptOutputs struct {
 
 type RunScriptOutput struct {
 	Target  string `json:"target"`
-	RetCode int    `json:"retCode"`
+	RetCode int    `json:"ret_code"`
 	Detail  string `json:"detail"`
 }
 
@@ -77,6 +81,9 @@ func (action *RunScriptAction) CheckParam(input interface{}) error {
 	}
 
 	for _, input := range inputs.Inputs {
+		if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 {
+			return errors.New("Wrong EndPointType")
+		}
 		if input.EndPoint == "" {
 			return errors.New("Endpoint is empty")
 		}
@@ -171,45 +178,49 @@ func downloadFile(url string) ([]byte, error) {
 	return body, err
 }
 
-func downLoadAndRunScript(input RunScriptInput) (error, string) {
+func downLoadScript(input RunScriptInput) (string, error) {
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
 	if err != nil {
 		logrus.Errorf("RunScriptAction downloads3 file error=%v", err)
-		return err, fmt.Sprintf("RunScriptAction downloads3 file error=%v", err)
+		return fmt.Sprintf("RunScriptAction downloads3 file error=%v", err), err
 	}
 
 	scriptPath, err := saveFileToSaltMasterBaseDir(fileName)
 	os.Remove(fileName)
 	if err != nil {
 		logrus.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
-		return err, fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err)
+		return fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err), err
 	}
+	return scriptPath, nil
+}
 
+func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	result, err := executeScript(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 	os.Remove(scriptPath)
 	if err != nil {
-		return err, fmt.Sprintf("executeScript meet error=%v", err)
+		return fmt.Sprintf("executeScript meet error=%v", err), err
 	}
 
 	saltApiResult, err := parseSaltApiCallResult(result)
 	if err != nil {
 		logrus.Errorf("parseSaltApiCallResult meet err=%v,rawStr=%s", err, result)
-		return err, fmt.Sprintf("parseSaltApiCallResult meet err=%v", err)
+		return fmt.Sprintf("parseSaltApiCallResult meet err=%v", err), err
 	}
 
 	var output string
 	for _, v := range saltApiResult.Results[0] {
 		if v.RetCode != 0 {
-			return fmt.Errorf("script run retCode =%v", v.RetCode), v.Stderr
+			return v.Stderr, fmt.Errorf("script run retCode =%v", v.RetCode)
 		}
 		output = v.Stdout + v.Stderr
 		break
 	}
-	return nil, output
+	return output, nil
 }
 
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
+	var err error
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
 
@@ -217,11 +228,19 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		output := RunScriptOutput{
 			Target: input.Target,
 		}
+		scriptPath := input.EndPoint
+		if input.EndPointType == END_POINT_TYPE_S3 {
+			scriptPath, err = downLoadScript(input)
+			if err != nil {
+				output.RetCode = 1
+				return outputs, err
+			}
+		}
 
-		err, stdOut := downLoadAndRunScript(input)
+		stdOut, err := runScript(scriptPath, input)
 		if err != nil {
 			output.RetCode = 1
-			return outputs,err
+			return outputs, err
 		}
 		output.Detail = stdOut
 
