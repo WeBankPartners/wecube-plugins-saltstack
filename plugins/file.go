@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"path/filepath"
+	"strings"
 )
 
 var FileActions = make(map[string]Action)
@@ -38,6 +39,7 @@ type FileCopyInput struct {
 	Guid            string `json:"guid,omitempty"`
 	Target          string `json:"target,omitempty"`
 	DestinationPath string `json:"destination_path,omitempty"`
+	Unpack          string `json:"unpack,omitempty"`
 }
 
 type FileCopyOutputs struct {
@@ -118,6 +120,14 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (*FileCopyOutput, e
 		return nil,err
 	}
 
+	if input.Unpack == "true" {
+		unpackRequest, _ := action.deriveUnpackRequest(input)
+		_, err := CallSaltApi("https://127.0.0.1:8080", *unpackRequest)
+		if err != nil {
+			return nil,err
+		}
+	}
+
 	output.Guid = input.Guid
 	output.Detail = md5sum
 	return &output, nil
@@ -147,6 +157,41 @@ func (action *FileCopyAction) deriveCopyFileRequest(basePath string,input *FileC
 	request.Args = append(request.Args, input.DestinationPath)
 	request.Args = append(request.Args, "makedirs=true")
 	request.Args = append(request.Args, "gzip=5")
+
+	return &request, nil
+}
+
+func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltApiRequest, error) {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+
+	lowerFilepath := strings.ToLower(input.DestinationPath)
+	currentDirectory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+
+	if strings.HasSuffix(lowerFilepath, ".zip") {
+		request.Function = "archive.cmd_unzip"
+		request.Args = append(request.Args, input.DestinationPath)
+		request.Args = append(request.Args, currentDirectory)
+	} else if strings.HasSuffix(lowerFilepath, ".rar") {
+		request.Function = "archive.unrar"
+		request.Args = append(request.Args, input.DestinationPath)
+		request.Args = append(request.Args, currentDirectory)
+	} else if strings.HasSuffix(lowerFilepath, ".tar") {
+		request.Function = "archive.tar"
+		request.Args = append(request.Args, "xf")
+		request.Args = append(request.Args, input.DestinationPath)
+		request.Args = append(request.Args, "dest=" + currentDirectory)
+	} else if strings.HasSuffix(lowerFilepath, ".tar.gz") || strings.HasSuffix(lowerFilepath, ".tgz") {
+		request.Function = "archive.tar"
+		request.Args = append(request.Args, "zxf")
+		request.Args = append(request.Args, input.DestinationPath)
+		request.Args = append(request.Args, "dest=" + currentDirectory)
+	} else if strings.HasSuffix(lowerFilepath, ".gz") {
+		request.Function = "archive.gunzip"
+		request.Args = append(request.Args, input.DestinationPath)
+	}
 
 	return &request, nil
 }
