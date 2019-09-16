@@ -186,16 +186,16 @@ func downLoadScript(input RunScriptInput) (string, error) {
 		return fmt.Sprintf("RunScriptAction downloads3 file error=%v", err), err
 	}
 
+	return fileName, nil
+}
+
+func runScript(fileName string, input RunScriptInput) (string, error) {
 	scriptPath, err := saveFileToSaltMasterBaseDir(fileName)
 	os.Remove(fileName)
 	if err != nil {
 		logrus.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
 		return fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err), err
 	}
-	return scriptPath, nil
-}
-
-func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	result, err := executeScript(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 	os.Remove(scriptPath)
 	if err != nil {
