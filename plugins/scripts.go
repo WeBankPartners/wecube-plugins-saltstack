@@ -238,7 +238,7 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		result, err := executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 		os.Remove(scriptPath)
 		if err != nil {
-			return fmt.Sprintf("executeScript meet error=%v", err), err
+			return fmt.Sprintf("executeS3Script meet error=%v", err), err
 		}
 	default:
 		err = fmt.Errorf("no such EndPointType")

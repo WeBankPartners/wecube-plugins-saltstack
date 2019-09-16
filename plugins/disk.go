@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,7 +36,7 @@ type GetUnformatedDiskInputs struct {
 }
 
 type GetUnformatedDiskInput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid   string `json:"guid,omitempty"`
 	Target string `json:"target,omitempty"`
 }
 
@@ -44,7 +45,7 @@ type GetUnformatedDiskOutputs struct {
 }
 
 type GetUnformatedDiskOutput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid            string   `json:"guid,omitempty"`
 	UnformatedDisks []string `json:"unformatedDisks,omitempty"`
 }
 
@@ -77,7 +78,7 @@ func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error
 	outputs := GetUnformatedDiskOutputs{}
 
 	for _, input := range inputs.Inputs {
-		result, err := executeScript("getUnformatedDisk.py", input.Target, "", "")
+		result, err := executeS3Script("getUnformatedDisk.py", input.Target, "", "")
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +90,7 @@ func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error
 		}
 
 		output := GetUnformatedDiskOutput{
-			Guid : input.Guid,
+			Guid: input.Guid,
 		}
 		for k, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
@@ -113,7 +114,7 @@ type FormatAndMountDiskInputs struct {
 }
 
 type FormatAndMountDiskInput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid           string `json:"guid,omitempty"`
 	Target         string `json:"target,omitempty"`
 	DiskName       string `json:"diskName,omitempty"`
 	FileSystemType string `json:"fileSystemType,omitempty"`
@@ -125,7 +126,7 @@ type FormatAndMountDiskOutputs struct {
 }
 
 type FormatAndMountDiskOutput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -179,8 +180,8 @@ func (action *FormatAndMountDiskAction) Do(input interface{}) (interface{}, erro
 	outputs := FormatAndMountDiskOutputs{}
 
 	for _, input := range inputs.Inputs {
-		execArgs := "-d " + input.DiskName +" -f "+input.FileSystemType + " -m " + input.MountDir
-		result, err := executeScript("formatAndMountDisk.py", input.Target, "", execArgs)
+		execArgs := "-d " + input.DiskName + " -f " + input.FileSystemType + " -m " + input.MountDir
+		result, err := executeS3Script("formatAndMountDisk.py", input.Target, "", execArgs)
 		if err != nil {
 			return nil, err
 		}
