@@ -71,6 +71,7 @@
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
+                <parameter datatype="string">guid</parameter>
             <!--
                 <parameter datatype="string">detail</parameter>
             -->
@@ -80,6 +81,7 @@
     <plugin id="user" name="User Management">
         <interface name="add" path="/v1/deploy/user/add">
             <input-parameters>
+                <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">target</parameter>
                 <parameter datatype="string">userName</parameter>
                 <parameter datatype="string">password</parameter>
@@ -89,6 +91,7 @@
                 <parameter datatype="string">homeDir</parameter>
             </input-parameters>
             <output-parameters>
+                <parameter datatype="string">guid</parameter>
              <!--
                 <parameter datatype="string">detail</parameter>
              -->
@@ -96,6 +99,7 @@
         </interface>
         <interface name="remove" path="/v1/deploy/user/remove">
             <input-parameters>
+                 <parameter datatype="string">guid</parameter>
                  <parameter datatype="string">target</parameter>
                 <parameter datatype="string">userName</parameter>
             </input-parameters>
@@ -103,6 +107,7 @@
               <!--
                 <parameter datatype="string">detail</parameter>
               -->
+                <parameter datatype="string">guid</parameter>
             </output-parameters>
         </interface>
     </plugin>
@@ -132,20 +137,25 @@
      <plugin id="disk" name="Storage Disk Operation" >
         <interface name="getUnformatedDisk" path="/v1/deploy/disk/getUnformatedDisk">
             <input-parameters>
+                <parameter datatype="string">guid</parameter>
                 <parameter datatype="target">endpoint</parameter>
             </input-parameters>
             <output-parameters>
+                <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">unformatedDisks</parameter>
             </output-parameters>
         </interface>
         <interface name="formatAndMountDisk" path="/v1/deploy/disk/formatAndMountDisk">
             <input-parameters>
+                <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">task</parameter>
                 <parameter datatype="string">diskName</parameter>
                 <parameter datatype="string">fileSystemType</parameter>
                 <parameter datatype="string">mountDir</parameter>
             </input-parameters>
+
             <output-parameters>
+              <parameter datatype="string">guid</parameter>
             <!--
                 <parameter datatype="string">detail</parameter>
              -->

@@ -60,6 +60,7 @@ type RunScriptOutput struct {
 	Target  string `json:"target"`
 	RetCode int    `json:"ret_code"`
 	Detail  string `json:"detail"`
+	Guid    string `json:"guid,omitempty"`
 }
 
 type RunScriptAction struct {
@@ -286,6 +287,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 			return outputs, err
 		}
 		output.Detail = stdOut
+		output.Guid = input.Guid
 
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
