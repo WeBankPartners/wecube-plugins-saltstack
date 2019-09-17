@@ -83,9 +83,9 @@ func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error
 			return nil, err
 		}
 
-		saltApiResult, err := parseSaltApiCallResult(result)
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			logrus.Errorf("parseSaltApiCallResult meet err=%v,rawStr=%s", err, result)
+			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
 			return nil, err
 		}
 
@@ -186,9 +186,9 @@ func (action *FormatAndMountDiskAction) Do(input interface{}) (interface{}, erro
 			return nil, err
 		}
 
-		saltApiResult, err := parseSaltApiCallResult(result)
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			logrus.Errorf("parseSaltApiCallResult meet err=%v,rawStr=%s", err, result)
+			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
 			return nil, err
 		}
 

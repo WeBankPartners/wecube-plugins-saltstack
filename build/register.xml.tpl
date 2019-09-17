@@ -67,7 +67,7 @@
                 <!-- <parameter datatype="string">accessKey</parameter>
                 <parameter datatype="string">secretKey</parameter> -->
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">runas</parameter>
+                <parameter datatype="string">run_as</parameter>
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
