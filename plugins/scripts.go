@@ -13,6 +13,9 @@ import (
 
 const (
 	SCRIPT_SAVE_PATH = "/srv/salt/base/"
+
+	END_POINT_TYPE_S3    = "S3"
+	END_POINT_TYPE_LOCAL = "LOCAL"
 )
 
 var ScriptPluginActions = make(map[string]Action)
@@ -39,14 +42,15 @@ type RunScriptInputs struct {
 }
 
 type RunScriptInput struct {
-	Guid         string `json:"guid,omitempty"`
-	EndPoint string `json:"endpoint,omitempty"`
+	EndPointType string `json:"end_point_type,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
+	EndPoint     string `json:"end_point,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 
 	Target  string `json:"target,omitempty"`
-	RunAs   string `json:"runas,omitempty"`
+	RunAs   string `json:"run_as,omitempty"`
 	ExecArg string `json:"args,omitempty"`
+	Guid    string `json:"guid,omitempty"`
 }
 
 type RunScriptOutputs struct {
@@ -55,9 +59,9 @@ type RunScriptOutputs struct {
 
 type RunScriptOutput struct {
 	Target  string `json:"target"`
-	RetCode int    `json:"retCode"`
+	RetCode int    `json:"ret_code"`
 	Detail  string `json:"detail"`
-	Guid         string `json:"guid,omitempty"`
+	Guid    string `json:"guid,omitempty"`
 }
 
 type RunScriptAction struct {
@@ -79,6 +83,9 @@ func (action *RunScriptAction) CheckParam(input interface{}) error {
 	}
 
 	for _, input := range inputs.Inputs {
+		if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 {
+			return errors.New("Wrong EndPointType")
+		}
 		if input.EndPoint == "" {
 			return errors.New("Endpoint is empty")
 		}
@@ -130,14 +137,14 @@ func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 	return fullPath, err
 }
 
-func executeScript(fileName string, target string, runAs string, execArg string) (string, error) {
+func executeS3Script(fileName string, target string, runAs string, execArg string) (string, error) {
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
 	request.Target = target
 	request.Function = "cmd.script"
 
-	logrus.Infof("executeScript fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
+	logrus.Infof("executeS3Script fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
 
 	request.Args = append(request.Args, "salt://base/"+fileName)
 	if len(execArg) > 0 {
@@ -147,6 +154,34 @@ func executeScript(fileName string, target string, runAs string, execArg string)
 	if len(runAs) > 0 {
 		request.Args = append(request.Args, "runas="+runAs)
 	}
+
+	result, err := CallSaltApi("https://127.0.0.1:8080", request)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
+
+func executeLocalScript(fileName string, target string, runAs string, execArg string) (string, error) {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = target
+	request.Function = "cmd.run"
+
+	logrus.Infof("executeLocalScript fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
+
+	cmdRun := "chmod +x " + fileName + ";" + fileName
+	if len(execArg) > 0 {
+		cmdRun = cmdRun + execArg
+	}
+	request.Args = append(request.Args, cmdRun)
+
+	if len(runAs) > 0 {
+		request.Args = append(request.Args, "runas="+runAs)
+	}
+	logrus.Infof("executeLocalScript request=%v", request)
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request)
 	if err != nil {
@@ -173,45 +208,79 @@ func downloadFile(url string) ([]byte, error) {
 	return body, err
 }
 
-func downLoadAndRunScript(input RunScriptInput) (error, string) {
+func downLoadScript(input RunScriptInput) (string, error) {
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
 	if err != nil {
 		logrus.Errorf("RunScriptAction downloads3 file error=%v", err)
-		return err, fmt.Sprintf("RunScriptAction downloads3 file error=%v", err)
+		return fmt.Sprintf("RunScriptAction downloads3 file error=%v", err), err
 	}
 
 	scriptPath, err := saveFileToSaltMasterBaseDir(fileName)
 	os.Remove(fileName)
 	if err != nil {
 		logrus.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
-		return err, fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err)
+		return fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err), err
 	}
 
-	result, err := executeScript(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
-	os.Remove(scriptPath)
-	if err != nil {
-		return err, fmt.Sprintf("executeScript meet error=%v", err)
-	}
+	return scriptPath, nil
+}
 
-	saltApiResult, err := parseSaltApiCallResult(result)
-	if err != nil {
-		logrus.Errorf("parseSaltApiCallResult meet err=%v,rawStr=%s", err, result)
-		return err, fmt.Sprintf("parseSaltApiCallResult meet err=%v", err)
-	}
-
+func runScript(scriptPath string, input RunScriptInput) (string, error) {
+	var result string
 	var output string
-	for _, v := range saltApiResult.Results[0] {
-		if v.RetCode != 0 {
-			return fmt.Errorf("script run retCode =%v", v.RetCode), v.Stderr
+	var err error
+	switch input.EndPointType {
+	case END_POINT_TYPE_LOCAL:
+		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg)
+		if err != nil {
+			return fmt.Sprintf("executeLocalScript meet error=%v", err), err
 		}
-		output = v.Stdout + v.Stderr
-		break
+		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+		if err != nil {
+			logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
+		}
+		for k, v := range saltApiResult.Results[0] {
+			if k != input.Target {
+				err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
+				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
+			}
+			output = k + ":" + v
+			break
+		}
+
+	case END_POINT_TYPE_S3:
+		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
+		os.Remove(scriptPath)
+		if err != nil {
+			return fmt.Sprintf("executeS3Script meet error=%v", err), err
+		}
+
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+		if err != nil {
+			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				return v.Stderr, fmt.Errorf("script run retCode=%v", v.RetCode)
+			}
+			output = v.Stdout + v.Stderr
+			break
+		}
+	default:
+		err = fmt.Errorf("no such EndPointType")
+		logrus.Error("runScript meet error=%v", err)
+		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
-	return nil, output
+
+	return output, nil
 }
 
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
+	var err error
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
 
@@ -219,11 +288,19 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		output := RunScriptOutput{
 			Target: input.Target,
 		}
+		scriptPath := input.EndPoint
+		if input.EndPointType == END_POINT_TYPE_S3 {
+			scriptPath, err = downLoadScript(input)
+			if err != nil {
+				output.RetCode = 1
+				return outputs, err
+			}
+		}
 
-		err, stdOut := downLoadAndRunScript(input)
+		stdOut, err := runScript(scriptPath, input)
 		if err != nil {
 			output.RetCode = 1
-			return outputs,err
+			return outputs, err
 		}
 		output.Detail = stdOut
 		output.Guid = input.Guid

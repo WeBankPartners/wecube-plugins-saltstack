@@ -2,7 +2,11 @@ package plugins
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,10 +14,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/md5"
-	"encoding/hex"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,9 +33,9 @@ func PKCS7UnPadding(origData []byte) []byte {
 	length := len(origData)
 	unpadding := int(origData[length-1])
 	if length > unpadding {
-	  return origData[:(length - unpadding)]
+		return origData[:(length - unpadding)]
 	}
-	return  []byte{}
+	return []byte{}
 }
 
 func AesEncode(key string, rawData string) (string, error) {
@@ -52,17 +53,17 @@ func AesEncode(key string, rawData string) (string, error) {
 }
 
 func AesDecode(key string, encryptData string) (password string, err error) {
-        defer func(){
-             	if r:=recover();r!=nil{
-                        err=fmt.Errorf("%v",r)
-                }
-        }()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
 
 	bytesRawKey := []byte(key)
 	bytesRawData, _ := hex.DecodeString(encryptData)
 	block, err := aes.NewCipher(bytesRawKey)
 	if err != nil {
-		return 
+		return
 	}
 	blockSize := block.BlockSize()
 	blockMode := cipher.NewCBCDecrypter(block, bytesRawKey[:blockSize])
@@ -70,14 +71,13 @@ func AesDecode(key string, encryptData string) (password string, err error) {
 	blockMode.CryptBlocks(origData, bytesRawData)
 	origData = PKCS7UnPadding(origData)
 	if len(origData) == 0 {
-	    err=fmt.Errorf("password wrong")
-	    return 
+		err = fmt.Errorf("password wrong")
+		return
 	}
-	
-	password=string(origData)
-	return 
-}
 
+	password = string(origData)
+	return
+}
 
 func UnmarshalJson(source interface{}, target interface{}) error {
 	reader, ok := source.(io.Reader)
@@ -154,14 +154,14 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	result := string(body)
 	logrus.Infof("call salt api response = %v", result)
 
-	apiResult:=callSaltApiResults{}
-	if err := json.Unmarshal([]byte(result), &apiResult);err != nil {
+	apiResult := callSaltApiResults{}
+	if err := json.Unmarshal([]byte(result), &apiResult); err != nil {
 		logrus.Infof("callSaltApi unmarshal result meet error=%v ", err)
-		return "",err
+		return "", err
 	}
-	
-	if len(apiResult.Results) == 0  || len(apiResult.Results[0]) == 0 {
-		return "",fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v",request)
+
+	if len(apiResult.Results) == 0 || len(apiResult.Results[0]) == 0 {
+		return "", fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v", request)
 	}
 
 	return result, nil

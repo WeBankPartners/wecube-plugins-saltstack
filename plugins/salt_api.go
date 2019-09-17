@@ -1,8 +1,9 @@
 package plugins
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -66,28 +67,46 @@ func (action *SaltApiCallAction) CheckParam(input interface{}) error {
 	return nil
 }
 
-type SaltApiResults struct {
-	Results []map[string]SaltApiResult `json:"return,omitempty"`
+type SaltApiCmdScriptResults struct {
+	Results []map[string]SaltApiCmdScriptResult `json:"results,omitempty"`
 }
 
-type SaltApiResult struct {
+type SaltApiCmdScriptResult struct {
 	Pid     int    `json:"pid,omitempty"`
 	RetCode int    `json:"retcode,omitempty"`
 	Stderr  string `json:"stderr,omitempty"`
 	Stdout  string `json:"stdout,omitempty"`
 }
 
-func parseSaltApiCallResult(jsonStr string) (*SaltApiResults, error) {
-	result := SaltApiResults{}
+func parseSaltApiCmdScriptCallResult(jsonStr string) (*SaltApiCmdScriptResults, error) {
+	result := SaltApiCmdScriptResults{}
 
-	if err := json.Unmarshal([]byte(jsonStr), &result);err != nil {
-		return &result,err
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return &result, err
 	}
-	
+
 	if len(result.Results) == 0 {
-		return &result,fmt.Errorf("parseSaltApiCallResult,get %d result",len(result.Results))
+		return &result, fmt.Errorf("parseSaltApiCmdScriptCallResult,get %d result", len(result.Results))
 	}
-	
+
+	return &result, nil
+}
+
+type SaltApiCmdRunResults struct {
+	Results []map[string]string `json:"return,omitempty"`
+}
+
+func parseSaltApiCmdRunCallResult(jsonStr string) (*SaltApiCmdRunResults, error) {
+	result := SaltApiCmdRunResults{}
+
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return &result, err
+	}
+
+	if len(result.Results) == 0 {
+		return &result, fmt.Errorf("parseSaltApiCmdRunCallResult,get %d result", len(result.Results))
+	}
+
 	return &result, nil
 }
 
