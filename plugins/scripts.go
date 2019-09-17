@@ -48,8 +48,9 @@ type RunScriptInput struct {
 	// SecretKey string `json:"secretKey,omitempty"`
 
 	Target  string `json:"target,omitempty"`
-	RunAs   string `json:"runas,omitempty"`
+	RunAs   string `json:"run_as,omitempty"`
 	ExecArg string `json:"args,omitempty"`
+	Guid    string `json:"guid,omitempty"`
 }
 
 type RunScriptOutputs struct {
@@ -227,18 +228,47 @@ func downLoadScript(input RunScriptInput) (string, error) {
 
 func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	var result string
+	var output string
 	var err error
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
-		result, err = executeLocalScript(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
+		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg)
 		if err != nil {
 			return fmt.Sprintf("executeLocalScript meet error=%v", err), err
 		}
+		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+		if err != nil {
+			logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
+		}
+		for k, v := range saltApiResult.Results[0] {
+			if k != input.Target {
+				err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
+				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
+			}
+			output = k + ":" + v
+			break
+		}
+
 	case END_POINT_TYPE_S3:
-		result, err := executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
+		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 		os.Remove(scriptPath)
 		if err != nil {
 			return fmt.Sprintf("executeS3Script meet error=%v", err), err
+		}
+
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+		if err != nil {
+			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				return v.Stderr, fmt.Errorf("script run retCode=%v", v.RetCode)
+			}
+			output = v.Stdout + v.Stderr
+			break
 		}
 	default:
 		err = fmt.Errorf("no such EndPointType")
@@ -246,20 +276,6 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
 
-	saltApiResult, err := parseSaltApiCallResult(result)
-	if err != nil {
-		logrus.Errorf("parseSaltApiCallResult meet err=%v,rawStr=%s", err, result)
-		return fmt.Sprintf("parseSaltApiCallResult meet err=%v", err), err
-	}
-
-	var output string
-	for _, v := range saltApiResult.Results[0] {
-		if v.RetCode != 0 {
-			return v.Stderr, fmt.Errorf("script run retCode =%v", v.RetCode)
-		}
-		output = v.Stdout + v.Stderr
-		break
-	}
 	return output, nil
 }
 
