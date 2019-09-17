@@ -30,7 +30,7 @@ type AddUserInputs struct {
 }
 
 type AddUserInput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid      string `json:"guid,omitempty"`
 	Target    string `json:"target,omitempty"`
 	UserName  string `json:"userName,omitempty"`
 	UserId    string `json:"userId,omitempty"`
@@ -45,7 +45,7 @@ type AddUserOutputs struct {
 }
 
 type AddUserOutput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -107,7 +107,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			execArg += " --home " + input.HomeDir
 		}
 
-		result, err := executeScript("user_manage.sh", input.Target, runAs, execArg)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ type RemoveUserInputs struct {
 }
 
 type RemoveUserInput struct {
-	Guid         string `json:"guid,omitempty"`
+	Guid     string `json:"guid,omitempty"`
 	Target   string `json:"target,omitempty"`
 	UserName string `json:"userName,omitempty"`
 }
@@ -138,7 +138,7 @@ type RemoveUserOutputs struct {
 
 type RemoveUserOutput struct {
 	Detail string `json:"detail,omitempty"`
-	Guid         string `json:"guid,omitempty"`
+	Guid   string `json:"guid,omitempty"`
 }
 
 type RemoveUserAction struct {
@@ -179,7 +179,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 	for _, input := range inputs.Inputs {
 		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
 
-		result, err := executeScript("user_manage.sh", input.Target, runAs, execArg)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
 			return nil, err
 		}

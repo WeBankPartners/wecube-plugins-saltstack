@@ -62,12 +62,12 @@
    <plugin id="script" name="Script Operation">
         <interface name="run" path="/v1/deploy/script/run">
             <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">endpoint</parameter>
+                <parameter datatype="string">end_point_type</parameter>
+                <parameter datatype="string">end_point</parameter>
                 <!-- <parameter datatype="string">accessKey</parameter>
                 <parameter datatype="string">secretKey</parameter> -->
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">runas</parameter>
+                <parameter datatype="string">run_as</parameter>
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
