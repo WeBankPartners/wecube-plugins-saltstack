@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 #chkconfig: 2345 20 80
 #description: wecube-plugins-saltstack
