@@ -47,7 +47,7 @@ do
     else
        rm -rf /var/run/httpd/httpd.pid 
        sleep 5
-fi
+    fi
 done
 
 
