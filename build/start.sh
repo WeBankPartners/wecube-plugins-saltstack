@@ -33,10 +33,21 @@ if [ ! -f $runReplaceOkFile ];then
     touch $runReplaceOkFile
 fi
 
-rm -rf /var/run/httpd/httpd.pid 
 cd /home/app/wecube-plugins-saltstack
 mkdir -p logs
 ./wecube-plugins-saltstack&
 /usr/bin/salt-master&
-httpd&
-/usr/bin/salt-api 
+/usr/bin/salt-api&
+
+while  /bin/true
+do
+    process=`ps aux | grep httpd| grep -v grep | awk '{print $1}'`
+    if [ -z "$process" ];then
+        httpd
+    else
+       rm -rf /var/run/httpd/httpd.pid 
+       sleep 5
+fi
+done
+
+
