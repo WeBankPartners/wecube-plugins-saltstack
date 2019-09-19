@@ -142,13 +142,13 @@ func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error
 			return nil, err
 		}
 
-		md5sum := Md5Encode(input.Guid+input.Seed)
-		password,err := AesDecode(md5sum[0:16], input.Password)
+		md5sum := Md5Encode(input.Guid + input.Seed)
+		password, err := AesDecode(md5sum[0:16], input.Password)
 		if err != nil {
 			logrus.Errorf("AesDecode meet error(%v)", err)
-			return nil , err
+			return nil, err
 		}
-		
+
 		result, err := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, fileName)
 		os.Remove(fileName)
 		if err != nil {

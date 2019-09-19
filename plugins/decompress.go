@@ -142,15 +142,15 @@ func getDecompressDirName(comporessedFileName string) string {
 	return ""
 }
 
-func getCompressFileSuffix(comporessedFileName string) (string,error){
+func getCompressFileSuffix(comporessedFileName string) (string, error) {
 	validExts := []string{".zip", ".tgz", ".tar.gz"}
 	for _, validExt := range validExts {
 		if strings.HasSuffix(comporessedFileName, validExt) {
-			return validExt,nil
+			return validExt, nil
 		}
 	}
 
-	return "",fmt.Errorf("%s have invalid compressFileSuffix",comporessedFileName)
+	return "", fmt.Errorf("%s have invalid compressFileSuffix", comporessedFileName)
 }
 
 func decompressFile(comporessedFileFullPath string, decompressDir string) error {
