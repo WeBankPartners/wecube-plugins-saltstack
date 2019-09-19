@@ -17,7 +17,7 @@ const (
 	ENV_NAME_SALT_API_HOST = "SALT_API_HOST"
 	ENV_NAME_SALT_API_USER = "SALT_API_USER"
 	ENV_NAME_SALT_API_PWD  = "SALT_API_PWD"
-	SALT_TOKEN_VALID_TIME =  30*60   //second
+	SALT_TOKEN_VALID_TIME  = 30 * 60 //second
 )
 
 type SaltApiToken struct {
@@ -31,7 +31,7 @@ func (token *SaltApiToken) isSaltApiTokenValid() bool {
 		return false
 	}
 
-	if elapse := time.Since(token.CreateTime).Seconds();  elapse < float64(token.Expire - 10)  {
+	if elapse := time.Since(token.CreateTime).Seconds(); elapse < float64(token.Expire-10) {
 		return true
 	}
 	return false

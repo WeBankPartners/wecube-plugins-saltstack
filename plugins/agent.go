@@ -1,10 +1,10 @@
 package plugins
 
 import (
+	"errors"
 	"fmt"
-        "errors"
-	"os/exec"
 	"github.com/sirupsen/logrus"
+	"os/exec"
 )
 
 var AgentActions = make(map[string]Action)
@@ -30,10 +30,10 @@ type AgentInstallInputs struct {
 }
 
 type AgentInstallInput struct {
-	Guid  string `json:"guid,omitempty"`
-	Seed  string `json:"seed,omitempty"`
-	Password  string `json:"password,omitempty"`
-	Host string `json:"host,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Password string `json:"password,omitempty"`
+	Host     string `json:"host,omitempty"`
 }
 
 type AgentInstallOutputs struct {
@@ -108,13 +108,13 @@ func (action *AgentInstallAction) removeSaltKeys(host string) {
 }
 
 func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (*AgentInstallOutput, error) {
-	md5sum := Md5Encode(input.Guid+input.Seed)
-	password,err := AesDecode(md5sum[0:16], input.Password)
+	md5sum := Md5Encode(input.Guid + input.Seed)
+	password, err := AesDecode(md5sum[0:16], input.Password)
 	if err != nil {
 		logrus.Errorf("AesDecode meet error(%v)", err)
-		return nil , err
+		return nil, err
 	}
-	installMinionArgs:=[]string{
+	installMinionArgs := []string{
 		input.Host,
 		password,
 	}
