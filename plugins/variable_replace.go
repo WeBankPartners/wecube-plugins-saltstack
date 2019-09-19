@@ -45,7 +45,7 @@ type VariableReplaceInput struct {
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
-	FilePath     string `json:"conf_files_path,omitempty"`
+	FilePath     string `json:"conf_files,omitempty"`
 	VariableList string `json:"variable_list,omitempty"`
 }
 
@@ -98,6 +98,11 @@ func getNewS3EndpointName(endpoint string, newPackageName string) string {
 	return endpoint[0:index+1] + newPackageName
 }
 
+func getPackageNameWithoutSuffix(packageName string) string {
+	index := strings.LastIndexAny(packageName, ".")
+	return packageName[0:index]
+}
+
 func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) {
 	files, _ := input.(VariableReplaceInputs)
 	outputs := VariableReplaceOutputs{}
@@ -145,7 +150,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 
 		//compress file
 		nowTime := time.Now().Format("200601021504")
-		newPackageName := fmt.Sprintf("%s-%v%s", packageName, nowTime, suffix)
+		newPackageName := fmt.Sprintf("%s-%v%s", getPackageNameWithoutSuffix(packageName), nowTime, suffix)
 		fmt.Printf("newPackageName=%s\n", newPackageName)
 		if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
 			logrus.Errorf("compressDir meet error=%v", err)
@@ -396,12 +401,11 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	}
 
 	if suffix == ".zip" {
-		sh = "zip -r " + UPLOADS3FILE_DIR + newPackageName + " " + decompressDirName
+		sh = "cd " + decompressDirName + " && " + "zip -r " + UPLOADS3FILE_DIR + newPackageName + " *"
 	}
 	if suffix == ".tgz" || suffix == ".tar.gz" {
-		sh = "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " " + decompressDirName
+		sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " *"
 	}
-
 	fmt.Printf("compressDir sh=%s\n", sh)
 
 	cmd := exec.Command("/bin/sh", "-c", sh)
