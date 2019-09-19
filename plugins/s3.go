@@ -22,7 +22,7 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	}
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
-		return "",fmt.Errorf("endpoint(%s) is not a valid s3 url",endPoint)
+		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
 	}
 
 	Info := strings.Split(s[1], "/")
@@ -73,12 +73,12 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
-		return "",fmt.Errorf("endpoint(%s) is not a valid s3 url",endPoint)
+		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
 	}
 
 	Info := strings.Split(s[1], "/")
-	if len(Info) < 3{
-		return "",fmt.Errorf("endpoint(%s) is not a valid s3 url",endPoint)
+	if len(Info) < 3 {
+		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
 	}
 
 	//check dir exist
