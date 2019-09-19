@@ -45,14 +45,13 @@
         <interface name="copy" path="/v1/deploy/variable/replace">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">pkg_name</parameter>
-                <parameter datatype="string">pkg_path</parameter>
-                <parameter datatype="string">file_path</parameter>
-                <parameter datatype="string">file_name</parameter>
+                <parameter datatype="string">conf_files_path</parameter>
+                <parameter datatype="string">endpoint</parameter>
                 <parameter datatype="string">variable_list</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
+                 <parameter datatype="string">s3_pkg_path</parameter>
                  <!--
                 <parameter datatype="string">detail</parameter>
                 -->
@@ -62,6 +61,7 @@
    <plugin id="script" name="Script Operation">
         <interface name="run" path="/v1/deploy/script/run">
             <input-parameters>
+	        <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">end_point_type</parameter>
                 <parameter datatype="string">end_point</parameter>
                 <!-- <parameter datatype="string">accessKey</parameter>
