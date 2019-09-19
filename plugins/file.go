@@ -1,10 +1,10 @@
 package plugins
 
 import (
-	"fmt"
-	"os"
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -79,7 +79,7 @@ func (action *FileCopyAction) CheckParam(input interface{}) error {
 		if input.DestinationPath == "" {
 			return errors.New("DestinationPath is empty")
 		}
-	
+
 		// if input.SecretKey == "" {
 		// 	return errors.New("SecretKey is empty")
 		// }
@@ -100,31 +100,31 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (*FileCopyOutput, e
 		return &output, fmt.Errorf("CopyFile downloads3 file error=%v", err)
 	}
 
-    savePath, err := saveFileToSaltMasterBaseDir(fileName)
+	savePath, err := saveFileToSaltMasterBaseDir(fileName)
 	os.Remove(fileName)
 	if err != nil {
 		return &output, fmt.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
 	}
-	
+
 	//copy file
-	copyRequest,err:=action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath),input)
-	_, err = CallSaltApi("https://127.0.0.1:8080",*copyRequest)
+	copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
+	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest)
 	os.Remove(savePath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	md5SumRequest, _ := action.deriveMd5SumRequest(input)
 	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	if input.Unpack == "true" {
 		unpackRequest, _ := action.deriveUnpackRequest(input)
 		_, err := CallSaltApi("https://127.0.0.1:8080", *unpackRequest)
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 	}
 
@@ -145,7 +145,7 @@ func (action *FileCopyAction) deriveMd5SumRequest(input *FileCopyInput) (*SaltAp
 	return &request, nil
 }
 
-func (action *FileCopyAction) deriveCopyFileRequest(basePath string,input *FileCopyInput) (*SaltApiRequest, error) {
+func (action *FileCopyAction) deriveCopyFileRequest(basePath string, input *FileCopyInput) (*SaltApiRequest, error) {
 
 	request := SaltApiRequest{}
 	request.Client = "local"
@@ -182,12 +182,12 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 		request.Function = "archive.tar"
 		request.Args = append(request.Args, "xf")
 		request.Args = append(request.Args, input.DestinationPath)
-		request.Args = append(request.Args, "dest=" + currentDirectory)
+		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".tar.gz") || strings.HasSuffix(lowerFilepath, ".tgz") {
 		request.Function = "archive.tar"
 		request.Args = append(request.Args, "zxf")
 		request.Args = append(request.Args, input.DestinationPath)
-		request.Args = append(request.Args, "dest=" + currentDirectory)
+		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".gz") {
 		request.Function = "archive.gunzip"
 		request.Args = append(request.Args, input.DestinationPath)
