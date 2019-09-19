@@ -45,8 +45,7 @@ type VariableReplaceInput struct {
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
-	PkgName      string `json:"pkg_name,omitempty"`
-	FilePath     string `json:"file_path,omitempty"`
+	FilePath     string `json:"conf_files_path,omitempty"`
 	VariableList string `json:"variable_list,omitempty"`
 }
 
@@ -58,10 +57,9 @@ type VariableReplaceOutputs struct {
 //VariableReplaceOutput .
 type VariableReplaceOutput struct {
 	Guid       string `json:"guid,omitempty"`
-	Detail     string `json:"detail,omitempty"`
-	MD5        string `json:"md5,omitempty"`
-	FilePath   string `json:"file_path,omitempty"`
-	CosPkgPath string `json:"cos_pkg_path,omitempty"`
+	//Detail     string `json:"detail,omitempty"`
+	//MD5        string `json:"md5,omitempty"`
+	NewS3PkgPath string `json:"s3_pkg_path,omitempty"`
 }
 
 type VariableReplaceAction struct {
@@ -82,7 +80,7 @@ func (action *VariableReplaceAction) CheckParam(input interface{}) error {
 		return fmt.Errorf("VariableReplaceAction:input type=%T not right", input)
 	}
 	if !strings.Contains(data.Inputs[0].PkgName, ".zip") && !strings.Contains(data.Inputs[0].PkgName, ".tar.gz") && !strings.Contains(data.Inputs[0].PkgName, ".tgz") {
-		return fmt.Errorf("VariableReplaceAction only support zip and tar.gz type package")
+		return fmt.Errorf("VariableReplaceAction only support zip,tar.gz and tgz compress type")
 	}
 	if len(data.Inputs) > 0 {
 		for _, d := range data.Inputs {
@@ -93,131 +91,123 @@ func (action *VariableReplaceAction) CheckParam(input interface{}) error {
 				return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
 			}
 		}
-
 	}
 
 	return nil
+}
+
+func getNewS3EndpointName(endpoint string,newPackageName string) string{
+	index := strings.LastIndexAny(endpoint, "/")
+	return endpoint[0:index+1] + newPackageName
 }
 
 func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) {
 	files, _ := input.(VariableReplaceInputs)
 	outputs := VariableReplaceOutputs{}
 
-	//replace variable
-	fileList := []string{}
-	confPkg := ""
-	dirPath := ""
 	for _, input := range files.Inputs {
+		suffix,err :=getCompressFileSuffix(input.EndPoint)
+		if err != nil{
+			return &outputs, err
+		}
+
 		packageName, err := getPackageNameFromEndpoint(input.EndPoint)
 		if err != nil {
 			return &outputs, err
 		}
 		logrus.Info("package name = >", packageName)
-		fullPath := getDecompressDirName(packageName)
-		dirPath = fullPath
-		if err = isDirExist(fullPath); err != nil {
-			// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-			comporessedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
-			if err != nil {
+
+		decompressDirName := getDecompressDirName(packageName)
+		if err = isDirExist(decompressDirName); err == nil {
+			os.RemoveAll(fullPath)
+		}
+
+		if err = os.MkdirAll(decompressDirName, os.ModePerm);err != nil {
+			return &outputs, err
+		}
+
+		compressedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		if err != nil {
 				logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 				return &outputs, err
-			}
+		}
 
-			if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
-				logrus.Errorf("VariableReplaceAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
-				os.RemoveAll(comporessedFileFullPath)
+		if err = decompressFile(compressedFileFullPath, decompressDirName); err != nil {
+			logrus.Errorf("VariableReplaceAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
+			os.RemoveAll(comporessedFileFullPath)
+			return &outputs, err
+	    }
+		os.RemoveAll(compressedFileFullPath)
+		
+		for _,filePath:=strings.Split(input.FilePath,"|"){
+			confFilePath := fullPath + "/" + filePath
+			if err := ReplaceFileVar(confFilePath, input.VariableList);err != nil {
 				return &outputs, err
 			}
-			os.RemoveAll(comporessedFileFullPath)
 		}
-		filePath := fullPath + "/" + input.FilePath
-		fileList = append(fileList, input.FilePath)
-		confPkg = fullPath + "/" + input.PkgName
-		resp, err := ReplaceFileVar(filePath, input.VariableList)
-		if err != nil {
-			outputs.Outputs = append(outputs.Outputs, resp)
+
+		//compress file 
+		nowTime:=  time.Now().Format("200601021504")
+		newPackageName:=fmt.Sprintf("%s-%v%s",packageName,nowTime,suffix)
+		fmt.Printf("newPackageName=%s\n",newPackageName)
+		if err = compressDir(decompressDirName,suffix,newPackageName);err != nil {
+			logrus.Errorf("compressDir meet error=%v",err)
 			return &outputs, err
 		}
-		resp.FilePath = input.FilePath
-		resp.Guid = input.Guid
-		md5, err := GetFileMD5Value(fullPath, input.FilePath)
-		if err != nil {
-			return outputs, err
-		}
-		resp.MD5 = md5
-		outputs.Outputs = append(outputs.Outputs, resp)
-	}
-	if strings.Contains(files.Inputs[0].PkgName, ".zip") {
-		err := CompressFile(dirPath, fileList, confPkg, "ZIP")
-		if err != nil {
-			logrus.Errorf("compress zip package error: %s", err)
+
+		//upload to s3
+		newS3Endpoint:=getNewS3EndpointName(input.EndPoint,newPackageName)
+		fmt.Printf("NewS3EndpointName=%s\n",newS3Endpoint)
+
+		if _, err = uploadS3File(newEndPoint, "access_key", "secret_key");err != nil {
+			logrus.Errorf("uploadS3File meet error=%v",err)
 			return &outputs, err
 		}
-	}
-	if strings.Contains(files.Inputs[0].PkgName, ".tar.gz") || strings.Contains(files.Inputs[0].PkgName, ".tgz") {
-		err := CompressFile(dirPath, fileList, confPkg, "TGZ")
-		if err != nil {
-			logrus.Errorf("compress tar.gz package error: %s", err)
-			return &outputs, err
+		output:=VariableReplaceOutput {
+			Guid:input.Guid,
+			NewS3PkgPath:newS3Endpoint,
 		}
-	}
-	s3Path, err := UploadConfPackage(files.Inputs[0])
-	if err != nil {
-		return &outputs, err
-	}
-	for i := 0; i < len(outputs.Outputs); i++ {
-		outputs.Outputs[i].CosPkgPath = s3Path
+		outputs=append(outputs,output)
 	}
 
-	logrus.Infof("all files = %v are finished", files)
-	return &outputs, nil
+	return outputs,nil 
 }
 
-func ReplaceFileVar(filepath, variablelist string) (VariableReplaceOutput, error) {
 
-	var resp VariableReplaceOutput
-
+func ReplaceFileVar(filepath, variablelist string) (error) {
 	index := strings.LastIndexAny(filepath, "/")
 	if index == -1 {
-		return resp, fmt.Errorf("Invalid endpoint %s", filepath)
+		return  fmt.Errorf("Invalid endpoint %s", filepath)
 	}
 	fileName := filepath[index+1:]
 	fileVarList, err := GetFileVariableString(filepath, fileName)
 	if err != nil {
-		resp.Detail = "get " + fileName + " variable error"
-		return resp, err
+		return  err
 	}
 
 	if len(fileVarList) == 0 {
-		resp.Detail = "file " + fileName + " no variable need to replace"
-		logrus.Errorf("file %s no variable need to replace", fileName)
-		return resp, fmt.Errorf("file %s no variable need to replace", fileName)
+		return fmt.Errorf("file %s no variable need to replace", fileName)
 	}
 
 	keyMap, err := GetInputVariableMap(variablelist)
 	if err != nil {
 		logrus.Errorf("GetInputVariableMap error: %s", err)
-		resp.Detail = "GetInputVariableMap error"
-		return resp, err
+		return err
 	}
 
 	err = CheckVariableIsAllReady(keyMap, fileVarList)
 	if err != nil {
 		logrus.Errorf("CheckVariableIsAllReady error: %s", err)
-		resp.Detail = "CheckVariableIsAllReady error"
-		return resp, err
+		return err
 	}
 
 	err = replaceFileVar(keyMap, filepath)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
-		resp.Detail = "replaceFileVar error"
-		return resp, err
+		return err
 	}
 
-	resp.Detail = "file " + fileName + " variable replace finished"
-
-	return resp, nil
+	return nil
 }
 
 func GetInputVariableMap(variable string) (map[string]string, error) {
@@ -397,6 +387,39 @@ func replaceFileVar(keyMap map[string]string, filepath string) error {
 	err = os.Rename(newfilePath, filepath)
 	if err != nil {
 		logrus.Errorf("file rename Error: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func compressDir(decompressDirName string,suffix string,newPackageName string) error{
+	sh := ""
+	if suffix != ".zip" && suffix !=".tgz" && suffix !=".tar.gz" {
+		return fmt.Errorf("%s is invalid suffix",suffix)
+	}
+
+	if suffix==".zip" {
+		sh =  "zip -r " + UPLOADS3FILE_DIR+newPackageName +" " + decompressDirName
+	}
+	if suffix ==".tgz" || suffix == ".tar.gz" {
+		sh =  "tar czf  " + UPLOADS3FILE_DIR+newPackageName +" " + decompressDirName
+	}
+
+	fmt.Printf("compressDir sh=%s\n",sh)
+
+	cmd := exec.Command("/bin/sh", "-c", sh)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Printf("can not obtain stdout pipe for command: %s \n", err)
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("conmand start is error: %s \n", err)
+		return err
+	}
+	_, err = LogReadLine(cmd, stdout)
+	if err != nil {
 		return err
 	}
 
