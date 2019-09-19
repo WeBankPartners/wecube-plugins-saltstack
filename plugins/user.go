@@ -112,6 +112,18 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			return nil, err
 		}
 
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+		if err != nil {
+			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				return v.Stderr, fmt.Errorf("%s", v.Stdout + v.Stderr)
+			}
+			break
+		}
+
 		output := AddUserOutput{
 			Detail: result,
 			Guid:   input.Guid,
@@ -182,6 +194,18 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
 			return nil, err
+		}
+		
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+		if err != nil {
+			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				return v.Stderr, fmt.Errorf("%s", v.Stdout + v.Stderr)
+			}
+			break
 		}
 
 		output := RemoveUserOutput{
