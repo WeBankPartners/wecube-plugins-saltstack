@@ -45,7 +45,7 @@
         <interface name="copy" path="/v1/deploy/variable/replace">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">conf_files_path</parameter>
+                <parameter datatype="string">conf_files</parameter>
                 <parameter datatype="string">endpoint</parameter>
                 <parameter datatype="string">variable_list</parameter>
             </input-parameters>
