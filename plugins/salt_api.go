@@ -68,7 +68,7 @@ func (action *SaltApiCallAction) CheckParam(input interface{}) error {
 }
 
 type SaltApiCmdScriptResults struct {
-	Results []map[string]SaltApiCmdScriptResult `json:"results,omitempty"`
+	Results []map[string]SaltApiCmdScriptResult `json:"return,omitempty"`
 }
 
 type SaltApiCmdScriptResult struct {
