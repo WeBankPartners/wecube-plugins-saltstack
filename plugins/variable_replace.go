@@ -156,6 +156,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 			logrus.Errorf("compressDir meet error=%v", err)
 			return &outputs, err
 		}
+		os.RemoveAll(decompressDirName)
 
 		//upload to s3
 		newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
