@@ -144,6 +144,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 		for _, filePath := range strings.Split(input.FilePath, "|") {
 			confFilePath := decompressDirName + "/" + filePath
 			if err := ReplaceFileVar(confFilePath, input.VariableList); err != nil {
+				os.RemoveAll(decompressDirName)
 				return &outputs, err
 			}
 		}
@@ -154,6 +155,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 		fmt.Printf("newPackageName=%s\n", newPackageName)
 		if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
 			logrus.Errorf("compressDir meet error=%v", err)
+			os.RemoveAll(decompressDirName)
 			return &outputs, err
 		}
 		os.RemoveAll(decompressDirName)
