@@ -174,7 +174,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 
 	cmdRun := "chmod +x " + fileName + ";" + fileName
 	if len(execArg) > 0 {
-		cmdRun = cmdRun + execArg
+		cmdRun = cmdRun + " " + execArg
 	}
 	request.Args = append(request.Args, cmdRun)
 
