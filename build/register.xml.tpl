@@ -15,6 +15,7 @@
                 <parameter datatype="string">target</parameter>
                 <parameter datatype="string">destination_path</parameter>
                 <parameter datatype="string">unpack</parameter>
+                <parameter datatype="string">file_owner</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
