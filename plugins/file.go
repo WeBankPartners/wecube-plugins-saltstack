@@ -40,7 +40,7 @@ type FileCopyInput struct {
 	Target          string `json:"target,omitempty"`
 	DestinationPath string `json:"destination_path,omitempty"`
 	Unpack          string `json:"unpack,omitempty"`
-	FileOwner       string `json:"fileOwner,omitempty"`
+	FileOwner       string `json:"file_owner,omitempty"`
 }
 
 type FileCopyOutputs struct {
@@ -111,10 +111,10 @@ func changeDirecoryOwner(input *FileCopyInput)error{
 	request.Function = "cmd.run"
 
 	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
-	cmdRun := "chown + R " +input.FileOwner +"  " + directory  
+	cmdRun := "chown -R " +input.FileOwner +"  " + directory  
 	request.Args = append(request.Args, cmdRun)
 
-	result, err := CallSaltApi("https://127.0.0.1:8080", request)
+	_, err := CallSaltApi("https://127.0.0.1:8080", request)
 	if err != nil {
 		return err
 	}
@@ -157,8 +157,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (*FileCopyOutput, e
 			return nil,err
 		}
 
-		_, err := CallSaltApi("https://127.0.0.1:8080", *unpackRequest)
-		if err != nil {
+		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest);err != nil {
 			return nil, err
 		}
 		if input.FileOwner != ""{
