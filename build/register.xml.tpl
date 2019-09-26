@@ -140,7 +140,7 @@
         <interface name="getUnformatedDisk" path="/v1/deploy/disk/getUnformatedDisk">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="target">endpoint</parameter>
+                <parameter datatype="target">target</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
@@ -150,7 +150,7 @@
         <interface name="formatAndMountDisk" path="/v1/deploy/disk/formatAndMountDisk">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">task</parameter>
+                <parameter datatype="string">target</parameter>
                 <parameter datatype="string">diskName</parameter>
                 <parameter datatype="string">fileSystemType</parameter>
                 <parameter datatype="string">mountDir</parameter>
