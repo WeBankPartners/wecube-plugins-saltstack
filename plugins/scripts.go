@@ -293,6 +293,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 			scriptPath, err = downLoadScript(input)
 			if err != nil {
 				output.RetCode = 1
+				outputs.Outputs = append(outputs.Outputs, output)
 				return outputs, err
 			}
 		}
@@ -300,10 +301,12 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		stdOut, err := runScript(scriptPath, input)
 		if err != nil {
 			output.RetCode = 1
+			outputs.Outputs = append(outputs.Outputs, output)
 			return outputs, err
 		}
 		output.Detail = stdOut
 		output.Guid = input.Guid
+		output.RetCode = 0
 
 		outputs.Outputs = append(outputs.Outputs, output)
 	}

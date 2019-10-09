@@ -85,38 +85,41 @@ check_args(){
 }
 
 addUser(){
-    if [[ -z $GROUP ]]; then
-       log "param error:empty group name"
-       printHelp
-    fi 
-
-    if [[ -z $USER_PWD ]]; then
-       log "param error:empty user password"
-       printHelp
-    fi
+    id -u $USER_NAME >& /dev/null
     
-    groupId=""
-    if [[ -n $GROUP_ID ]]; then
-        groupId="-g "$GROUP_ID 
-    fi 
+    if [ $? -ne 0 ]; then
+        if [[ -z $GROUP ]]; then
+            log "param error:empty group name"
+            printHelp
+        fi 
 
-    uid=""
-    if [[ -n $USER_ID ]]; then
-        uid="-u "$USER_ID 
-    fi 
-
-    home=""
-    if [[ -n $USER_HOME ]]; then
-        home="-d "$USER_HOME
-        if [ ! -d $USER_HOME ];then
-           mkdir -p $USER_HOME
+        if [[ -z $USER_PWD ]]; then
+            log "param error:empty user password"
+            printHelp
         fi
-    fi 
+        
+        groupId=""
+        if [[ -n $GROUP_ID ]]; then
+            groupId="-g "$GROUP_ID 
+        fi 
 
-    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
+        uid=""
+        if [[ -n $USER_ID ]]; then
+            uid="-u "$USER_ID 
+        fi 
 
-    useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) -g $GROUP
+        home=""
+        if [[ -n $USER_HOME ]]; then
+            home="-d "$USER_HOME
+            if [ ! -d $USER_HOME ];then
+            mkdir -p $USER_HOME
+            fi
+        fi 
 
+        grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
+
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) -g $GROUP
+    fi
 }
 
 removeUser(){

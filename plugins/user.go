@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+const (
+	ADD_USER_DEFALUT_PASSWORD = "Ab888888"
+)
+
 var UserPluginActions = make(map[string]Action)
 
 func init() {
@@ -76,13 +80,13 @@ func (action *AddUserAction) CheckParam(input interface{}) error {
 			return errors.New("AddUserAction userName is empty")
 		}
 
-		if input.Password == "" {
-			return errors.New("AddUserAction password is empty")
-		}
+		// if input.Password == "" {
+		// 	return errors.New("AddUserAction password is empty")
+		// }
 
-		if input.UserGroup == "" {
-			return errors.New("AddUserAction userGroup is empty")
-		}
+		// if input.UserGroup == "" {
+		// 	return errors.New("AddUserAction userGroup is empty")
+		// }
 	}
 
 	return nil
@@ -94,15 +98,21 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	runAs := ""
 
 	for _, input := range inputs.Inputs {
-		execArg := fmt.Sprintf("--action add --user %s --password %s --group %s", input.UserName, input.Password, input.UserGroup)
-		if input.UserId != "" {
+		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
+		if input.Password != "" {
+			execArg += " --password " + input.Password
+		} else {
+			execArg += " --password " + ADD_USER_DEFALUT_PASSWORD
+		}
+		if input.UserGroup != "" {
 			execArg += " --userId " + input.UserId
 		}
-
+		if input.UserId != "" {
+			execArg += " --group " + input.UserGroup
+		}
 		if input.GroupId != "" {
 			execArg += " --groupId " + input.GroupId
 		}
-
 		if input.HomeDir != "" {
 			execArg += " --home " + input.HomeDir
 		}
@@ -119,7 +129,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout + v.Stderr)
+				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
@@ -195,7 +205,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
 			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
@@ -203,7 +213,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout + v.Stderr)
+				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
