@@ -135,12 +135,11 @@
             </output-parameters>
         </interface>
     </plugin>
-     
-     <plugin id="disk" name="Storage Disk Operation" >
+    <plugin id="disk" name="Storage Disk Operation" >
         <interface name="getUnformatedDisk" path="/v1/deploy/disk/getUnformatedDisk">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="target">target</parameter>
+                <parameter datatype="string">target</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
@@ -161,6 +160,41 @@
             <!--
                 <parameter datatype="string">detail</parameter>
              -->
+            </output-parameters>
+        </interface>
+    </plugin>
+     <plugin id="apply-deployment" name="Apply Deployment Operation" >
+        <interface name="new" path="/v1/deploy/apply-deployment/new">
+            <input-parameters>
+                <parameter datatype="string">guid</parameter>
+                <parameter datatype="string">target</parameter>
+                <parameter datatype="string">end_point</parameter>
+                <parameter datatype="string">user_name</parameter>
+                <parameter datatype="string">destination_path</parameter>
+                <parameter datatype="string">conf_files</parameter>
+                <parameter datatype="string">variable_list</parameter>
+                <parameter datatype="string">start_script</parameter>
+                <parameter datatype="string">args</parameter>
+            </input-parameters>
+            <output-parameters>
+                <parameter datatype="string">guid</parameter>
+            </output-parameters>
+        </interface>
+        <interface name="update" path="/v1/deploy/apply-deployment/update">
+            <input-parameters>
+                <parameter datatype="string">guid</parameter>
+                <parameter datatype="string">target</parameter>
+                <parameter datatype="string">user_name</parameter>
+                <parameter datatype="string">end_point</parameter>
+                <parameter datatype="string">conf_files</parameter>
+                <parameter datatype="string">destination_path</parameter>
+                <parameter datatype="string">variable_list</parameter>
+                <parameter datatype="string">stop_script</parameter>
+                <parameter datatype="string">start_script</parameter>
+                <parameter datatype="string">args</parameter>
+            </input-parameters>
+            <output-parameters>
+              <parameter datatype="string">guid</parameter>
             </output-parameters>
         </interface>
     </plugin>

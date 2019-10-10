@@ -7,29 +7,29 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var ApplyActions = make(map[string]Action)
+var ApplyDeploymentActions = make(map[string]Action)
 
 func init() {
-	ApplyActions["deployment"] = new(ApplyDeploymentAction)
-	ApplyActions["update"] = new(ApplyUpdateAction)
+	ApplyDeploymentActions["new"] = new(ApplyNewDeploymentAction)
+	ApplyDeploymentActions["update"] = new(ApplyUpdateDeploymentAction)
 }
 
-type ApplyPlugin struct {
+type ApplyDeploymentPlugin struct {
 }
 
-func (plugin *ApplyPlugin) GetActionByName(actionName string) (Action, error) {
+func (plugin *ApplyDeploymentPlugin) GetActionByName(actionName string) (Action, error) {
 	return nil, nil
 }
 
-type ApplyDeploymentInputs struct {
-	Inputs []ApplyDeploymentInput `json:"inputs,omitempty"`
+type ApplyNewDeploymentInputs struct {
+	Inputs []ApplyNewDeploymentInput `json:"inputs,omitempty"`
 }
-type ApplyDeploymentInput struct {
+type ApplyNewDeploymentInput struct {
 	EndPoint string `json:"endpoint,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"userName,omitempty"`
+	UserName         string `json:"user_name,omitempty"`
 	Target           string `json:"target,omitempty"`
 	DestinationPath  string `json:"destination_path,omitempty"`
 	VariableFilePath string `json:"conf_files,omitempty"`
@@ -38,11 +38,11 @@ type ApplyDeploymentInput struct {
 	StartScriptPath  string `json:"start_script,omitempty"`
 }
 
-type ApplyDeploymentOutputs struct {
-	Outputs []ApplyDeploymentOutput `json:"outputs,omitempty"`
+type ApplyNewDeploymentOutputs struct {
+	Outputs []ApplyNewDeploymentOutput `json:"outputs,omitempty"`
 }
 
-type ApplyDeploymentOutput struct {
+type ApplyNewDeploymentOutput struct {
 	Guid            string `json:"guid,omitempty"`
 	UserDetail      string `json:"user_detail,omitempty"`
 	FileDetail      string `json:"file_detail"`
@@ -52,21 +52,21 @@ type ApplyDeploymentOutput struct {
 	RunScriptDetail string `json:"run_script_detail"`
 }
 
-type ApplyDeploymentAction struct {
+type ApplyNewDeploymentAction struct {
 }
 
-func (action *ApplyDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs ApplyDeploymentInputs
+func (action *ApplyNewDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs ApplyNewDeploymentInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
 	return &inputs, nil
 }
 
-func (action *ApplyDeploymentAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(ApplyDeploymentInputs)
+func (action *ApplyNewDeploymentAction) CheckParam(input interface{}) error {
+	inputs, ok := input.(ApplyNewDeploymentInputs)
 	if !ok {
-		return fmt.Errorf("ApplyDeploymentAction:input type=%T not right", input)
+		return fmt.Errorf("ApplyNewDeploymentAction:input type=%T not right", input)
 	}
 
 	for _, input := range inputs.Inputs {
@@ -96,12 +96,12 @@ func (action *ApplyDeploymentAction) CheckParam(input interface{}) error {
 	return nil
 }
 
-func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) {
-	inputs := input.(ApplyDeploymentInputs)
-	outputs := ApplyDeploymentOutputs{}
+func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, error) {
+	inputs := input.(ApplyNewDeploymentInputs)
+	outputs := ApplyNewDeploymentOutputs{}
 
 	for _, input := range inputs.Inputs {
-		output := ApplyDeploymentOutput{
+		output := ApplyNewDeploymentOutput{
 			Guid:   input.Guid,
 			Target: input.Target,
 		}
@@ -119,7 +119,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 
 		userAddOutputs, err := createApplyUser(addUserRequest)
 		if err != nil {
-			logrus.Errorf("ApplyDeploymentAction createApplyUser meet error=%v", err)
+			logrus.Errorf("ApplyNewDeploymentAction createApplyUser meet error=%v", err)
 			output.RetCode = 1
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
@@ -139,7 +139,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 		}
 		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
-			logrus.Errorf("ApplyDeploymentAction replaceApplyVariable meet error=%v", err)
+			logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
 			output.RetCode = 1
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
@@ -150,7 +150,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 		fileCopyRequest := FileCopyInputs{
 			Inputs: []FileCopyInput{
 				FileCopyInput{
-					EndPoint:        input.EndPoint,
+					EndPoint:        output.NewS3PkgPath,
 					Guid:            input.Guid,
 					Target:          input.Target,
 					DestinationPath: input.DestinationPath,
@@ -160,7 +160,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 		}
 		fileCopyOutputs, err := copyApplyFile(fileCopyRequest)
 		if err != nil {
-			logrus.Errorf("ApplyDeploymentAction copyApplyFile meet error=%v", err)
+			logrus.Errorf("ApplyNewDeploymentAction copyApplyFile meet error=%v", err)
 			output.RetCode = 1
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
@@ -174,7 +174,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 					EndPointType: "LOCAL",
 					EndPoint:     input.StartScriptPath,
 					Target:       input.Target,
-					RunAs:        "",
+					RunAs:        input.UserName,
 					Guid:         input.Guid,
 				},
 			},
@@ -184,7 +184,7 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 		}
 		runScriptOutputs, err := runApplyScript(runScriptRequest)
 		if err != nil {
-			logrus.Errorf("ApplyDeploymentAction runApplyScript meet error=%v", err)
+			logrus.Errorf("ApplyNewDeploymentAction runApplyScript meet error=%v", err)
 			output.RetCode = 1
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
@@ -196,16 +196,16 @@ func (action *ApplyDeploymentAction) Do(input interface{}) (interface{}, error) 
 	return &outputs, nil
 }
 
-type ApplyUpdateInputs struct {
-	Inputs []ApplyUpdateInput `json:"inputs,omitempty"`
+type ApplyUpdateDeploymentInputs struct {
+	Inputs []ApplyUpdateDeploymentInput `json:"inputs,omitempty"`
 }
 
-type ApplyUpdateInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
+type ApplyUpdateDeploymentInput struct {
+	EndPoint string `json:"end_point,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"userName,omitempty"`
+	UserName         string `json:"user_name,omitempty"`
 	Target           string `json:"target,omitempty"`
 	DestinationPath  string `json:"destination_path,omitempty"`
 	VariableFilePath string `json:"conf_files,omitempty"`
@@ -215,11 +215,11 @@ type ApplyUpdateInput struct {
 	StartScriptPath  string `json:"start_script,omitempty"`
 }
 
-type ApplyUpdateOutputs struct {
-	Outputs []ApplyUpdateOutput `json:"outputs,omitempty"`
+type ApplyUpdateDeploymentOutputs struct {
+	Outputs []ApplyUpdateDeploymentOutput `json:"outputs,omitempty"`
 }
 
-type ApplyUpdateOutput struct {
+type ApplyUpdateDeploymentOutput struct {
 	Guid                 string `json:"guid,omitempty"`
 	FileDetail           string `json:"file_detail"`
 	NewS3PkgPath         string `json:"s3_pkg_path,omitempty"`
@@ -229,19 +229,19 @@ type ApplyUpdateOutput struct {
 	RunStopScriptDetail  string `json:"run_stop_script_detail"`
 }
 
-type ApplyUpdateAction struct {
+type ApplyUpdateDeploymentAction struct {
 }
 
-func (action *ApplyUpdateAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs ApplyUpdateInputs
+func (action *ApplyUpdateDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs ApplyUpdateDeploymentInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
 	return &inputs, nil
 }
 
-func (action *ApplyUpdateAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(ApplyUpdateInputs)
+func (action *ApplyUpdateDeploymentAction) CheckParam(input interface{}) error {
+	inputs, ok := input.(ApplyUpdateDeploymentInputs)
 	if !ok {
 		return fmt.Errorf("ApplyUpdateInputs:input type=%T not right", input)
 	}
@@ -276,12 +276,12 @@ func (action *ApplyUpdateAction) CheckParam(input interface{}) error {
 	return nil
 }
 
-func (action *ApplyUpdateAction) Do(input interface{}) (interface{}, error) {
-	inputs := input.(ApplyUpdateInputs)
-	outputs := ApplyUpdateOutputs{}
+func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, error) {
+	inputs := input.(ApplyUpdateDeploymentInputs)
+	outputs := ApplyUpdateDeploymentOutputs{}
 
 	for _, input := range inputs.Inputs {
-		output := ApplyUpdateOutput{
+		output := ApplyUpdateDeploymentOutput{
 			Guid:   input.Guid,
 			Target: input.Target,
 		}
@@ -331,7 +331,7 @@ func (action *ApplyUpdateAction) Do(input interface{}) (interface{}, error) {
 		fileCopyRequest := FileCopyInputs{
 			Inputs: []FileCopyInput{
 				FileCopyInput{
-					EndPoint:        input.EndPoint,
+					EndPoint:        output.NewS3PkgPath,
 					Guid:            input.Guid,
 					Target:          input.Target,
 					DestinationPath: input.DestinationPath,
@@ -355,7 +355,7 @@ func (action *ApplyUpdateAction) Do(input interface{}) (interface{}, error) {
 					EndPointType: "LOCAL",
 					EndPoint:     input.StartScriptPath,
 					Target:       input.Target,
-					RunAs:        "",
+					RunAs:        input.UserName,
 					Guid:         input.Guid,
 				},
 			},
