@@ -55,7 +55,7 @@ func init() {
 	registerPlugin("disk", new(DiskPlugin))
 	registerPlugin("text-processor", new(TextProcessorPlugin))
 	registerPlugin("log", new(LogPlugin))
-	registerPlugin("apply", new(ApplyPlugin))
+	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
 }
 
 type PluginRequest struct {
