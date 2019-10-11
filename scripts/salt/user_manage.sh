@@ -88,11 +88,6 @@ addUser(){
     id -u $USER_NAME >& /dev/null
     
     if [ $? -ne 0 ]; then
-        if [[ -z $GROUP ]]; then
-            log "param error:empty group name"
-            printHelp
-        fi 
-
         if [[ -z $USER_PWD ]]; then
             log "param error:empty user password"
             printHelp
@@ -101,6 +96,12 @@ addUser(){
         groupId=""
         if [[ -n $GROUP_ID ]]; then
             groupId="-g "$GROUP_ID 
+        fi
+
+	group=""
+        if [[ -n $GROUP ]]; then
+            group="-g "$GROUP
+	    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
         fi 
 
         uid=""
@@ -116,14 +117,14 @@ addUser(){
             fi
         fi 
 
-        grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
-
-        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) -g $GROUP
-    fi
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group 
+    else
+	    exit 0
+    fi   
 }
 
 removeUser(){
-   userdel -rf  $USER_NAME
+    userdel -rf  $USER_NAME
 }
 
 
@@ -138,4 +139,3 @@ else
     log "param error:unknown action($ACTION)"
     printHelp
 fi
-

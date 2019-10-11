@@ -63,14 +63,16 @@ func initRouter() {
 	http.HandleFunc("/v1/deploy/disk/formatAndMountDisk", routeDispatcher)
 	http.HandleFunc("/v1/deploy/text-processor/search", routeDispatcher)
 	http.HandleFunc("/v1/deploy/text-processor/getContext", routeDispatcher)
-	http.HandleFunc("/v1/qcloud/log/search", routeDispatcher)
-	http.HandleFunc("/v1/qcloud/log/searchdetail", routeDispatcher)
+	http.HandleFunc("/v1/deploy/log/search", routeDispatcher)
+	http.HandleFunc("/v1/deploy/log/searchdetail", routeDispatcher)
+	http.HandleFunc("/v1/deploy/apply-deployment/new", routeDispatcher)
+	http.HandleFunc("/v1/deploy/apply-deployment/update", routeDispatcher)
 }
 
 func routeDispatcher(w http.ResponseWriter, r *http.Request) {
 	pluginRequest := parsePluginRequest(r)
 	pluginResponse, _ := plugins.Process(pluginRequest)
-	logrus.Infof("return data=%++v",pluginResponse)
+	logrus.Infof("return data=%++v", pluginResponse)
 	write(w, pluginResponse)
 }
 
