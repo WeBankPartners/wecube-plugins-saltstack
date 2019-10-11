@@ -18,16 +18,20 @@ type ApplyDeploymentPlugin struct {
 }
 
 func (plugin *ApplyDeploymentPlugin) GetActionByName(actionName string) (Action, error) {
-	return nil, nil
+	action, found := ApplyDeploymentActions[actionName]
+
+	if !found {
+		return nil, fmt.Errorf("ApplyDeployment plugin,action = %s not found", actionName)
+	}
+
+	return action, nil
 }
 
 type ApplyNewDeploymentInputs struct {
 	Inputs []ApplyNewDeploymentInput `json:"inputs,omitempty"`
 }
 type ApplyNewDeploymentInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
-	// AccessKey    string `json:"accessKey,omitempty"`
-	// SecretKey    string `json:"secretKey,omitempty"`
+	EndPoint         string `json:"end_point,omitempty"`
 	Guid             string `json:"guid,omitempty"`
 	UserName         string `json:"user_name,omitempty"`
 	Target           string `json:"target,omitempty"`
@@ -36,6 +40,8 @@ type ApplyNewDeploymentInput struct {
 	VariableList     string `json:"variable_list,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
 	StartScriptPath  string `json:"start_script,omitempty"`
+	// AccessKey    string `json:"accessKey,omitempty"`
+	// SecretKey    string `json:"secretKey,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -60,7 +66,7 @@ func (action *ApplyNewDeploymentAction) ReadParam(param interface{}) (interface{
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
-	return &inputs, nil
+	return inputs, nil
 }
 
 func (action *ApplyNewDeploymentAction) CheckParam(input interface{}) error {
@@ -98,6 +104,8 @@ func (action *ApplyNewDeploymentAction) CheckParam(input interface{}) error {
 
 func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, error) {
 	inputs := input.(ApplyNewDeploymentInputs)
+	logrus.Infof("ApplyNewDeploymentAction Do: input=%++v", inputs)
+
 	outputs := ApplyNewDeploymentOutputs{}
 
 	for _, input := range inputs.Inputs {
@@ -117,6 +125,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			},
 		}
 
+		logrus.Infof("ApplyNewDeploymentAction createApplyUser: input=%++v", addUserRequest)
 		userAddOutputs, err := createApplyUser(addUserRequest)
 		if err != nil {
 			logrus.Errorf("ApplyNewDeploymentAction createApplyUser meet error=%v", err)
@@ -124,7 +133,9 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.UserDetail = userAddOutputs.(AddUserOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: userAddOutputs=%++v", userAddOutputs.(*AddUserOutputs))
+		output.UserDetail = userAddOutputs.(*AddUserOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 		// replace apply variable
 		variableReplaceRequest := VariableReplaceInputs{
@@ -137,6 +148,8 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 				},
 			},
 		}
+
+		logrus.Infof("ApplyNewDeploymentAction replaceApplyVariable: input=%++v", variableReplaceRequest)
 		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
 			logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
@@ -144,7 +157,9 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.NewS3PkgPath = variableReplaceOutputs.(VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+		logrus.Infof("ApplyNewDeploymentAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
+		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 		// copy apply package
 		fileCopyRequest := FileCopyInputs{
@@ -158,6 +173,8 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 				},
 			},
 		}
+
+		logrus.Infof("ApplyNewDeploymentAction copyApplyFile: input=%++v", fileCopyRequest)
 		fileCopyOutputs, err := copyApplyFile(fileCopyRequest)
 		if err != nil {
 			logrus.Errorf("ApplyNewDeploymentAction copyApplyFile meet error=%v", err)
@@ -165,7 +182,9 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.FileDetail = fileCopyOutputs.(FileCopyOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: fileCopyOutputs=%++v", fileCopyOutputs.(*FileCopyOutputs))
+		output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 		// start apply script
 		runScriptRequest := RunScriptInputs{
@@ -182,6 +201,8 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		if input.ExecArg != "" {
 			runScriptRequest.Inputs[0].ExecArg = input.ExecArg
 		}
+
+		logrus.Infof("ApplyNewDeploymentAction runApplyScript: input=%++v", runScriptRequest)
 		runScriptOutputs, err := runApplyScript(runScriptRequest)
 		if err != nil {
 			logrus.Errorf("ApplyNewDeploymentAction runApplyScript meet error=%v", err)
@@ -189,10 +210,14 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.RunScriptDetail = runScriptOutputs.(RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: runScriptOutputs=%++v", runScriptOutputs.(*RunScriptOutputs))
+		output.RunScriptDetail = runScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
+
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
+	logrus.Infof("ApplyNewDeploymentAction: outputs=%++v", outputs)
 	return &outputs, nil
 }
 
@@ -201,9 +226,7 @@ type ApplyUpdateDeploymentInputs struct {
 }
 
 type ApplyUpdateDeploymentInput struct {
-	EndPoint string `json:"end_point,omitempty"`
-	// AccessKey    string `json:"accessKey,omitempty"`
-	// SecretKey    string `json:"secretKey,omitempty"`
+	EndPoint         string `json:"end_point,omitempty"`
 	Guid             string `json:"guid,omitempty"`
 	UserName         string `json:"user_name,omitempty"`
 	Target           string `json:"target,omitempty"`
@@ -237,7 +260,7 @@ func (action *ApplyUpdateDeploymentAction) ReadParam(param interface{}) (interfa
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
-	return &inputs, nil
+	return inputs, nil
 }
 
 func (action *ApplyUpdateDeploymentAction) CheckParam(input interface{}) error {
@@ -298,6 +321,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 				},
 			},
 		}
+
+		logrus.Infof("ApplyUpdateAction runApplyScript: input=%++v", runStopScriptRequest)
 		runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
 		if err != nil {
 			logrus.Errorf("ApplyUpdateAction runApplyScript meet error=%v", err)
@@ -305,7 +330,9 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.RunStopScriptDetail = runStopScriptOutputs.(RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: runStopScriptOutputs=%++v", runStopScriptOutputs.(*RunScriptOutputs))
+		output.RunStopScriptDetail = runStopScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// replace apply variable
 		variableReplaceRequest := VariableReplaceInputs{
@@ -318,6 +345,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 				},
 			},
 		}
+
+		logrus.Infof("ApplyUpdateAction replaceApplyVariable: input=%++v", variableReplaceRequest)
 		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
 			logrus.Errorf("ApplyUpdateAction replaceApplyVariable meet error=%v", err)
@@ -325,7 +354,9 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		output.NewS3PkgPath = variableReplaceOutputs.(VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+		logrus.Infof("ApplyUpdateAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
+		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// copy apply package
 		fileCopyRequest := FileCopyInputs{
@@ -339,6 +370,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 				},
 			},
 		}
+
+		logrus.Infof("ApplyUpdateAction copyApplyFile: input=%++v", fileCopyRequest)
 		fileCopyOutputs, err := copyApplyFile(fileCopyRequest)
 		if err != nil {
 			logrus.Errorf("ApplyUpdateAction copyApplyFile meet error=%v", err)
@@ -346,7 +379,9 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
+		logrus.Infof("ApplyUpdateAction: fileCopyOutputs=%++v", fileCopyOutputs.(FileCopyOutputs))
 		output.FileDetail = fileCopyOutputs.(FileCopyOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// start apply script
 		runStartScriptRequest := RunScriptInputs{
@@ -363,6 +398,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 		if input.ExecArg != "" {
 			runStartScriptRequest.Inputs[0].ExecArg = input.ExecArg
 		}
+
+		logrus.Infof("ApplyUpdateAction runApplyScript: input=%++v", runStartScriptRequest)
 		runStartScriptOutputs, err := runApplyScript(runStartScriptRequest)
 		if err != nil {
 			logrus.Errorf("ApplyUpdateAction runApplyScript meet error=%v", err)
@@ -370,25 +407,21 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
+		logrus.Infof("ApplyUpdateAction: runStartScriptOutputs=%++v", runStartScriptOutputs.(RunScriptOutputs))
 		output.RunStartScriptDetail = runStartScriptOutputs.(RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: output=%++v", output)
+
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
+
+	logrus.Infof("ApplyNewDeploymentAction: output=%++v", outputs)
 	return &outputs, nil
 }
 
-func createApplyUser(input AddUserInputs) (interface{}, error) {
+func createApplyUser(input interface{}) (interface{}, error) {
 	addUserAction := new(AddUserAction)
 
-	userAddInpurt, err := addUserAction.ReadParam(input)
-	if err != nil {
-		logrus.Errorf("createApplyUser ReadParam meet error=%v", err)
-		return nil, err
-	}
-	if err = addUserAction.CheckParam(userAddInpurt); err != nil {
-		logrus.Errorf("createApplyUser CheckParam meet error=%v", err)
-		return nil, err
-	}
-	userAddOutputs, err := addUserAction.Do(userAddInpurt)
+	userAddOutputs, err := addUserAction.Do(input)
 	if err != nil {
 		logrus.Errorf("createApplyUser Do meet error=%v", err)
 		return nil, err
@@ -397,19 +430,10 @@ func createApplyUser(input AddUserInputs) (interface{}, error) {
 	return userAddOutputs, nil
 }
 
-func replaceApplyVariable(input VariableReplaceInputs) (interface{}, error) {
+func replaceApplyVariable(input interface{}) (interface{}, error) {
 	variableReplaceAction := new(VariableReplaceAction)
 
-	variableReplaceInput, err := variableReplaceAction.ReadParam(input)
-	if err != nil {
-		logrus.Errorf("replaceApplyVariable ReadParam meet error=%v", err)
-		return nil, err
-	}
-	if err = variableReplaceAction.CheckParam(variableReplaceInput); err != nil {
-		logrus.Errorf("replaceApplyVariable CheckParam meet error=%v", err)
-		return nil, err
-	}
-	variableReplaceOutputs, err := variableReplaceAction.Do(variableReplaceInput)
+	variableReplaceOutputs, err := variableReplaceAction.Do(input)
 	if err != nil {
 		logrus.Errorf("replaceApplyVariable Do meet error=%v", err)
 		return nil, err
@@ -418,19 +442,10 @@ func replaceApplyVariable(input VariableReplaceInputs) (interface{}, error) {
 	return variableReplaceOutputs, nil
 }
 
-func copyApplyFile(input FileCopyInputs) (interface{}, error) {
+func copyApplyFile(input interface{}) (interface{}, error) {
 	fileCopyAction := new(FileCopyAction)
 
-	fileCopyInput, err := fileCopyAction.ReadParam(input)
-	if err != nil {
-		logrus.Errorf("copyApplyFile ReadParam meet error=%v", err)
-		return nil, err
-	}
-	if err = fileCopyAction.CheckParam(fileCopyInput); err != nil {
-		logrus.Errorf("copyApplyFile CheckParam meet error=%v", err)
-		return nil, err
-	}
-	fileCopyOutputs, err := fileCopyAction.Do(fileCopyInput)
+	fileCopyOutputs, err := fileCopyAction.Do(input)
 	if err != nil {
 		logrus.Errorf("copyApplyFile Do meet error=%v", err)
 		return nil, err
@@ -439,19 +454,10 @@ func copyApplyFile(input FileCopyInputs) (interface{}, error) {
 	return fileCopyOutputs, nil
 }
 
-func runApplyScript(input RunScriptInputs) (interface{}, error) {
+func runApplyScript(input interface{}) (interface{}, error) {
 	runScriptAction := new(RunScriptAction)
 
-	runScriptInput, err := runScriptAction.ReadParam(input)
-	if err != nil {
-		logrus.Errorf("runApplyScript ReadParam meet error=%v", err)
-		return nil, err
-	}
-	if err = runScriptAction.CheckParam(runScriptInput); err != nil {
-		logrus.Errorf("runApplyScript CheckParam meet error=%v", err)
-		return nil, err
-	}
-	runScriptOutputs, err := runScriptAction.Do(runScriptInput)
+	runScriptOutputs, err := runScriptAction.Do(input)
 	if err != nil {
 		logrus.Errorf("runApplyScript Do meet error=%v", err)
 		return nil, err
