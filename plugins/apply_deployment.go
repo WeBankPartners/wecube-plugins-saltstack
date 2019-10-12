@@ -317,7 +317,7 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 					EndPointType: "LOCAL",
 					EndPoint:     input.StopScriptPath,
 					Target:       input.Target,
-					RunAs:        "",
+					RunAs:        input.UserName,
 					Guid:         input.Guid,
 				},
 			},
@@ -368,6 +368,7 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 					Target:          input.Target,
 					DestinationPath: input.DestinationPath,
 					Unpack:          "true",
+					FileOwner:       input.UserName,
 				},
 			},
 		}
@@ -380,8 +381,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		logrus.Infof("ApplyUpdateAction: fileCopyOutputs=%++v", fileCopyOutputs.(FileCopyOutputs))
-		output.FileDetail = fileCopyOutputs.(FileCopyOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: fileCopyOutputs=%++v", fileCopyOutputs.(*FileCopyOutputs))
+		output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
 		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// start apply script
@@ -408,8 +409,8 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			outputs.Outputs = append(outputs.Outputs, output)
 			return &outputs, err
 		}
-		logrus.Infof("ApplyUpdateAction: runStartScriptOutputs=%++v", runStartScriptOutputs.(RunScriptOutputs))
-		output.RunStartScriptDetail = runStartScriptOutputs.(RunScriptOutputs).Outputs[0].Detail
+		logrus.Infof("ApplyUpdateAction: runStartScriptOutputs=%++v", runStartScriptOutputs.(*RunScriptOutputs))
+		output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		outputs.Outputs = append(outputs.Outputs, output)
