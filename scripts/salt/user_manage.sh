@@ -85,42 +85,46 @@ check_args(){
 }
 
 addUser(){
-    if [[ -z $GROUP ]]; then
-       log "param error:empty group name"
-       printHelp
-    fi 
-
-    if [[ -z $USER_PWD ]]; then
-       log "param error:empty user password"
-       printHelp
-    fi
+    id -u $USER_NAME >& /dev/null
     
-    groupId=""
-    if [[ -n $GROUP_ID ]]; then
-        groupId="-g "$GROUP_ID 
-    fi 
-
-    uid=""
-    if [[ -n $USER_ID ]]; then
-        uid="-u "$USER_ID 
-    fi 
-
-    home=""
-    if [[ -n $USER_HOME ]]; then
-        home="-d "$USER_HOME
-        if [ ! -d $USER_HOME ];then
-           mkdir -p $USER_HOME
+    if [ $? -ne 0 ]; then
+        if [[ -z $USER_PWD ]]; then
+            log "param error:empty user password"
+            printHelp
         fi
-    fi 
+        
+        groupId=""
+        if [[ -n $GROUP_ID ]]; then
+            groupId="-g "$GROUP_ID 
+        fi
 
-    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
+	group=""
+        if [[ -n $GROUP ]]; then
+            group="-g "$GROUP
+	    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
+        fi 
 
-    useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) -g $GROUP
+        uid=""
+        if [[ -n $USER_ID ]]; then
+            uid="-u "$USER_ID 
+        fi 
 
+        home=""
+        if [[ -n $USER_HOME ]]; then
+            home="-d "$USER_HOME
+            if [ ! -d $USER_HOME ];then
+            mkdir -p $USER_HOME
+            fi
+        fi 
+
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group 
+    else
+	    exit 0
+    fi   
 }
 
 removeUser(){
-   userdel -rf  $USER_NAME
+    userdel -rf  $USER_NAME
 }
 
 
@@ -135,4 +139,3 @@ else
     log "param error:unknown action($ACTION)"
     printHelp
 fi
-
