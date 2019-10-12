@@ -3,13 +3,14 @@ package plugins
 import (
 	"bufio"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 //VariableActions .
@@ -175,7 +176,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return outputs, nil
+	return &outputs, nil
 }
 
 func ReplaceFileVar(filepath, variablelist string) error {
