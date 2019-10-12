@@ -170,6 +170,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 					Target:          input.Target,
 					DestinationPath: input.DestinationPath,
 					Unpack:          "true",
+					FileOwner:       input.UserName,
 				},
 			},
 		}
