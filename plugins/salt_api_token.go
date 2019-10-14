@@ -32,7 +32,7 @@ func (token *SaltApiToken) isSaltApiTokenValid() bool {
 	}
 
 	if elapse := time.Since(token.CreateTime).Seconds(); elapse < float64(token.Expire-10) {
-		return true
+		return false
 	}
 	return false
 }
