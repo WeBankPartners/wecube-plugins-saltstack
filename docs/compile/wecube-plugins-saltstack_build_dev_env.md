@@ -123,7 +123,7 @@ source ~/.bash_profile
 mkdir -p /Users/gowork/go/src/github.com/WeBankPartners/
 ```
 
-5. git clone QCloud插件包代码
+5. git clone SaltStack插件包代码
 
 ```
 cd /Users/gowork/go/src/github.com/WeBankPartners/
