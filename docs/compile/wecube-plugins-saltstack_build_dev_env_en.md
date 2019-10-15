@@ -24,7 +24,7 @@ wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
 tar xzvf go1.12.9.linux-amd64.tar.gz 
 ```
 
-3. Set Golang environmental variables. Make file golang.sh under directory /data/ with the fllowing content:
+3. Set Golang environmental variables. Make file golang.sh under directory /data/ with the following content:
 
 ```
 export GOROOT=/data/go
@@ -44,7 +44,7 @@ source /data/golang.sh
 go version
 ```
 
-6. Git clone SaltStack Plugin's source code.
+6. Git clone SaltStack Plugin source code.
 
 ```
 cd /data/gowork/src/github.com/WeBankPartners/
@@ -64,9 +64,9 @@ go build
 
 2. If your computer does not install git client, please install [Git for Windows](https://www.git-scm.com/download/win).
 
-3. Install [Golang for Windows](https://dl.google.com/go/go1.13.1.windows-amd64.msi). During installation, please change the install directory to D:\go\. 
+3. Install [Golang for Windows](https://dl.google.com/go/go1.13.1.windows-amd64.msi). During installation, please change the installing directory to D:\go\. 
 
-4. After installation, input the command **go version** to view the Golang version.
+4. After installed, input the command **go version** to view the Golang version.
 
 5. Set environmental variables GOROOT and GOPATH:
 
