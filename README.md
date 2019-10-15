@@ -6,7 +6,7 @@
 
 ## 简介
 
-SaltStack插件是一个提供salt-master服务的简单工具。SaltStack插件根据不同场景的具体需求，对salt-api进行封装以及组合封装，提供了更贴近业务使用场景的API接口。
+SaltStack插件是一个提供salt-master服务的简单工具。SaltStack插件根据不同场景的具体需求，对salt-api进行封装以及组合封装，降低了使用SaltStack的难度，提供了更贴近业务使用场景的API接口。
 
 SaltStack插件作为WeCube插件群里重要的一员，为WeCube提供了管理主机集群的能力。同时，SaltStack插件可以独立于WeCube为第三方应用提供可插拔式的服务。
 
