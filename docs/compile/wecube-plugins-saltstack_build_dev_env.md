@@ -1,5 +1,7 @@
 # SaltStack插件开发环境搭建
 
+中文 / [English](wecube-plugins-saltstack_build_dev_env_en.md)
+
 - [搭建Linux开发环境](#Linux)  
 - [搭建Windows开发环境](#Windows)
 - [搭建Mac开发环境](#Mac)
@@ -60,9 +62,10 @@ go build
 
 1. 在Windows系统上，建好目录 D:\gowork\src\github.com\WeBankPartners
 
-2. 确认本机上已经安装git客户端，如果没有安装请到如下链接地址进行下载安装 https://www.git-scm.com/download/win
+2. 确认本机上已经安装git客户端，如果没有安装请到如下链接地址进行下载安装 [Git Windows版](https://www.git-scm.com/download/win)
 
-3. 下载golang安装包安装golang环境，安装过程中，会跳出golang的安装目录将其改为 D:\go\。 https://dl.google.com/go/go1.13.1.windows-amd64.msi
+3. 下载[Golang安装包](https://dl.google.com/go/go1.13.1.windows-amd64.msi
+)安装golang环境，安装过程中，会跳出golang的安装目录将其改为 D:\go\ 
 
 4. 安装完成后，在cmd的命令行中输入 go version 确认可以看到golang的版本号
 
