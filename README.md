@@ -5,7 +5,7 @@
 中文 / [English](README_EN.md)
 
 ## 简介
-SaltStack插件包含salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。用户可通过该插件提供的API执行如下操作:
+SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。用户可通过该插件提供的API执行如下操作:
 - salt-minion安装：主机安装salt-minion后,后续所有对该主机的操作都可从salt-master发起
 - 文件分发：从S3对象存储中下载文件并部署到指定主机的指定目录，如果是压缩包还提供解压能力
 - 变量替换操作：将安装包指定目录下的配置文件进行变量替换，并重新生成替换后的安装包放到S3对象存储
