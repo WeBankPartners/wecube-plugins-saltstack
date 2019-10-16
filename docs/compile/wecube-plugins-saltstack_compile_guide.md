@@ -45,7 +45,7 @@
 	```
     ![saltstack_image](images/saltstack_image.png)
 
-	3. 执行以下命令制作插件包
+	3. 执行以下命令制作插件包:
 	
 	```
 	make package PLUGIN_VERSION=v1.0
