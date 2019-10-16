@@ -5,7 +5,7 @@
 中文 / [English](README_EN.md)
 
 ## 简介
-SaltStack插件包含salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。用户可通过该插件提供的API执行如下操作:
+SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。用户可通过该插件提供的API执行如下操作:
 - salt-minion安装：主机安装salt-minion后,后续所有对该主机的操作都可从salt-master发起
 - 文件分发：从S3对象存储中下载文件并部署到指定主机的指定目录，如果是压缩包还提供解压能力
 - 变量替换操作：将安装包指定目录下的配置文件进行变量替换，并重新生成替换后的安装包放到S3对象存储
@@ -27,16 +27,16 @@ SaltStack插件包含salt-master,salt-api和httpd等服务，基于这些服务�
 ## 插件docker镜像和插件包制作
 [Salt-Stack插件docker镜像包和插件包制作指引](docs/compile/wecube-plugins-saltstack_compile_guide.md)
 
-## 插件运行
+## 运行插件
 执行如下命令运行Salt-Stack插件容器,其中变量HOST_IP需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量TAG_NUM对应代码最后一次提交的commit号;另外因为该插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
 
 ```
-docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}}
+docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
 ```
 
 **插件日志路径**:/home/app/wecube-plugins-saltstack/logs/wecube-plugins-saltstack.log
 
-## 插件验证
+
 使用容器的方式运行插件后,可通过找一台linux主机在其上安装salt-minion来测试。
 
 在Salt-Stack插件所在的机器上运行如下curl命令,其中json参数host为需要安装salt-minion的主机ip,password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
