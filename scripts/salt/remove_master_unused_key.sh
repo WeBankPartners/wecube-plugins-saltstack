@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e -x
 
 if [[ $# < 1 ]]; then
   echo "please input the host ip for new added host"

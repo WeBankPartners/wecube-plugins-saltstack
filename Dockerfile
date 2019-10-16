@@ -1,5 +1,4 @@
-FROM  ccr.ccs.tencentyun.com/wecube/salt-master-base:v1
-LABEL maintainer = "Webank CTB Team"
+FROM  webankpartners/salt-master-base:v1
 
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
 ENV LOG_PATH=$APP_HOME/logs
