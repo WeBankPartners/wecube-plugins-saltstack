@@ -1,8 +1,8 @@
-# WECUBE PLUGINS SALTSTACK API GUIDE
+# SaltStack Plugin API Guid
   
 提供统一接口定义，为使用者提供清晰明了的使用方法。
 
-## API 操作资源（Resources）:  
+## API 操作资源(Resources):
 
 **Agent操作**
 
@@ -79,8 +79,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -104,7 +104,7 @@ detail|string|详细信息
 guid|string|是|CI类型全局唯一ID
 endpoint|string|是|文件存储在对象存储中的地址，全路径
 target|string|是|目标机器IP
-destination_path|string|是|目标路径，全路径，包括目标文件名
+destinationPath|string|是|目标路径
 
 ##### 输出参数：
 参数名称|类型|描述
@@ -120,7 +120,7 @@ detail|string|详细信息
 			"guid":"10002_000000001",
 			"endpoint":"http://127.0.0.1:9000/brankbao/unpack-demo.tar",
 			"target":"127.0.0.1",
-			"destination_path":"/data/app/scripts/unpack-demo.tar"
+			"destinationPath":"/data/app/scripts/unpack-demo.tar"
   }]
 }
 ```
@@ -128,8 +128,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -151,14 +151,14 @@ detail|string|详细信息
 :--|:--|:--|:-- 
 guid|string|是|CI类型全局唯一ID
 endpoint|string|是|应用包存储在对象存储中的地址 ，全路径
-conf_files_path|string|是|差异化变量文件在应用包中的相对路径，多个文件以分号";"分隔
-variable_list|string|是|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
+confFiles|string|是|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+variableList|string|是|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
 
 ##### 输出参数：
 参数名称|类型|描述
 :--|:--|:--    
 guid|string|CI类型全局唯一ID
-s3_pkg_path|string|变量替换后的应用包在对象存储中的绝对路径 
+s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径 
 
 ##### 示例：
 输入：
@@ -167,8 +167,8 @@ s3_pkg_path|string|变量替换后的应用包在对象存储中的绝对路径
     "inputs": [{
 			"guid":"10003_000000001",
 			"endpoint": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0.zip",
-			"conf_files": "beego-demo/conf/app.conf",
-			"variable_list":"env=prod"
+			"confFiles": "beego-demo/conf/app.conf",
+			"variableList":"env=prod"
 		}]
 }
 ```
@@ -176,13 +176,13 @@ s3_pkg_path|string|变量替换后的应用包在对象存储中的绝对路径
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
                 "guid": "10003_000000001",
-                "s3_pkg_path": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0-201909231548.zip"
+                "s3PkgPath": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0-201909231548.zip"
             }
         ]
     }
@@ -198,10 +198,10 @@ s3_pkg_path|string|变量替换后的应用包在对象存储中的绝对路径
 ##### 输入参数：
 参数名称|类型|必选|描述
 :--|:--|:--|:-- 
-end_point_type|string|是|脚本来源类型，可选值："S3"：脚本在对象存储，"LOCAL"：脚本在服务器本地
-end_point|string|是|脚本存储路径， 可以是对象存储上的绝对路径，或者服务器的绝对路径
+endpointType|string|是|脚本来源类型，可选值："S3"：脚本在对象存储，"LOCAL"：脚本在服务器本地
+endpoint|string|是|脚本存储路径， 可以是对象存储上的绝对路径，或者服务器的绝对路径
 target|string|是|目标机器IP
-run_as|string|是|执行用户
+runAs|string|是|执行用户
 args|string|是|执行参数
 
 ##### 输出参数：
@@ -210,7 +210,7 @@ args|string|是|执行参数
 guid|string|CI类型全局唯一ID
 detail|string|详细信息
 target|string|目标机器
-ret_code|string|返回码
+retCode|string|返回码
 
 ##### 示例：
 输入：
@@ -218,10 +218,10 @@ ret_code|string|返回码
 {
   "inputs":[{
 			"guid":"10004_000000001",
-			"end_point_type":"LOCAL",
-			"end_point":"/data/app/scripts/test.sh",
+			"endpointType":"LOCAL",
+			"endpoint":"/data/app/scripts/test.sh",
 			"target":"127.0.0.1",
-			"run_as":"app",
+			"runAs":"app",
 			"args":""
   }]
 }
@@ -230,13 +230,13 @@ ret_code|string|返回码
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
                 "target": "127.0.0.1",
-                "ret_code": 0,
+                "retCode": 0,
                 "detail": "127.0.0.1:",
                 "guid": "10004_000000001"
             }
@@ -287,8 +287,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -299,7 +299,6 @@ detail|string|详细信息
     }
 }
 ```
-
 
 #### <span id="user-remove">Linux用户删除</span>
 [POST] /v1/deploy/user/remove
@@ -332,8 +331,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -344,7 +343,6 @@ detail|string|详细信息
     }
 }
 ```
-
 
 ### 数据库操作
 
@@ -363,11 +361,10 @@ seed|string|是|数据库用户密钥种子
 databaseName|string|是|数据库名
 endpoint|string|是|文件存储在对象存储中的地址 ，全路径
 
-
 ##### 输出参数：
 参数名称|类型|描述
 :--|:--|:--    
-guid|string|是|CI类型全局唯一ID
+guid|string|CI类型全局唯一ID
 detail|string|详细信息
 
 ##### 示例：
@@ -390,8 +387,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -403,7 +400,6 @@ detail|string|详细信息
 }
 ```
 
-
 ### 数据盘操作
 
 #### <span id="disk-getUnformatedDisk">查询未挂载数据盘</span>
@@ -414,7 +410,6 @@ detail|string|详细信息
 :--|:--|:--|:-- 
 guid|string|是|CI类型全局唯一ID
 endpoint|string|是|目标机器IP
-
 
 ##### 输出参数：
 参数名称|类型|描述
@@ -436,8 +431,8 @@ unformatedDisks|string|未挂载数据盘清单
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -450,8 +445,6 @@ unformatedDisks|string|未挂载数据盘清单
     }
 }
 ```
-
-
 
 #### <span id="disk-formatAndMountDisk">挂载数据盘</span>
 [POST] /v1/deploy/disk/formatAndMountDisk
@@ -468,7 +461,7 @@ mountDir|string|是|挂载目录名
 ##### 输出参数：
 参数名称|类型|描述
 :--|:--|:--    
-guid|string|是|CI类型全局唯一ID
+guid|string|CI类型全局唯一ID
 detail|string|详细信息
 
 ##### 示例：
@@ -488,8 +481,8 @@ detail|string|详细信息
 输出：
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -503,8 +496,138 @@ detail|string|详细信息
 
 ### 部署操作
 
-#### <span id="agent-install">全量部署</span>
-开发中
+#### <span id="deploy-install">全量部署</span>
+[POST] /v1/deploy/apply-deployment/new
 
-#### <span id="agent-install">增量部署</span>
-开发中
+##### 输入参数：
+参数名称|类型|必选|描述
+:--|:--|:--|:-- 
+guid|string|是|CI类型全局唯一ID
+target|string|是|目标机器IP
+endpoint|string|是|文件存储在对象存储中的地址，全路径
+userName|string|是|用户名
+destinationPath|string|是|目标路径
+confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
+startScript|string|是|启动脚本，全路径
+args|string|否|执行参数
+
+##### 输出参数：
+参数名称|类型|描述
+:--|:--|:--    
+guid|string|CI类型全局唯一ID
+userDetail|string|创建用户详细信息
+fileDetail|string|应用部署包拷贝详细信息
+s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
+target|string|目标机器IP
+retCode|string|返回码
+runScriptDetail|string|启动脚本详细信息
+
+##### 示例：
+输入：
+```
+{
+    "inputs": [
+        {
+            "guid": "0015_0000000079",
+            "userName": "app",
+            "endpoint": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
+            "target": "10.250.1.3",
+            "destinationPath": "/data/app/",
+            "confFiles": "edp-core-app_v2.6/conf/app.conf|/edp-core-app_v2.6/controllers/test/test.conf",
+            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=10.250.1.3",
+            "startScript": "/data/app/edp-core-app_v2.6/wecube-demo.sh"
+        }
+    ]
+}
+```
+
+输出：
+```
+{
+    "resultCode": "0",
+    "resultMessage": "success",
+    "results": {
+        "outputs": [
+            {
+                "guid": "0015_0000000079",
+                "userDetail": "{\"return\": [{\"10.250.1.3\": {\"pid\": 19231, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}",
+                "fileDetail": "{\"return\": [{\"10.250.1.3\": \"909d22a818257c502557b7abe9ec636d\"}]}",
+                "s3PkgPath": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121000.tgz",
+                "target": "10.250.1.3",
+                "retCode": 0,
+                "runScriptDetail": "10.250.1.3:sudo: no tty present and no askpass program specified"
+            }
+        ]
+    }
+}
+```
+
+#### <span id="deploy-upgrade">增量部署</span>
+[POST] /v1/deploy/apply-deployment/update
+
+##### 输入参数：
+参数名称|类型|必选|描述
+:--|:--|:--|:-- 
+guid|string|是|CI类型全局唯一ID
+target|string|是|目标机器IP
+endpoint|string|是|文件存储在对象存储中的地址，全路径
+userName|string|是|用户名
+destinationPath|string|是|目标路径
+confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
+startScript|string|是|启动脚本，全路径
+stopScript|string|是|停止脚本，全路径
+args|string|否|执行参数
+
+##### 输出参数：
+参数名称|类型|描述
+:--|:--|:--    
+guid|string|CI类型全局唯一ID
+fileDetail|string|应用部署包拷贝详细信息
+s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
+target|string|目标机器IP
+retCode|string|返回码
+runStartScriptDetail|string|执行启动脚本详细信息
+runStopScriptDetail|string|执行停止脚本详细信息
+
+##### 示例：
+输入：
+```
+{
+    "inputs": [
+        {
+            "guid": "0015_0000000079",
+            "userName": "app",
+            "endpoint": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
+            "target": "10.250.1.3",
+            "destinationPath": "/data/app/",
+            "confFiles": "edp-core-app_v2.6/conf/app.conf|/edp-core-app_v2.6/controllers/test/test.conf",
+            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=10.250.1.3",
+            "startScript": "/data/app/edp-core-app_v2.6/wecube-demo.sh",
+            "stopScript": "/data/app/edp-core-app_v2.6/stop.sh"
+        }
+    ]
+}
+```
+
+输出：
+```
+{
+    "resultCode": "0",
+    "resultMessage": "success",
+    "results": {
+        "outputs": [
+            {
+                "guid": "0015_0000000079",
+                "fileDetail": "{\"return\": [{\"10.250.1.3\": \"2e1538f77758e9e026fdcaa9ed4ad388\"}]}",
+                "s3PkgPath": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121517.tgz",
+                "target": "10.250.1.3",
+                "retCode": 0,
+                "runStartScriptDetail": "10.250.1.3:sudo: no tty present and no askpass program specified",
+                "runStopScriptDetail": "10.250.1.3:"
+            }
+        ]
+    }
+}
+```
