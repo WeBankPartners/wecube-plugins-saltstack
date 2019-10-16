@@ -19,7 +19,7 @@ SaltStack插件包含salt-master,salt-api和httpd等服务，基于这些服务�
 <img src="./docs/images/architectrue.png" />
 
 ## Salt-Stack插件开发环境搭建
-[Salt-Stack插件开发环境搭建指引](docs/compile/wecube-plugins-saltstack_build_dev_env)
+[Salt-Stack插件开发环境搭建指引](docs/compile/wecube-plugins-saltstack_build_dev_env.md)
 
 **注意**:Salt-Stack插件编译完毕后，运行二进制前必须确认本机已安装salt-master、salt-api、mysql client等组件，建议在linux主机上使用docker镜像的方式运行Salt-Stack插件，因为docker镜像中已默认安装salt-api等组件。
 
@@ -27,8 +27,8 @@ SaltStack插件包含salt-master,salt-api和httpd等服务，基于这些服务�
 ## Salt-Stack插件docker镜像和插件包制作
 [Salt-Stack插件docker镜像包和插件包制作指引](docs/compile/wecube-plugins-saltstack_compile_guide.md)
 
-## 独立运行Salt-Stack插件容器
-执行如下命令运行Salt-Stack插件容器,其中变量HOST_IP需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用,变量TAG_NUM对应代码最后一次提交的commit号;另外因为该插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
+## 运行Salt-Stack插件
+执行如下命令运行Salt-Stack插件容器,其中变量HOST_IP需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量TAG_NUM对应代码最后一次提交的commit号;另外因为该插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
 
 ```
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}}
@@ -37,7 +37,9 @@ docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e mini
 **插件日志路径**:/home/app/wecube-plugins-saltstack/logs/wecube-plugins-saltstack.log
 
 ## 验证插件
-使用容器的方式运行插件后,可通过找一台linux主机在其上安装salt-minion来测试。在Salt-Stack插件所在的机器上运行如下curl命令,其中json参数host为需要安装salt-minion的主机ip,password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
+使用容器的方式运行插件后,可通过找一台linux主机在其上安装salt-minion来测试。
+
+在Salt-Stack插件所在的机器上运行如下curl命令,其中json参数host为需要安装salt-minion的主机ip,password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
 ```
 curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: no-cache"  -H "content-type: application/json" -d "{\"inputs\":[{\"guid\":\"1234\",\"seed\":\"abc12345\",\"host\":\"10.0.0.14\",\"password\": \"251f54c3f5be75e171ae1eb516dbacd9\"}]}"
 ```
