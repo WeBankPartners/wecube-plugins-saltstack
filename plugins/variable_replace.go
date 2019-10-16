@@ -46,7 +46,7 @@ type VariableReplaceInput struct {
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
-	FilePath     string `json:"confFile,omitempty"`
+	FilePath     string `json:"confFiles,omitempty"`
 	VariableList string `json:"variableList,omitempty"`
 }
 

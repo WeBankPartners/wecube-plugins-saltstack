@@ -47,7 +47,7 @@
         <interface name="copy" path="/v1/deploy/variable/replace">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">confFile</parameter>
+                <parameter datatype="string">confFiles</parameter>
                 <parameter datatype="string">endpoint</parameter>
                 <parameter datatype="string">variableList</parameter>
             </input-parameters>
@@ -171,7 +171,7 @@
                 <parameter datatype="string">endpoint</parameter>
                 <parameter datatype="string">userName</parameter>
                 <parameter datatype="string">destinationPath</parameter>
-                <parameter datatype="string">confFile</parameter>
+                <parameter datatype="string">confFiles</parameter>
                 <parameter datatype="string">variableList</parameter>
                 <parameter datatype="string">startScript</parameter>
                 <parameter datatype="string">args</parameter>
@@ -186,7 +186,7 @@
                 <parameter datatype="string">target</parameter>
                 <parameter datatype="string">userName</parameter>
                 <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">confFile</parameter>
+                <parameter datatype="string">confFiles</parameter>
                 <parameter datatype="string">destinationPath</parameter>
                 <parameter datatype="string">variableList</parameter>
                 <parameter datatype="string">stopScript</parameter>
