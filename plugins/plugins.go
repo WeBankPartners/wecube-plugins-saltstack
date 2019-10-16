@@ -67,8 +67,8 @@ type PluginRequest struct {
 }
 
 type PluginResponse struct {
-	ResultCode string      `json:"result_code"`
-	ResultMsg  string      `json:"result_message"`
+	ResultCode string      `json:"resultCode"`
+	ResultMsg  string      `json:"resultMessage"`
 	Results    interface{} `json:"results"`
 }
 
