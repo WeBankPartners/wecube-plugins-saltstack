@@ -31,15 +31,15 @@ type ApplyNewDeploymentInputs struct {
 	Inputs []ApplyNewDeploymentInput `json:"inputs,omitempty"`
 }
 type ApplyNewDeploymentInput struct {
-	EndPoint         string `json:"end_point,omitempty"`
+	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"user_name,omitempty"`
+	UserName         string `json:"userName,omitempty"`
 	Target           string `json:"target,omitempty"`
-	DestinationPath  string `json:"destination_path,omitempty"`
-	VariableFilePath string `json:"conf_files,omitempty"`
-	VariableList     string `json:"variable_list,omitempty"`
+	DestinationPath  string `json:"destinationPath,omitempty"`
+	VariableFilePath string `json:"confFile,omitempty"`
+	VariableList     string `json:"variableList,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
-	StartScriptPath  string `json:"start_script,omitempty"`
+	StartScriptPath  string `json:"startScript,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 }
@@ -50,12 +50,12 @@ type ApplyNewDeploymentOutputs struct {
 
 type ApplyNewDeploymentOutput struct {
 	Guid            string `json:"guid,omitempty"`
-	UserDetail      string `json:"user_detail,omitempty"`
-	FileDetail      string `json:"file_detail"`
-	NewS3PkgPath    string `json:"s3_pkg_path,omitempty"`
+	UserDetail      string `json:"userDetail,omitempty"`
+	FileDetail      string `json:"fileDetail"`
+	NewS3PkgPath    string `json:"s3PkgPath,omitempty"`
 	Target          string `json:"target"`
-	RetCode         int    `json:"ret_code"`
-	RunScriptDetail string `json:"run_script_detail"`
+	RetCode         int    `json:"retCode"`
+	RunScriptDetail string `json:"runScriptDetail"`
 }
 
 type ApplyNewDeploymentAction struct {
@@ -227,16 +227,16 @@ type ApplyUpdateDeploymentInputs struct {
 }
 
 type ApplyUpdateDeploymentInput struct {
-	EndPoint         string `json:"end_point,omitempty"`
+	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"user_name,omitempty"`
+	UserName         string `json:"userName,omitempty"`
 	Target           string `json:"target,omitempty"`
-	DestinationPath  string `json:"destination_path,omitempty"`
-	VariableFilePath string `json:"conf_files,omitempty"`
-	VariableList     string `json:"variable_list,omitempty"`
+	DestinationPath  string `json:"destinationPath,omitempty"`
+	VariableFilePath string `json:"confFile,omitempty"`
+	VariableList     string `json:"variableList,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
-	StopScriptPath   string `json:"stop_script,omitempty"`
-	StartScriptPath  string `json:"start_script,omitempty"`
+	StopScriptPath   string `json:"stopScript,omitempty"`
+	StartScriptPath  string `json:"startScript,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -245,12 +245,12 @@ type ApplyUpdateDeploymentOutputs struct {
 
 type ApplyUpdateDeploymentOutput struct {
 	Guid                 string `json:"guid,omitempty"`
-	FileDetail           string `json:"file_detail"`
-	NewS3PkgPath         string `json:"s3_pkg_path,omitempty"`
+	FileDetail           string `json:"fileDetail"`
+	NewS3PkgPath         string `json:"s3PkgPath,omitempty"`
 	Target               string `json:"target"`
-	RetCode              int    `json:"ret_code"`
-	RunStartScriptDetail string `json:"run_start_script_detail"`
-	RunStopScriptDetail  string `json:"run_stop_script_detail"`
+	RetCode              int    `json:"retCode"`
+	RunStartScriptDetail string `json:"runStartScriptDetail"`
+	RunStopScriptDetail  string `json:"runStopScriptDetail"`
 }
 
 type ApplyUpdateDeploymentAction struct {
