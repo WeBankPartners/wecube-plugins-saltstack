@@ -42,7 +42,7 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 
 
 ## 运行插件
-执行以下命令运行SaltStack插件容器,其中变量HOST_IP需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量TAG_NUM对应代码最后一次提交的commit号。
+执行以下命令运行SaltStack插件容器,其中变量{$HOST_IP}需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量{$TAG_NUM}对应代码最后一次提交的commit号。
 
 插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
 
@@ -53,15 +53,15 @@ docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e mini
 **插件日志路径**:/home/app/wecube-plugins-saltstack/logs/wecube-plugins-saltstack.log
 
 
-使用容器的方式运行插件后,在另外一台linux主机上安装salt-minion来测试。
+使用容器的方式运行插件后，在另外一台linux主机上安装salt-minion来测试。
 
-在SaltStack插件所在的机器上运行如下curl命令,其中json参数host为需要安装salt-minion的主机ip,password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
+在SaltStack插件所在的机器上运行如下curl命令，其中json参数host为需要安装salt-minion的主机ip，password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
 
 ```
 curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: no-cache"  -H "content-type: application/json" -d "{\"inputs\":[{\"guid\":\"1234\",\"seed\":\"abc12345\",\"host\":\"10.0.0.14\",\"password\": \"251f54c3f5be75e171ae1eb516dbacd9\"}]}"
 ```
 
-如看到如下返回，表示salt-minion安装成功
+如看到以下返回，表示salt-minion安装成功
 
 ```
 {
@@ -89,7 +89,7 @@ SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](LI
 
 
 ## 社区
-- 如果您想得到最快的响应，请给我们提[Issue](https://github.com/WeBankPartners/wecube-plugin-saltstack/issues/new/choose)或扫描下面的二维码，我们会第一时间反馈。
+- 如果您想得到最快的响应，请给我们提[Issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose)或扫描下面的二维码，我们会第一时间反馈。
 
 	<div align="left">
 	<img src="docs/images/wecube_qr_code.png"  height="200" width="200">
