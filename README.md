@@ -42,7 +42,7 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 
 
 ## 运行插件
-执行以下命令运行SaltStack插件容器,其中变量{$HOST_IP}需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量{$TAG_NUM}对应代码最后一次提交的commit号。
+执行以下命令运行SaltStack插件容器,其中变量`{$HOST_IP}`需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量`{$TAG_NUM}`对应代码最后一次提交的commit号。
 
 插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
 
