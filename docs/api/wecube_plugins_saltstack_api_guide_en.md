@@ -150,7 +150,7 @@ Name|Type|Required|Description
 :--|:--|:--|:-- 
 guid|string|Yes|Globally unique CI type ID
 endpoint|string|Yes|The full path where the application package is stored in
-confFiles|string|Yes|The full path where files needing to replace variables are stored in, and using "|" to distinguish multi files
+confFiles|string|Yes|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
 variableList|string|Yes|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
 
 ##### Output Parameters
@@ -504,7 +504,7 @@ target|string|Yes|Target host IP
 endpoint|string|Yes|The full path where the file is stored in
 userName|string|Yes|User name
 destinationPath|string|Yes|The destination where the file copied will be stored in
-confFiles|string|No|The full path where files needing to replace variables are stored in, and using "|" to distinguish multi files
+confFiles|string|No|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
 variableList|string|No|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
 startScript|string|Yes|The full path where the start script is stored in
 args|string|No|The running parameters
@@ -571,7 +571,7 @@ target|string|Yes|Target host IP
 endpoint|string|Yes|The full path where the file is stored in
 userName|string|Yes|User name
 destinationPath|string|Yes|The destination where the file copied will be stored in
-confFiles|string|No|The full path where files needing to replace variables are stored in, and using "|" to distinguish multi files
+confFiles|string|No|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
 variableList|string|No|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
 startScript|string|Yes|The full path where the start script is stored in
 stopScript|string|Yes|The full path where the stop script is stored in
@@ -590,6 +590,7 @@ runStopScriptDetail|string|More information about running the stop script
 
 ##### Example
 Input:
+```
 {
     "inputs": [
         {

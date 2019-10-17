@@ -151,7 +151,7 @@ detail|string|详细信息
 :--|:--|:--|:-- 
 guid|string|是|CI类型全局唯一ID
 endpoint|string|是|应用包存储在对象存储中的地址 ，全路径
-confFiles|string|是|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+confFiles|string|是|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
 variableList|string|是|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
 
 ##### 输出参数：
@@ -508,7 +508,7 @@ target|string|是|目标机器IP
 endpoint|string|是|文件存储在对象存储中的地址，全路径
 userName|string|是|用户名
 destinationPath|string|是|目标路径
-confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
 variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
 startScript|string|是|启动脚本，全路径
 args|string|否|执行参数
@@ -575,7 +575,7 @@ target|string|是|目标机器IP
 endpoint|string|是|文件存储在对象存储中的地址，全路径
 userName|string|是|用户名
 destinationPath|string|是|目标路径
-confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"|"分隔
+confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
 variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
 startScript|string|是|启动脚本，全路径
 stopScript|string|是|停止脚本，全路径
