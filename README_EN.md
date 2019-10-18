@@ -5,7 +5,11 @@
 [中文](README.md) / English
 
 ## Introduction
+Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack, and much more.
 
+The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenario.
+
+As an important member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. At the same time, the SaltStack plugin provides pluggable services for third-party applications.
 
 SaltStack plugin 1.0.0 is now released, its architecture & APIs is as follows:
 <img src="./docs/images/architectrue_en.png" /> 
@@ -46,6 +50,7 @@ make image
 ```
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
 ```
+
 5. after running the SaltStack Plugin， use the following curl command to check if SaltStack plugin works fine. 
 
 ```
@@ -81,8 +86,12 @@ make package PLUGIN_VERSION=v{$package_version}
 ![saltstack_zip](docs/compile/images/saltstack_zip.png)
 
 
+## API Reference
+Please refer to the [SaltStack API Guide](docs/api/wecube_plugins_saltstack_api_guide_en.md)
+
+
 ## License
-SaltStack Plugin is licensed under the Apache License Version 2.0 , please refer to the [license](LICENSE) for details.
+SaltStack Plugin is licensed under the Apache License Version 2.0, please refer to the [license](LICENSE) for details.
 
 
 ## Community
