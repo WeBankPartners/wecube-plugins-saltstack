@@ -5,6 +5,7 @@
 中文 / [English](README_EN1.md)
 
 ## 简介
+
 SaltStack 是一个服务器基础架构集中化管理平台，具备配置管理、远程执行、监控等功能。SaltStack 基于Python语言实现，结合轻量级消息队列（ZeroMQ）与Python第三方模块（Pyzmq、PyCrypto、Pyjinjia2、python-msgpack和PyYAML等）构建。
 
 SaltStack插件根据不同场景的具体需求，对salt-api进行封装以及组合封装，降低了使用SaltStack的难度，并提供了更贴近业务使用场景的API接口。
@@ -12,6 +13,7 @@ SaltStack插件根据不同场景的具体需求，对salt-api进行封装以及
 SaltStack插件作为WeCube插件群里重要的一员，为WeCube提供了管理主机集群的能力。同时，SaltStack插件可以独立于WeCube为第三方应用提供可插拔式的服务。
 
 ## 主要功能
+
 SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。
 
 用户可通过该插件提供的API执行如下操作:
@@ -30,9 +32,10 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 <img src="./docs/images/architectrue.png" />
 
 ## 开发环境搭建
+
 详情请查看 [SaltStack插件开发环境搭建指引](docs/compile/wecube-plugins-saltstack_build_dev_env.md)
 
-**注意**:SaltStack插件编译完毕后，运行二进制前必须确认本机已安装salt-master、salt-api、mysql client等组件，建议在linux主机上使用docker镜像的方式运行SaltStack插件，因为docker镜像中已默认安装salt-api等组件。
+**注意**: SaltStack插件编译完毕后，运行二进制前必须确认本机已安装salt-master、salt-api、mysql client等组件，建议在linux主机上使用docker镜像的方式运行SaltStack插件，因为docker镜像中已默认安装salt-api等组件。
 
 ## docker镜像和插件包制作
 
@@ -40,7 +43,7 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 
 ## 运行插件
 
-执行以下命令运行SaltStack插件容器,其中变量{$HOST_IP}需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量{$TAG_NUM}对应代码最后一次提交的commit号。
+执行以下命令运行SaltStack插件容器,其中变量`{$HOST_IP}`需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量`{$TAG_NUM}`对应代码最后一次提交的commit号。
 
 插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
 
@@ -75,13 +78,16 @@ curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: n
 ```
 
 ## API使用说明
+
 关于SaltStack插件的API说明，请查看以下文档
 [SaltStack插件API手册](docs/api/wecube_plugins_saltstack_api_guide.md)
 
 ## License
+
 SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](LICENSE)
 
 ## 社区
+
 - 如果您想得到最快的响应，请给我们提[Issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose)或扫描下面的二维码，我们会第一时间反馈。
 
 	<div align="left">
