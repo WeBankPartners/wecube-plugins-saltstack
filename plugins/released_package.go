@@ -153,7 +153,7 @@ type GetConfigFileKeyInput struct {
 	EndPoint string `json:"endpoint,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
-	FilePath string `json:"file_path,omitempty"`
+	FilePath string `json:"filePath,omitempty"`
 }
 
 type GetConfigFileKeyOutputs struct {
@@ -161,8 +161,8 @@ type GetConfigFileKeyOutputs struct {
 }
 
 type GetConfigFileKeyOutput struct {
-	FilePath       string          `json:"file_path,omitempty"`
-	ConfigKeyInfos []ConfigKeyInfo `json:"config_key_infos"`
+	FilePath       string          `json:"filePath,omitempty"`
+	ConfigKeyInfos []ConfigKeyInfo `json:"configKeyInfos"`
 }
 
 type ConfigKeyInfo struct {

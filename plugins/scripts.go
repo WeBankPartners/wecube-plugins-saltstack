@@ -42,13 +42,13 @@ type RunScriptInputs struct {
 }
 
 type RunScriptInput struct {
-	EndPointType string `json:"end_point_type,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
-	EndPoint     string `json:"end_point,omitempty"`
+	EndPointType string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
+	EndPoint     string `json:"endpoint,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 
 	Target  string `json:"target,omitempty"`
-	RunAs   string `json:"run_as,omitempty"`
+	RunAs   string `json:"runAs,omitempty"`
 	ExecArg string `json:"args,omitempty"`
 	Guid    string `json:"guid,omitempty"`
 }
@@ -59,7 +59,7 @@ type RunScriptOutputs struct {
 
 type RunScriptOutput struct {
 	Target  string `json:"target"`
-	RetCode int    `json:"ret_code"`
+	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
 	Guid    string `json:"guid,omitempty"`
 }

@@ -110,10 +110,10 @@ func ExtractJsonFromStruct(s interface{}) map[string]string {
 
 type SaltApiRequest struct {
 	Client     string   `json:"client,omitempty"`
-	TargetType string   `json:"expr_form,omitempty"`
-	Target     string   `json:"tgt,omitempty"`
-	Function   string   `json:"fun,omitempty"`
-	Args       []string `json:"arg,omitempty"`
+	TargetType string   `json:"exprForm,omitempty"`
+	Target     string   `json:"target,omitempty"`
+	Function   string   `json:"function,omitempty"`
+	Args       []string `json:"args,omitempty"`
 }
 
 type callSaltApiResults struct {

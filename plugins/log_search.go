@@ -43,8 +43,8 @@ type SearchInputs struct {
 //SearchInput .
 type SearchInput struct {
 	Guid       string `json:"guid,omitempty"`
-	KeyWord    string `json:"key_word,omitempty"`
-	LineNumber int    `json:"line_number,omitempty"`
+	KeyWord    string `json:"keyWord,omitempty"`
+	LineNumber int    `json:"lineNumber,omitempty"`
 }
 
 //SearchOutputs .
@@ -54,8 +54,8 @@ type SearchOutputs struct {
 
 //SearchOutput .
 type SearchOutput struct {
-	FileName string `json:"file_name,omitempty"`
-	Line     string `json:"line_number,omitempty"`
+	FileName string `json:"fileName,omitempty"`
+	Line     string `json:"lineNumber,omitempty"`
 	Log      string `json:"log,omitempty"`
 }
 
@@ -207,9 +207,9 @@ type SearchDetailInputs struct {
 
 //SearchDetailInput .
 type SearchDetailInput struct {
-	FileName        string `json:"file_name,omitempty"`
-	LineNumber      string `json:"line_number,omitempty"`
-	RelateLineCount int    `json:"relate_line_count,omitempty"`
+	FileName        string `json:"fileName,omitempty"`
+	LineNumber      string `json:"lineNumber,omitempty"`
+	RelateLineCount int    `json:"relateLineCount,omitempty"`
 }
 
 //SearchDetailOutputs .
@@ -219,8 +219,8 @@ type SearchDetailOutputs struct {
 
 //SearchDetailOutput .
 type SearchDetailOutput struct {
-	FileName   string `json:"file_name,omitempty"`
-	LineNumber string `json:"line_number,omitempty"`
+	FileName   string `json:"fileName,omitempty"`
+	LineNumber string `json:"lineNumber,omitempty"`
 	Logs       string `json:"logs,omitempty"`
 }
 

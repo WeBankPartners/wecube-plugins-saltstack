@@ -32,9 +32,9 @@ type SaltApiCallInputs struct {
 type SaltApiCallInput struct {
 	Guid     string   `json:"guid,omitempty"`
 	Client   string   `json:"client,omitempty"`
-	Target   string   `json:"tgt,omitempty"`
-	Function string   `json:"fun,omitempty"`
-	Args     []string `json:"arg,omitempty"`
+	Target   string   `json:"target,omitempty"`
+	Function string   `json:"function,omitempty"`
+	Args     []string `json:"args,omitempty"`
 }
 
 type SaltApiCallOutputs struct {
@@ -73,7 +73,7 @@ type SaltApiCmdScriptResults struct {
 
 type SaltApiCmdScriptResult struct {
 	Pid     int    `json:"pid,omitempty"`
-	RetCode int    `json:"retcode,omitempty"`
+	RetCode int    `json:"retCode,omitempty"`
 	Stderr  string `json:"stderr,omitempty"`
 	Stdout  string `json:"stdout,omitempty"`
 }

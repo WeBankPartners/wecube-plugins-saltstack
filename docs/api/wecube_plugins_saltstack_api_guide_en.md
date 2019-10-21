@@ -1,71 +1,69 @@
 # SaltStack Plugin API Guide
 
-中文 / [English](wecube_plugins_saltstack_api_guide_en.md)
-  
-提供统一接口定义，为使用者提供清晰明了的使用方法。
+English / [中文](wecube_plugins_saltstack_api_guide.md)
 
-## API 操作资源(Resources):
+Provide a unified interface definition which is clear and convenient for users to use.
 
-**Agent操作**
+## API Resources
 
-- [Agent安装](#agent-install)  
+**Agent Action**
 
-**文件操作**
+- [Install Agent](#agent-install)
 
-- [文件拷贝](#file-copy)  
+**File Action**
 
-**变量操作**
+- [Copy File](#file-copy) 
 
-- [变量替换](#variable-replace)  
+**Variable Action**
 
-**脚本操作**
+- [Replace Variable](#variable-replace)
 
-- [脚本执行](#script-run)  
+**Script Action**
 
-**用户管理操作**
+- [Run Script](#script-run)
 
-- [Linux用户新增](#user-add)  
-- [Linux用户删除](#user-remove)  
+**User Management Action**
 
-**数据库操作**
+- [Add Linux User](#user-add)  
+- [Remove Linux User](#user-remove)  
 
-- [数据库脚本执行](#database-runScript)  
+**Database Action**
 
-**数据盘操作**
+- [Run Database Script](#database-runScript)
 
-- [查询未挂载数据盘](#disk-getUnformatedDisk)  
-- [挂载数据盘](#disk-formatAndMountDisk) 
+**Disk Action**
 
-**部署操作**
+- [Get Unformated Disk](#disk-getUnformatedDisk)  
+- [Format and Mount Disk](#disk-formatAndMountDisk)
 
-- [全量部署](#deploy-install)  
-- [增量部署](#deploy-upgrade)  
+**Application Deployment Action**
 
+- [Deploy Application](#deploy-install)  
+- [Upgrade Application](#deploy-upgrade)
 
-## API 概览及实例：  
+## API and Examples
 
-### Agent操作
+### Agent Action
 
-#### <span id="agent-install">Agent安装</span>
+#### <span id="agent-install">Install Agent</span>
 [POST] /v1/deploy/agent/install
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-host|string|是|目标机器IP
-password|string|是|目标机器ROOT用户密码
-seed|string|是|目标机器ROOT用户密钥种子
+guid|string|Yes|Globally unique CI type ID
+host|string|Yes|Target host IP
+password|string|Yes|Password of target host ROOT user
+seed|string|Yes|Secret key seed of target host ROOT user
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|more output information
 
-##### 示例：
-输入：
-
+##### Example
+Input:
 ```
 {
     "inputs":[{
@@ -77,7 +75,7 @@ detail|string|详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -93,27 +91,28 @@ detail|string|详细信息
 }
 ```
 
-### 文件操作
+### File Action
 
-#### <span id="file-copy">文件拷贝</span>
+#### <span id="file-copy">Copy File</span>
 [POST] /v1/deploy/file/copy
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-endpoint|string|是|文件存储在对象存储中的地址，全路径
-target|string|是|目标机器IP
-destinationPath|string|是|目标路径
+guid|string|Yes|Globally unique CI type ID
+endpoint|string|Yes|The full path where the file is stored in
+target|string|Yes|Target host IP
+destinationPath|string|Yes|The destination where the file copied will be stored in
 
-##### 输出参数：
+##### Output Parameters
 参数名称|类型|描述
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|More information
 
-##### 示例：
-输入：
+##### Example
+
+Input:
 ```
 {
   "inputs":[{
@@ -121,11 +120,11 @@ detail|string|详细信息
         "endpoint":"http://127.0.0.1:9000/brankbao/unpack-demo.tar",
         "target":"127.0.0.1",
         "destinationPath":"/data/app/scripts/unpack-demo.tar"
-  }]
+    }]
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -141,27 +140,27 @@ detail|string|详细信息
 }
 ```
 
-### 变量操作
+### Variable Action
 
-#### <span id="variable-replace">变量替换</span>
+#### <span id="variable-replace">Replace Variable</span>
 [POST] /v1/deploy/variable/replace
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-endpoint|string|是|应用包存储在对象存储中的地址 ，全路径
-confFiles|string|是|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
-variableList|string|是|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
+guid|string|Yes|Globally unique CI type ID
+endpoint|string|Yes|The full path where the application package is stored in
+confFiles|string|Yes|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
+variableList|string|Yes|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径 
+guid|string|Globally unique CI type ID
+s3PkgPath|string|The absolute path of the application package after the variables are replaced
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs": [{
@@ -169,11 +168,11 @@ s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
         "endpoint": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0.zip",
         "confFiles": "beego-demo/conf/app.conf",
         "variableList":"env=prod"
-    }]
+	}]
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -189,32 +188,31 @@ s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
 }
 ```
 
+### Script Action
 
-### 脚本操作
-
-#### <span id="script-run">脚本执行</span>
+#### <span id="script-run">Run Script</span>
 [POST] /v1/deploy/script/run
 
-##### 输入参数：
-参数名称|类型|必选|描述
-:--|:--|:--|:--
-guid|string|是|CI类型全局唯一ID 
-endpointType|string|是|脚本来源类型，可选值："S3"：脚本在对象存储，"LOCAL"：脚本在服务器本地
-endpoint|string|是|脚本存储路径， 可以是对象存储上的绝对路径，或者服务器的绝对路径
-target|string|是|目标机器IP
-runAs|string|否|执行用户
-args|string|否|执行参数
+##### Input Parameters
+Name|Type|Required|Description
+:--|:--|:--|:-- 
+guid|string|Yes|Globally unique CI type ID
+endpointType|string|Yes|Type of script, options: "S3": script which is stored in S3 server;"LOCAL" : Script which is stored in local
+endpoint|string|Yes|The absolute path where script is stored in
+target|string|Yes|Target host IP
+runAs|string|No|User running the script
+args|string|No|The running parameters
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
-target|string|目标机器
-retCode|string|返回码
+guid|string|Globally unique CI type ID
+detail|string|More information
+target|string|Target Host' IP
+retCode|string|Return code
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
   "inputs":[{
@@ -228,7 +226,7 @@ retCode|string|返回码
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -246,33 +244,31 @@ retCode|string|返回码
 }
 ```
 
+### User Management Action
 
-### 用户管理操作
-
-#### <span id="user-add">Linux用户新增</span>
+#### <span id="user-add">Add Linux User</span>
 [POST] /v1/deploy/user/add
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-target|string|是|目标机器IP
-userId|string|否|用户ID
-userName|string|是|用户名
-password|string|是|密码
-userGroup|string|否|用户组
-groupId|string|否|组ID
-homeDir|string|否|用户home目录
+guid|string|Yes|Globally unique CI type ID
+target|string|Yes|Target host' IP
+userId|string|No|User ID
+userName|string|Yes|User name
+password|string|Yes|Secret
+userGroup|string|No|User group
+groupId|string|No|Group ID
+homeDir|string|No|User home diretory
 
-
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|More Information
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
   "inputs":[{
@@ -285,7 +281,7 @@ detail|string|详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -301,24 +297,24 @@ detail|string|详细信息
 }
 ```
 
-#### <span id="user-remove">Linux用户删除</span>
+#### <span id="user-remove">Remove Linux User</span>
 [POST] /v1/deploy/user/remove
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+name|type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-target|string|是|目标机器IP
-userName|string|是|用户名
+guid|string|Yes|Globally unique CI type ID
+target|string|Yes|Target host IP
+userName|string|Yes|User name
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|More information
 
-##### 示例：
-输入：
+##### Example:
+Input:
 ```
 {
   "inputs":[{
@@ -329,7 +325,7 @@ detail|string|详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -345,31 +341,31 @@ detail|string|详细信息
 }
 ```
 
-### 数据库操作
+### Database Action
 
-#### <span id="database-runScript">数据库脚本执行</span>
+#### <span id="database-runScript">Run Database Script</span>
 [POST] /v1/deploy/database/runScript
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-host|string|是|数据库IP
-port|string|是|数据库端口
-userName|string|是|数据库用户名
-password|string|是|数据库用户密码
-seed|string|是|数据库用户密钥种子
-databaseName|string|是|数据库名
-endpoint|string|是|文件存储在对象存储中的地址 ，全路径
+guid|string|Yes|Globally unique CI type ID
+host|string|Yes|Database IP
+port|string|Yes|Database port
+userName|string|Yes|Name of database user
+password|string|Yes|Password of database user 
+seed|string|Yes|Secret seed of database user 
+databaseName|string|Yes|Database name
+endpoint|string|Yes|The full path where the script is stored in
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|More information
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs":[{
@@ -385,7 +381,7 @@ detail|string|详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -401,25 +397,25 @@ detail|string|详细信息
 }
 ```
 
-### 数据盘操作
+### Disk Action
 
-#### <span id="disk-getUnformatedDisk">查询未挂载数据盘</span>
+#### <span id="disk-getUnformatedDisk">Get Unformated Disk</span>
 [POST] /v1/deploy/disk/getUnformatedDisk
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-endpoint|string|是|目标机器IP
+guid|string|Yes|Globally unique CI type ID
+endpoint|string|Yes|Target host IP
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-unformatedDisks|array|未挂载数据盘清单
+guid|string|Globally unique CI type ID
+unformatedDisks|array|Unformated disk list
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs":[{
@@ -429,7 +425,7 @@ unformatedDisks|array|未挂载数据盘清单
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -447,26 +443,26 @@ unformatedDisks|array|未挂载数据盘清单
 }
 ```
 
-#### <span id="disk-formatAndMountDisk">挂载数据盘</span>
+#### <span id="disk-formatAndMountDisk">Formate and Mount Disk</span>
 [POST] /v1/deploy/disk/formatAndMountDisk
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-target|string|是|目标机器IP
-diskName|string|是|数据盘名称
-fileSystemType|string|是|文件系统
-mountDir|string|是|挂载目录名
+guid|string|Yes|Globally unique CI type ID
+target|string|Yes|Target host IP
+diskName|string|Yes|Disk name
+fileSystemType|string|Yes|File system type
+mountDir|string|Yes|The directory to mount 
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-detail|string|详细信息
+guid|string|Globally unique CI type ID
+detail|string|More information
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs":[{
@@ -479,7 +475,7 @@ detail|string|详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -495,37 +491,37 @@ detail|string|详细信息
 }
 ```
 
-### 部署操作
+### Application Deployment Action
 
-#### <span id="deploy-install">全量部署</span>
+#### <span id="deploy-install">Deploy Application</span>
 [POST] /v1/deploy/apply-deployment/new
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-target|string|是|目标机器IP
-endpoint|string|是|文件存储在对象存储中的地址，全路径
-userName|string|是|用户名
-destinationPath|string|是|目标路径
-confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
-variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
-startScript|string|是|启动脚本，全路径
-args|string|否|执行参数
+guid|string|Yes|Globally unique CI type ID
+target|string|Yes|Target host IP
+endpoint|string|Yes|The full path where the file is stored in
+userName|string|Yes|User name
+destinationPath|string|Yes|The destination where the file copied will be stored in
+confFiles|string|No|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
+variableList|string|No|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
+startScript|string|Yes|The full path where the start script is stored in
+args|string|No|The running parameters
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-userDetail|string|创建用户详细信息
-fileDetail|string|应用部署包拷贝详细信息
-s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
-target|string|目标机器IP
-retCode|string|返回码
-runScriptDetail|string|启动脚本详细信息
+guid|string|Globally unique CI type ID
+userDetail|string|More information about creating user
+fileDetail|string|More information about copying application package
+s3PkgPath|string|The absolute path of the application package after the variables are replaced
+target|string|Target host IP
+retCode|string|Return code
+runScriptDetail|string|More information about running the start script
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs": [
@@ -543,7 +539,7 @@ runScriptDetail|string|启动脚本详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
@@ -564,36 +560,36 @@ runScriptDetail|string|启动脚本详细信息
 }
 ```
 
-#### <span id="deploy-upgrade">增量部署</span>
+#### <span id="deploy-upgrade">Upgrade Application</span>
 [POST] /v1/deploy/apply-deployment/update
 
-##### 输入参数：
-参数名称|类型|必选|描述
+##### Input Parameters
+Name|Type|Required|Description
 :--|:--|:--|:-- 
-guid|string|是|CI类型全局唯一ID
-target|string|是|目标机器IP
-endpoint|string|是|文件存储在对象存储中的地址，全路径
-userName|string|是|用户名
-destinationPath|string|是|目标路径
-confFiles|string|否|差异化变量文件在应用包中的相对路径，多个文件以分号"\|"分隔
-variableList|string|否|变量列表， 格式："Name=tom, Age=10, Dog = test1, Cat = tet2"
-startScript|string|是|启动脚本，全路径
-stopScript|string|是|停止脚本，全路径
-args|string|否|执行参数
+guid|string|Yes|Globally unique CI type ID
+target|string|Yes|Target host IP
+endpoint|string|Yes|The full path where the file is stored in
+userName|string|Yes|User name
+destinationPath|string|Yes|The destination where the file copied will be stored in
+confFiles|string|No|The full path where files needing to replace variables are stored in, and using "\|" to distinguish multi files
+variableList|string|No|Variable List, format: "Name=tom, Age=10, Dog = test1, Cat = tet2"
+startScript|string|Yes|The full path where the start script is stored in
+stopScript|string|Yes|The full path where the stop script is stored in
+args|string|No|The running parameters
 
-##### 输出参数：
-参数名称|类型|描述
+##### Output Parameters
+Name|Type|Description
 :--|:--|:--    
-guid|string|CI类型全局唯一ID
-fileDetail|string|应用部署包拷贝详细信息
-s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
-target|string|目标机器IP
-retCode|string|返回码
-runStartScriptDetail|string|执行启动脚本详细信息
-runStopScriptDetail|string|执行停止脚本详细信息
+guid|string|Globally unique CI type ID
+fileDetail|string|More information about copying application package
+s3PkgPath|string|The absolute path of the application package after the variables are replaced
+target|string|Target host IP
+retCode|string|Return code
+runStartScriptDetail|string|More information about running the start script
+runStopScriptDetail|string|More information about running the stop script
 
-##### 示例：
-输入：
+##### Example
+Input:
 ```
 {
     "inputs": [
@@ -612,7 +608,7 @@ runStopScriptDetail|string|执行停止脚本详细信息
 }
 ```
 
-输出：
+Output:
 ```
 {
     "resultCode": "0",
