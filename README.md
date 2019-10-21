@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![](https://img.shields.io/badge/language-golang-orang.svg)
  
-中文 / [English](README_EN_1.md)
+中文 / [English](README_EN.md)
 
 ## 简介
 
@@ -84,7 +84,7 @@ curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: n
 
 ## License
 
-SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](LICENSE)
+SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## 社区
 
