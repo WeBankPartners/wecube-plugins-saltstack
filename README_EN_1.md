@@ -6,7 +6,7 @@
 English / [中文](README.md)
 
 ## Introduction
-SaltStack is a centralized management platform for server infrastructure with configuration management, remote execution, monitoring etc. SaltStack is based on Python and combines the construction of lightweight message level (ZeroMQ) with Python third-party modules (Pyzmq, PyCrypto, Pyjinjia2, python-msgpack and PyYAML).
+SaltStack is a centralized management platform for server infrastructure with configuration management, remote execution, monitoring and etc. SaltStack is based on Python and combines the construction of lightweight message level (ZeroMQ) with Python third-party modules (Pyzmq, PyCrypto, Pyjinjia2, python-msgpack and PyYAML).
 
 The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack and provides API interfaces that are closer to business scenarios.
 
