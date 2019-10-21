@@ -39,7 +39,7 @@ Read more [Build SaltStack Plugin Development Environment Guide](docs/compile/we
 
 ## Build Docker Image
 
-Read more [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide.md).
+Read more [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide_en.md).
 
 ## Run SaltStack Plugin
 
@@ -83,7 +83,7 @@ Please see the following document [SaltStack Plugin API Guide](docs/api/wecube_p
 
 ## License
 
-SaltStack plugin is available under the Apache 2 license. Learn more [license](LICENSE).
+SaltStack plugin is available under the Apache 2 license. Learn more about [license](LICENSE).
 
 ## Community
 
