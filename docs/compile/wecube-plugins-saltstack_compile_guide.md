@@ -48,7 +48,7 @@
 	3. 执行以下命令制作插件包:
 	
 	```
-	make package PLUGIN_VERSION=v1.0
+	make package PLUGIN_VERSION=v1.1
 	```
 
 	其中PLUGIN_VERSION为插件包的版本号，编译完成后将生成一个zip的插件包。
