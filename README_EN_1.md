@@ -83,7 +83,7 @@ Please see the following document [SaltStack Plugin API Guide](docs/api/wecube_p
 
 ## License
 
-SaltStack plugin is available under the Apache 2 license. please refer to the [license](LICENSE) for details.
+SaltStack plugin is available under the Apache 2 license. please refer to the [license](http://www.apache.org/licenses/LICENSE-2.0) for details.
 
 ## Community
 

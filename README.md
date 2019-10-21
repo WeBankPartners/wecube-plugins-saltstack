@@ -84,7 +84,7 @@ curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: n
 
 ## License
 
-SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](LICENSE)
+SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## 社区
 
