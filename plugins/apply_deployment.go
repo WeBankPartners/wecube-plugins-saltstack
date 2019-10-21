@@ -31,15 +31,15 @@ type ApplyNewDeploymentInputs struct {
 	Inputs []ApplyNewDeploymentInput `json:"inputs,omitempty"`
 }
 type ApplyNewDeploymentInput struct {
-	EndPoint         string `json:"end_point,omitempty"`
+	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"user_name,omitempty"`
+	UserName         string `json:"userName,omitempty"`
 	Target           string `json:"target,omitempty"`
-	DestinationPath  string `json:"destination_path,omitempty"`
-	VariableFilePath string `json:"conf_files,omitempty"`
-	VariableList     string `json:"variable_list,omitempty"`
+	DestinationPath  string `json:"destinationPath,omitempty"`
+	VariableFilePath string `json:"confFiles,omitempty"`
+	VariableList     string `json:"variableList,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
-	StartScriptPath  string `json:"start_script,omitempty"`
+	StartScriptPath  string `json:"startScript,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 }
@@ -50,12 +50,12 @@ type ApplyNewDeploymentOutputs struct {
 
 type ApplyNewDeploymentOutput struct {
 	Guid            string `json:"guid,omitempty"`
-	UserDetail      string `json:"user_detail,omitempty"`
-	FileDetail      string `json:"file_detail"`
-	NewS3PkgPath    string `json:"s3_pkg_path,omitempty"`
-	Target          string `json:"target"`
-	RetCode         int    `json:"ret_code"`
-	RunScriptDetail string `json:"run_script_detail"`
+	UserDetail      string `json:"userDetail,omitempty"`
+	FileDetail      string `json:"fileDetail,omitempty"`
+	NewS3PkgPath    string `json:"s3PkgPath,omitempty"`
+	Target          string `json:"target,omitempty"`
+	RetCode         int    `json:"retCode,omitempty"`
+	RunScriptDetail string `json:"runScriptDetail,omitempty"`
 }
 
 type ApplyNewDeploymentAction struct {
@@ -85,18 +85,18 @@ func (action *ApplyNewDeploymentAction) CheckParam(input interface{}) error {
 		if input.Target == "" {
 			return errors.New("Target is empty")
 		}
-		if input.VariableFilePath == "" {
-			return errors.New("VariableFilePath is empty")
-		}
+		// if input.VariableFilePath == "" {
+		// 	return errors.New("VariableFilePath is empty")
+		// }
 		if input.StartScriptPath == "" {
 			return errors.New("StartScriptPath is empty")
 		}
 		if input.DestinationPath == "" {
 			return errors.New("DestinationPath is empty")
 		}
-		if input.VariableList == "" {
-			return errors.New("VariableList is empty")
-		}
+		// if input.VariableList == "" {
+		// 	return errors.New("VariableList is empty")
+		// }
 	}
 
 	return nil
@@ -138,28 +138,33 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 		// replace apply variable
-		variableReplaceRequest := VariableReplaceInputs{
-			Inputs: []VariableReplaceInput{
-				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
+		if input.VariableFilePath != "" {
+			variableReplaceRequest := VariableReplaceInputs{
+				Inputs: []VariableReplaceInput{
+					VariableReplaceInput{
+						Guid:         input.Guid,
+						EndPoint:     input.EndPoint,
+						FilePath:     input.VariableFilePath,
+						VariableList: input.VariableList,
+					},
 				},
-			},
-		}
+			}
 
-		logrus.Infof("ApplyNewDeploymentAction replaceApplyVariable: input=%++v", variableReplaceRequest)
-		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
-		if err != nil {
-			logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
-			output.RetCode = 1
-			outputs.Outputs = append(outputs.Outputs, output)
-			return &outputs, err
+			logrus.Infof("ApplyNewDeploymentAction replaceApplyVariable: input=%++v", variableReplaceRequest)
+			variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
+			if err != nil {
+				logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
+				output.RetCode = 1
+				outputs.Outputs = append(outputs.Outputs, output)
+				return &outputs, err
+			}
+			logrus.Infof("ApplyNewDeploymentAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
+			output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+			logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
+		} else {
+			output.NewS3PkgPath = input.VariableFilePath
+			logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 		}
-		logrus.Infof("ApplyNewDeploymentAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
-		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 		// copy apply package
 		fileCopyRequest := FileCopyInputs{
@@ -227,16 +232,16 @@ type ApplyUpdateDeploymentInputs struct {
 }
 
 type ApplyUpdateDeploymentInput struct {
-	EndPoint         string `json:"end_point,omitempty"`
+	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
-	UserName         string `json:"user_name,omitempty"`
+	UserName         string `json:"userName,omitempty"`
 	Target           string `json:"target,omitempty"`
-	DestinationPath  string `json:"destination_path,omitempty"`
-	VariableFilePath string `json:"conf_files,omitempty"`
-	VariableList     string `json:"variable_list,omitempty"`
+	DestinationPath  string `json:"destinationPath,omitempty"`
+	VariableFilePath string `json:"confFiles,omitempty"`
+	VariableList     string `json:"variableList,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
-	StopScriptPath   string `json:"stop_script,omitempty"`
-	StartScriptPath  string `json:"start_script,omitempty"`
+	StopScriptPath   string `json:"stopScript,omitempty"`
+	StartScriptPath  string `json:"startScript,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -245,12 +250,12 @@ type ApplyUpdateDeploymentOutputs struct {
 
 type ApplyUpdateDeploymentOutput struct {
 	Guid                 string `json:"guid,omitempty"`
-	FileDetail           string `json:"file_detail"`
-	NewS3PkgPath         string `json:"s3_pkg_path,omitempty"`
-	Target               string `json:"target"`
-	RetCode              int    `json:"ret_code"`
-	RunStartScriptDetail string `json:"run_start_script_detail"`
-	RunStopScriptDetail  string `json:"run_stop_script_detail"`
+	FileDetail           string `json:"fileDetail,omitempty"`
+	NewS3PkgPath         string `json:"s3PkgPath,omitempty"`
+	Target               string `json:"target,omitempty"`
+	RetCode              int    `json:"retCode,omitempty"`
+	RunStartScriptDetail string `json:"runStartScriptDetail,omitempty"`
+	RunStopScriptDetail  string `json:"runStopScriptDetail,omitempty"`
 }
 
 type ApplyUpdateDeploymentAction struct {
@@ -280,18 +285,18 @@ func (action *ApplyUpdateDeploymentAction) CheckParam(input interface{}) error {
 		if input.Target == "" {
 			return errors.New("Target is empty")
 		}
-		if input.VariableFilePath == "" {
-			return errors.New("VariableFilePath is empty")
-		}
+		// if input.VariableFilePath == "" {
+		// 	return errors.New("VariableFilePath is empty")
+		// }
 		if input.StartScriptPath == "" {
 			return errors.New("StartScriptPath is empty")
 		}
 		if input.DestinationPath == "" {
 			return errors.New("DestinationPath is empty")
 		}
-		if input.VariableList == "" {
-			return errors.New("VariableList is empty")
-		}
+		// if input.VariableList == "" {
+		// 	return errors.New("VariableList is empty")
+		// }
 		if input.StopScriptPath == "" {
 			return errors.New("StopScriptPath is empty")
 		}
@@ -336,28 +341,33 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// replace apply variable
-		variableReplaceRequest := VariableReplaceInputs{
-			Inputs: []VariableReplaceInput{
-				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
+		if input.VariableFilePath != "" {
+			variableReplaceRequest := VariableReplaceInputs{
+				Inputs: []VariableReplaceInput{
+					VariableReplaceInput{
+						Guid:         input.Guid,
+						EndPoint:     input.EndPoint,
+						FilePath:     input.VariableFilePath,
+						VariableList: input.VariableList,
+					},
 				},
-			},
-		}
+			}
 
-		logrus.Infof("ApplyUpdateAction replaceApplyVariable: input=%++v", variableReplaceRequest)
-		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
-		if err != nil {
-			logrus.Errorf("ApplyUpdateAction replaceApplyVariable meet error=%v", err)
-			output.RetCode = 1
-			outputs.Outputs = append(outputs.Outputs, output)
-			return &outputs, err
+			logrus.Infof("ApplyUpdateAction replaceApplyVariable: input=%++v", variableReplaceRequest)
+			variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
+			if err != nil {
+				logrus.Errorf("ApplyUpdateAction replaceApplyVariable meet error=%v", err)
+				output.RetCode = 1
+				outputs.Outputs = append(outputs.Outputs, output)
+				return &outputs, err
+			}
+			logrus.Infof("ApplyUpdateAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
+			output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+			logrus.Infof("ApplyUpdateAction: output=%++v", output)
+		} else {
+			output.NewS3PkgPath = input.EndPoint
+			logrus.Infof("ApplyUpdateAction: output=%++v", output)
 		}
-		logrus.Infof("ApplyUpdateAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
-		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 		// copy apply package
 		fileCopyRequest := FileCopyInputs{

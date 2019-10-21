@@ -46,8 +46,8 @@ type VariableReplaceInput struct {
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
-	FilePath     string `json:"conf_files,omitempty"`
-	VariableList string `json:"variable_list,omitempty"`
+	FilePath     string `json:"confFiles,omitempty"`
+	VariableList string `json:"variableList,omitempty"`
 }
 
 //VariableReplaceOutputs .
@@ -60,7 +60,7 @@ type VariableReplaceOutput struct {
 	Guid string `json:"guid,omitempty"`
 	//Detail     string `json:"detail,omitempty"`
 	//MD5        string `json:"md5,omitempty"`
-	NewS3PkgPath string `json:"s3_pkg_path,omitempty"`
+	NewS3PkgPath string `json:"s3PkgPath,omitempty"`
 }
 
 type VariableReplaceAction struct {

@@ -64,7 +64,6 @@ func walk(path string, info os.FileInfo, node *FileNode) {
 
 		node.FileNodes = append(node.FileNodes, &child)
 
-		// 奾B弾^~\輾A~M伾N~F漾Z~D弾S伾I~M弾V~G件弾X¯个漾[®弾U﻾L伾H~Y达[伾E¥该漾[®弾U达[纠¾L輾@~R弾R
 		if fio.IsDir() {
 			walk(fpath, fio, &child)
 		}

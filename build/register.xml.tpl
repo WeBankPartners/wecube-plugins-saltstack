@@ -13,15 +13,15 @@
                 <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">endpoint</parameter>
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">destination_path</parameter>
+                <parameter datatype="string">destinationPath</parameter>
                 <parameter datatype="string">unpack</parameter>
-                <parameter datatype="string">file_owner</parameter>
+                <parameter datatype="string">fileOwner</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
                 <!--
-                <parameter datatype="string">result_code</parameter>
-                <parameter datatype="string">result_message</parameter>
+                <parameter datatype="string">resultCode</parameter>
+                <parameter datatype="string">resultMessage</parameter>
                  -->
             </output-parameters>
         </interface>
@@ -37,8 +37,8 @@
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
                 <!--
-                <parameter datatype="string">result_code</parameter>
-                <parameter datatype="string">result_message</parameter>
+                <parameter datatype="string">resultCode</parameter>
+                <parameter datatype="string">resultMessage</parameter>
                 -->
             </output-parameters>
         </interface>
@@ -47,13 +47,13 @@
         <interface name="copy" path="/v1/deploy/variable/replace">
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">conf_files</parameter>
+                <parameter datatype="string">confFiles</parameter>
                 <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">variable_list</parameter>
+                <parameter datatype="string">variableList</parameter>
             </input-parameters>
             <output-parameters>
                 <parameter datatype="string">guid</parameter>
-                 <parameter datatype="string">s3_pkg_path</parameter>
+                 <parameter datatype="string">s3PkgPath</parameter>
                  <!--
                 <parameter datatype="string">detail</parameter>
                 -->
@@ -64,12 +64,12 @@
         <interface name="run" path="/v1/deploy/script/run">
             <input-parameters>
 	        <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">end_point_type</parameter>
-                <parameter datatype="string">end_point</parameter>
+                <parameter datatype="string">endpointType</parameter>
+                <parameter datatype="string">endpoint</parameter>
                 <!-- <parameter datatype="string">accessKey</parameter>
                 <parameter datatype="string">secretKey</parameter> -->
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">run_as</parameter>
+                <parameter datatype="string">runAs</parameter>
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
@@ -168,12 +168,12 @@
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">end_point</parameter>
-                <parameter datatype="string">user_name</parameter>
-                <parameter datatype="string">destination_path</parameter>
-                <parameter datatype="string">conf_files</parameter>
-                <parameter datatype="string">variable_list</parameter>
-                <parameter datatype="string">start_script</parameter>
+                <parameter datatype="string">endpoint</parameter>
+                <parameter datatype="string">userName</parameter>
+                <parameter datatype="string">destinationPath</parameter>
+                <parameter datatype="string">confFiles</parameter>
+                <parameter datatype="string">variableList</parameter>
+                <parameter datatype="string">startScript</parameter>
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>
@@ -184,13 +184,13 @@
             <input-parameters>
                 <parameter datatype="string">guid</parameter>
                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">user_name</parameter>
-                <parameter datatype="string">end_point</parameter>
-                <parameter datatype="string">conf_files</parameter>
-                <parameter datatype="string">destination_path</parameter>
-                <parameter datatype="string">variable_list</parameter>
-                <parameter datatype="string">stop_script</parameter>
-                <parameter datatype="string">start_script</parameter>
+                <parameter datatype="string">userName</parameter>
+                <parameter datatype="string">endpoint</parameter>
+                <parameter datatype="string">confFiles</parameter>
+                <parameter datatype="string">destinationPath</parameter>
+                <parameter datatype="string">variableList</parameter>
+                <parameter datatype="string">stopScript</parameter>
+                <parameter datatype="string">startScript</parameter>
                 <parameter datatype="string">args</parameter>
             </input-parameters>
             <output-parameters>

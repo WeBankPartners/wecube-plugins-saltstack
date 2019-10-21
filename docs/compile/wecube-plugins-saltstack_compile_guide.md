@@ -1,4 +1,4 @@
-# WeCube Plugins SaltStack Compile Guide
+# Salt-Stack编译和打包指南
 
 ## 编译前准备
 1. 准备一台linux主机，为加快编译速度， 资源配置建议4核8GB或以上；
@@ -14,7 +14,7 @@
 5. 安装docker1.17.03.x以上
 	- 安装请参考[docker安装文档](https://github.com/WeBankPartners/we-cmdb/blob/master/cmdb-wiki/docs/install/docker_install_guide.md)
 
-6. 端口检查，	通过netstat命令确认主机上9099,9090,4505,4506这4个端口未被占用。
+6. 端口检查，通过netstat或ss命令确认主机上8082,9090,4505,4506这4个端口未被占用。
 
 ## 编译及打包
 1. 通过github拉取代码
@@ -32,8 +32,20 @@
 	![saltstack_dir](images/saltstack_dir.png)
 
 2. 编译和打包插件
+    1. 执行以下命令编译插件二进制:
+	```
+	make build
+	```
+	![saltstack_build](images/saltstack_build.png)
 
-	执行以下命令：
+
+	2. 执行以下命令生成docker镜像:
+	```
+	make image
+	```
+    ![saltstack_image](images/saltstack_image.png)
+
+	3. 执行以下命令制作插件包:
 	
 	```
 	make package PLUGIN_VERSION=v1.0
