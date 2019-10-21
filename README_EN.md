@@ -1,10 +1,12 @@
 # SaltStack Plugin
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![](https://img.shields.io/badge/language-golang-orang.svg)
  
 [中文](README.md) / English
 
 ## Introduction
+
 Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack, and much more.
 
 The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenario.
@@ -12,14 +14,31 @@ The SaltStack plugin encapsulates and packages the salt-api according to the spe
 As an important member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. At the same time, the SaltStack plugin provides pluggable services for third-party applications.
 
 SaltStack plugin 1.0.0 is now released, its architecture & APIs is as follows:
+
 <img src="./docs/images/architectrue_en.png" /> 
 
+## Key Features
+
+The SaltStack plugin relies on services such as salt-master, salt-api, and httpd. Based on these services, it encapsulates a layer of APIs for system management and application deployment.
+
+The user can perform the following operations through the APIs provided by the plugin:
+
+- Salt-minion installation: After the host installs the salt-minion, all subsequent operations of the host can be ordered from the salt-master;
+- File copy: Download files from the S3 server and deploy them to the specified directory of the specified host. If there is a compressed package, it also provides decompression capability;
+- Variable replacement: Replace variables in the configuration files of installation package and send the new package to S3 server;
+- Script running: User can choose the specified host to exeute bash or python scripts stored in the local or S3 server;
+- User management: You can new or remove user on the specified host;
+- Database management: Excute the sql file stored in S3 server on the specified mysql database instance;
+- Disk management: Check whether the specified host has an unformatted data disk. Format the data disk on the specified host and set it to automatically hang in a host directory;
+- Application deployment: Download the application installation package from the specified S3 server and excute the corresponding script to start or stop application.
+
 ## How to build development environment
+
 Please refer to the [SaltStack Plugin Development Guide](docs/compile/wecube-plugins-saltstack_build_dev_env_en.md) on how to build development environment.
 
 ## Build and Run Docker Image
 
-Before execute the following command, please make sure docker command is installed on the centos host. Click here to know [How to Install Docker](https://docs.docker.com/install/linux/docker-ce/centos/)
+Before execute the following command, please make sure docker command is installed on the centos host. Click here to know [How to Install Docker](https://docs.docker.com/install/linux/docker-ce/centos/).
 
 1. Git clone source code 
 
@@ -61,8 +80,8 @@ salt-minion has been installed on host：10.0.0.14 when you saw the message belo
 
 ```
 {
-    "result_code": "0",
-    "result_message": "success",
+    "resultCode": "0",
+    "resultMessage": "success",
     "results": {
         "outputs": [
             {
@@ -71,13 +90,11 @@ salt-minion has been installed on host：10.0.0.14 when you saw the message belo
         ]
     }
 }
-
 ```
-
 
 ## Build Plugin Package for Wecube
 
-If you want to build a plugin package to work with Wecube,please execute the following command. You can replace variable {$package_version} with the version number you want.
+If you want to build a plugin package to work with Wecube, please execute the following command. You can replace variable {$package_version} with the version number you want.
 
 ```
 make package PLUGIN_VERSION=v{$package_version}
@@ -85,17 +102,20 @@ make package PLUGIN_VERSION=v{$package_version}
 
 ![saltstack_zip](docs/compile/images/saltstack_zip.png)
 
+Learn more about the [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide_en.md).
 
 ## API Reference
+
 Please refer to the [SaltStack API Guide](docs/api/wecube_plugins_saltstack_api_guide_en.md)
 
-
 ## License
-SaltStack Plugin is licensed under the Apache License Version 2.0, please refer to the [license](LICENSE) for details.
+
+SaltStack Plugin is licensed under the Apache License Version 2.0, please refer to the [license](http://www.apache.org/licenses/LICENSE-2.0) for details.
 
 
 ## Community
-- For quick response, please [raise an issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose) to us, or you can also scan the following QR code to join our community, we will provide feedback as quickly as we can.
+
+- For quick response, please [open an issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose) to us, or you can also scan the following QR code to join our community, we will provide feedback as quickly as we can.
 
   <div align="left">
   <img src="docs/images/wecube_qr_code.png"  height="200" width="200">
