@@ -19,7 +19,7 @@ The SaltStack plugin relies on services such as salt-master, salt-api, and httpd
 The user can perform the following operations through the APIs provided by the plugin:
 
 - Salt-minion installation: After the host installs the salt-minion, all subsequent operations of the host can be ordered from the salt-master;
-- File distribution: Download files from the S3 server and deploy them to the specified directory of the specified host. If there is a compressed package, it also provides decompression capability;
+- File copy: Download files from the S3 server and deploy them to the specified directory of the specified host. If there is a compressed package, it also provides decompression capability;
 - Variable replacement: Replace variables in the configuration files of installation package and send the new package to S3 server;
 - Script running: User can choose the specified host to exeute bash or python scripts stored in the local or S3 server;
 - User management: You can new or remove user on the specified host;
@@ -29,7 +29,7 @@ The user can perform the following operations through the APIs provided by the p
 
 The architecture and API are shown below.
 
-<img src="./docs/images/architectrue.png" />
+<img src="./docs/images/architectrue_en.png" />
 
 ## Build Development Environment
 
@@ -83,11 +83,11 @@ Please see the following document [SaltStack Plugin API Guide](docs/api/wecube_p
 
 ## License
 
-SaltStack plugin is available under the Apache 2 license. Learn more about [license](LICENSE).
+SaltStack plugin is available under the Apache 2 license. please refer to the [license](LICENSE) for details.
 
 ## Community
 
-- If you want the fastest response, please open an [Issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose) or scan the QR code below and we will give feedback as soon as possible.
+- If you want the fastest response, please [open an issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose) to us or you can also scan the following QR code to join our community, we will provide feedback as quickly as we can.
 
     <div align="left">
 	<img src="docs/images/wecube_qr_code.png"  height="200" width="200">
