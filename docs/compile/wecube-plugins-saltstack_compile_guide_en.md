@@ -13,10 +13,10 @@
 	```
  	yum install -y git
  	```
-	- Manual installation, please refer to [git installation documentation](https://github.com/WeBankPartners/we-cmdb/blob/master/cmdb-wiki/docs/install/git_install_guide.md)
+	- Manual installation, please refer to [git installation documentation](https://github.com/WeBankPartners/we-cmdb/blob/master/cmdb-wiki/docs/install/git_install_guide_en.md)
 
 5. Installed docker1.17.03.x or higher
-    - Please refer to [docker installation documentation](https://github.com/WeBankPartners/we-cmdb/blob/master/cmdb-wiki/docs/install/docker_install_guide.md)
+    - Please refer to [docker installation documentation](https://github.com/WeBankPartners/we-cmdb/blob/master/cmdb-wiki/docs/install/docker_install_guide_en.md)
 
 6. Please use netstat or ss command to confirm the host ports 8082, 9090, 4505, 4506 are not occupied.
 
