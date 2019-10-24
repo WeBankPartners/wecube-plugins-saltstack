@@ -7,30 +7,30 @@
 
 ## Introduction
 
-Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack, and much more.
+Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack and etc.
 
-The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenario.
+The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenarios.
 
-As an important member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. At the same time, the SaltStack plugin provides pluggable services for third-party applications.
+As an important member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. In the meanwhile, the SaltStack plugin can also provide pluggable services for third-party applications.
 
 SaltStack plugin 1.0.0 is now released, its architecture & APIs is as follows:
 
-<img src="./docs/images/architectrue_en.png" /> 
+<img src="./docs/images/architecture_en.png" /> 
 
 ## Key Features
 
 The SaltStack plugin relies on services such as salt-master, salt-api, and httpd. Based on these services, it encapsulates a layer of APIs for system management and application deployment.
 
-The user can perform the following operations through the APIs provided by the plugin:
+User can perform the following operations through the APIs provided by the plugin:
 
-- Salt-minion installation: After the host installs the salt-minion, all subsequent operations of the host can be ordered from the salt-master;
+- Salt-minion installation: After the host installs the salt-minion, all subsequent operations on the host can be triggered from the salt-master;
 - File copy: Download files from the S3 server and deploy them to the specified directory of the specified host. If there is a compressed package, it also provides decompression capability;
 - Variable replacement: Replace variables in the configuration files of installation package and send the new package to S3 server;
-- Script running: User can choose the specified host to exeute bash or python scripts stored in the local or S3 server;
-- User management: You can new or remove user on the specified host;
-- Database management: Excute the sql file stored in S3 server on the specified mysql database instance;
-- Disk management: Check whether the specified host has an unformatted data disk. Format the data disk on the specified host and set it to automatically hang in a host directory;
-- Application deployment: Download the application installation package from the specified S3 server and excute the corresponding script to start or stop application.
+- Script execution: User can choose a host to execute bash or python scripts which are stored in the local or S3 server;
+- User management: You can create or remove user on a specified host;
+- Database management: Excute the sql file stored in S3 server on a specified mysql database instance;
+- Disk management: Check whether a specified host has an unformatted data disk. Format the data disk on the specified host and set it as automatically mounted in a host directory;
+- Application deployment: Download the application installation package from the specified S3 server and excute the corresponding script to start or stop the application.
 
 ## How to build development environment
 
@@ -102,7 +102,7 @@ make package PLUGIN_VERSION=v{$package_version}
 
 ![saltstack_zip](docs/compile/images/saltstack_zip.png)
 
-Learn more about the [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide_en.md).
+Read more in [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide_en.md).
 
 ## API Reference
 

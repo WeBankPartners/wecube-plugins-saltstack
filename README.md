@@ -29,7 +29,7 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 
 架构及API见下图：
 
-<img src="./docs/images/architectrue.png" />
+<img src="./docs/images/architecture.png" />
 
 ## 开发环境搭建
 
