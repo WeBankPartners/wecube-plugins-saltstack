@@ -7,19 +7,19 @@
 
 ## Introduction
 
-Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack and etc.
+Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack, etc.
 
 The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenarios.
 
-As an important member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. In the meanwhile, the SaltStack plugin can also provide pluggable services for third-party applications.
+As an essential member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. In the meanwhile, the SaltStack plugin can also offer pluggable services for third-party applications.
 
-SaltStack plugin 1.0.0 is now released, its architecture & APIs is as follows:
+SaltStack plugin 1.0.0 is now released, its architecture & APIs are as follows:
 
 <img src="./docs/images/architecture_en.png" /> 
 
 ## Key Features
 
-The SaltStack plugin relies on services such as salt-master, salt-api, and httpd. Based on these services, it encapsulates a layer of APIs for system management and application deployment.
+The SaltStack plugin relies on services such as `salt-master`, `salt-api`, and `httpd`. Based on these services, it encapsulates a layer of APIs for system management and application deployment.
 
 User can perform the following operations through the APIs provided by the plugin:
 
@@ -38,11 +38,11 @@ Please refer to the [SaltStack Plugin Development Guide](docs/compile/wecube-plu
 
 ## Build and Run Docker Image
 
-Before execute the following command, please make sure docker command is installed on the centos host. Click here to know [How to Install Docker](https://docs.docker.com/install/linux/docker-ce/centos/).
+Before executing the following command, please make sure docker command is installed on the CentOS host. Click here to know [How to Install Docker](https://docs.docker.com/install/linux/docker-ce/centos/).
 
 1. Git clone source code 
 
-```
+```shell script
 git clone https://github.com/WeBankPartners/wecube-plugins-saltstack.git
 ```
 
@@ -50,7 +50,7 @@ git clone https://github.com/WeBankPartners/wecube-plugins-saltstack.git
 
 2. Build plugin binary
 
-```
+```shell script
 make build 
 ```
 
@@ -58,27 +58,27 @@ make build
 
 3. Build plugin docker image, the docker image tag is github's commit number.
 
-```
+```shell script
 make image
 ```
 
 ![saltstack_image](docs/compile/images/saltstack_image.png)
 
-4. Run plugin container. Please replace variable {$HOST_IP} with your host ip, replace variable {$IMAGE_TAG} with your image tag, and execute the following command.
+4. Run plugin container. Please replace variable `{$HOST_IP}` with your host ip, replace variable `{$IMAGE_TAG}` with your image tag, and execute the following command.
 
-```
+```shell script
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
 ```
 
-5. after running the SaltStack Plugin， use the following curl command to check if SaltStack plugin works fine. 
+5. after running the SaltStack Plugin, use the following curl command to check if SaltStack plugin works fine. 
 
-```
+```shell script
 curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: no-cache"  -H "content-type: application/json" -d "{\"inputs\":[{\"guid\":\"1234\",\"seed\":\"abc12345\",\"host\":\"10.0.0.14\",\"password\": \"251f54c3f5be75e171ae1eb516dbacd9\"}]}"
 ```
 
-salt-minion has been installed on host：10.0.0.14 when you saw the message below:
+salt-minion has been installed on host：`10.0.0.14` when you saw the message below:
 
-```
+```json
 {
     "resultCode": "0",
     "resultMessage": "success",
@@ -94,9 +94,9 @@ salt-minion has been installed on host：10.0.0.14 when you saw the message belo
 
 ## Build Plugin Package for Wecube
 
-If you want to build a plugin package to work with Wecube, please execute the following command. You can replace variable {$package_version} with the version number you want.
+If you want to build a plugin package to work with Wecube, please execute the following command. You can replace variable `{$package_version}` with the version number you want.
 
-```
+```shell script
 make package PLUGIN_VERSION=v{$package_version}
 ```
 
