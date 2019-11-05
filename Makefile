@@ -21,6 +21,9 @@ archive:
 	cp $(APP_HOME)/wecube-plugins-saltstack target
 	cd target && tar cvfz $(PKG_NAME) *
 
+fmt:
+	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) -w /go/src/github.com/WeBankPartners/$(project_name)/  golang:1.12.5 go fmt ./...
+
 clean:
 	rm -rf $(project_name)
 	rm -rf  ./*.tar
