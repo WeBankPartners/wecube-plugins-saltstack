@@ -3,6 +3,8 @@ package plugins
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
@@ -10,14 +12,13 @@ import (
 	"net/http"
 	"time"
 	"unicode/utf8"
-	"encoding/json"
 )
 
 const (
 	WEB_CONSOLE_DEFAULT_USER_NAME = "root"
-	WEB_CONSOLE_DEFAULT_PORT      =22
-	WEB_CONSOLE_DEFAULT_COLS      =800
-	WEB_CONSOLE_DEFUALT_ROWS      =600
+	WEB_CONSOLE_DEFAULT_PORT      = 22
+	WEB_CONSOLE_DEFAULT_COLS      = 800
+	WEB_CONSOLE_DEFUALT_ROWS      = 600
 )
 
 var upgrader = websocket.Upgrader{
@@ -84,26 +85,25 @@ type RunWebConsoleParam struct {
 	UserName  string `json:"user_name,omitempty"`
 	Seed      string `json:"seed,omitempty"`
 	Password  string `json:"password,omitempty"`
-	Rows      uint   `json:"rows,omitempty"`
-	Columns   uint   `json:"columns,omitempty"`
+	Rows      uint32 `json:"rows,omitempty"`
+	Columns   uint32 `json:"columns,omitempty"`
 }
-
 
 type RunWebConsoleErr struct {
-	ResultCode string      `json:"resultCode"`
-	ResultMsg  string      `json:"resultMessage"`
+	ResultCode string `json:"resultCode"`
+	ResultMsg  string `json:"resultMessage"`
 }
 
-func getRunWebConsoleBytes(err error)([]bytes){
-	consoleErr:=RunWebConsoleErr{
-		ResultCode :-1,
-		ResultMsg:err.Error(),
+func getRunWebConsoleBytes(err error) []byte {
+	consoleErr := RunWebConsoleErr{
+		ResultCode: "-1",
+		ResultMsg:  err.Error(),
 	}
-	b, _:= json.Marshal(consoleErr)
-	return b 
+	b, _ := json.Marshal(consoleErr)
+	return b
 }
 
-func checkWebConsoleParam(param *RunWebConsoleParam)error {
+func checkWebConsoleParam(param *RunWebConsoleParam) error {
 	if param.HostIp == "" {
 		return errors.New("host_ip is empty")
 	}
@@ -112,10 +112,10 @@ func checkWebConsoleParam(param *RunWebConsoleParam)error {
 	}
 
 	if param.ShellPort == 0 {
-		param.ShellPort =WEB_CONSOLE_DEFAULT_PORT 
+		param.ShellPort = WEB_CONSOLE_DEFAULT_PORT
 	}
 
-	if param.UserName ==""{
+	if param.UserName == "" {
 		param.UserName = WEB_CONSOLE_DEFAULT_USER_NAME
 	}
 
@@ -130,18 +130,18 @@ func checkWebConsoleParam(param *RunWebConsoleParam)error {
 		param.Rows = WEB_CONSOLE_DEFUALT_ROWS
 	}
 	if param.Columns == 0 {
-		param.Columns == WEB_CONSOLE_DEFUALT_COLS
+		param.Columns = WEB_CONSOLE_DEFAULT_COLS
 	}
 
-	return nil 
+	return nil
 }
 
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
-	var err error 
+	var err error
 	var runWebConsoleParam RunWebConsoleParam
 	var password string
 
-	defer func(){
+	defer func() {
 		if err != nil {
 			w.Header().Set("content-type", "application/json")
 			w.Write(getRunWebConsoleBytes(err))
@@ -149,13 +149,13 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	}()
 
-	if err = UnmarshalJson(r.Body,&runWebConsoleParam);err!= nil {
-		return 
+	if err = UnmarshalJson(r.Body, &runWebConsoleParam); err != nil {
+		return
 	}
-	if err = checkWebConsoleParam(&runWebConsoleParam);err != nil {
-		return 
+	if err = checkWebConsoleParam(&runWebConsoleParam); err != nil {
+		return
 	}
-	
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Printf("upgrader failed err=%v\n", err)
@@ -166,13 +166,13 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	md5sum := Md5Encode(runWebConsoleParam.Guid + runWebConsoleParam.Seed)
 	password, err = AesDecode(md5sum[0:16], runWebConsoleParam.Password)
 	if err != nil {
-		return 
+		return
 	}
 
 	sh := &ssh{
 		user: runWebConsoleParam.UserName,
 		pwd:  password,
-		addr: fmt.Sprintf("%s:%v",runWebConsoleParam.HostIp,runWebConsoleParam.ShellPort),
+		addr: fmt.Sprintf("%s:%v", runWebConsoleParam.HostIp, runWebConsoleParam.ShellPort),
 	}
 
 	sh, err = sh.Connect()
@@ -212,10 +212,10 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := ptyRequestMsg{
 		Term:     "xterm",
-		Columns:  param.Columns ,
-		Rows:     param.Rows,
-		Width:    param.Columns * 8,
-		Height:   param.Rows * 8,
+		Columns:  runWebConsoleParam.Columns,
+		Rows:     runWebConsoleParam.Rows,
+		Width:    runWebConsoleParam.Columns * 8,
+		Height:   runWebConsoleParam.Rows * 8,
 		Modelist: string(modeList),
 	}
 
