@@ -49,24 +49,8 @@ func initLogger() {
 
 func initRouter() {
 	//path should be defined as "/[version]/[pacakge]/[plugin]/[action]"
-	http.HandleFunc("/v1/deploy/file/copy", routeDispatcher)
-	http.HandleFunc("/v1/deploy/salt-api/call", routeDispatcher)
-	http.HandleFunc("/v1/deploy/agent/install", routeDispatcher)
-	http.HandleFunc("/v1/deploy/variable/replace", routeDispatcher)
-	http.HandleFunc("/v1/deploy/script/run", routeDispatcher)
-	http.HandleFunc("/v1/deploy/user/add", routeDispatcher)
-	http.HandleFunc("/v1/deploy/user/remove", routeDispatcher)
-	http.HandleFunc("/v1/deploy/database/runScript", routeDispatcher)
-	http.HandleFunc("/v1/deploy/released-package/listCurrentDir", routeDispatcher)
-	http.HandleFunc("/v1/deploy/released-package/getConfigFileKey", routeDispatcher)
-	http.HandleFunc("/v1/deploy/disk/getUnformatedDisk", routeDispatcher)
-	http.HandleFunc("/v1/deploy/disk/formatAndMountDisk", routeDispatcher)
-	http.HandleFunc("/v1/deploy/text-processor/search", routeDispatcher)
-	http.HandleFunc("/v1/deploy/text-processor/getContext", routeDispatcher)
-	http.HandleFunc("/v1/deploy/log/search", routeDispatcher)
-	http.HandleFunc("/v1/deploy/log/searchdetail", routeDispatcher)
-	http.HandleFunc("/v1/deploy/apply-deployment/new", routeDispatcher)
-	http.HandleFunc("/v1/deploy/apply-deployment/update", routeDispatcher)
+	http.HandleFunc("/v1/deploy/", routeDispatcher)
+	http.HandleFunc("/v1/deploy/webconsole",plugins.WebConsoleHandler)
 }
 
 func routeDispatcher(w http.ResponseWriter, r *http.Request) {
