@@ -56,6 +56,8 @@ func init() {
 	registerPlugin("text-processor", new(TextProcessorPlugin))
 	registerPlugin("log", new(LogPlugin))
 	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
+	registerPlugin("web-console", new(WebConsolePlugin))
+
 }
 
 type PluginRequest struct {
