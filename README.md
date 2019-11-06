@@ -1,69 +1,84 @@
-# SaltStack插件
+# SaltStack Plugin
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![](https://img.shields.io/badge/language-golang-orang.svg)
  
-中文 / [English](README_EN.md)
+English / [中文](README_CN.md)
 
-## 简介
+## Introduction
 
-SaltStack 是一个服务器基础架构集中化管理平台，具备配置管理、远程执行、监控等功能。SaltStack 基于Python语言实现，结合轻量级消息队列（ZeroMQ）与Python第三方模块（Pyzmq、PyCrypto、Pyjinjia2、python-msgpack和PyYAML等）构建。
+Salt is a new approach to infrastructure management built on a dynamic communication bus. Salt can be used for data-driven orchestration, remote execution for any infrastructure, configuration management for any app stack, etc.
 
-SaltStack插件根据不同场景的具体需求，对salt-api进行封装以及组合封装，降低了使用SaltStack的难度，并提供了更贴近业务使用场景的API接口。
+The SaltStack plugin encapsulates and packages the salt-api according to the specific needs of different scenarios, which reduces the difficulty of using SaltStack. It also provides an API interface that is closer to the business usage scenarios.
 
-SaltStack插件作为WeCube插件群里重要的一员，为WeCube提供了管理主机集群的能力。同时，SaltStack插件可以独立于WeCube为第三方应用提供可插拔式的服务。
+As an essential member of the WeCube plugin group, the SaltStack plugin provides WeCube with the ability to manage infrastructure resources. In the meanwhile, the SaltStack plugin can also offer pluggable services for third-party applications.
 
-## 主要功能
+SaltStack plugin 1.0.0 is now released, its architecture & APIs are as follows:
 
-SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务封装了一层对主机进行系统管理和应用部署的API。
+<img src="./docs/images/architecture_en.png" /> 
 
-用户可通过该插件提供的API执行如下操作:
+## Key Features
 
-- salt-minion安装：主机安装salt-minion后,后续所有对该主机的操作都可从salt-master发起；
-- 文件分发：从S3对象存储中下载文件并部署到指定主机的指定目录，如果是压缩包还提供解压能力；
-- 变量替换操作：将安装包指定目录下的配置文件进行变量替换，并重新生成替换后的安装包放到S3对象存储；
-- 脚本执行：可指定用户在指定主机上执行主机本地或者S3对象存储上的bash和python脚本；
-- 用户管理操作：可在指定主机上新增用户、删除用户；
-- 数据库操作：在指定的mysql数据库实例上执行S3对象存储上的sql文件；
-- 数据盘操作：检查指定主机是否有未格式化的数据盘，可对指定主机上的数据盘进行格式化并设置自动挂在到某个主机目录；
-- 应用部署：可指定主机下发S3上对象存储上的应用安装包，并执行安装包内的指定脚本用来启动或者停止应用。
+The SaltStack plugin relies on services such as `salt-master`, `salt-api`, and `httpd`. Based on these services, it encapsulates a layer of APIs for system management and application deployment.
 
-架构及API见下图：
+User can perform the following operations through the APIs provided by the plugin:
 
-<img src="./docs/images/architecture.png" />
+- Salt-minion installation: After the host installs the salt-minion, all subsequent operations on the host can be triggered from the salt-master;
+- File copy: Download files from the S3 server and deploy them to the specified directory of the specified host. If there is a compressed package, it also provides decompression capability;
+- Variable replacement: Replace variables in the configuration files of installation package and send the new package to S3 server;
+- Script execution: User can choose a host to execute bash or python scripts which are stored in the local or S3 server;
+- User management: You can create or remove user on a specified host;
+- Database management: Excute the sql file stored in S3 server on a specified mysql database instance;
+- Disk management: Check whether a specified host has an unformatted data disk. Format the data disk on the specified host and set it as automatically mounted in a host directory;
+- Application deployment: Download the application installation package from the specified S3 server and excute the corresponding script to start or stop the application.
 
-## 开发环境搭建
+## How to build development environment
 
-详情请查看 [SaltStack插件开发环境搭建指引](docs/compile/wecube-plugins-saltstack_build_dev_env.md)
+Please refer to the [SaltStack Plugin Development Guide](docs/compile/wecube-plugins-saltstack_build_dev_env_en.md) on how to build development environment.
 
-**注意**: SaltStack插件编译完毕后，运行二进制前必须确认本机已安装salt-master、salt-api、mysql client等组件，建议在linux主机上使用docker镜像的方式运行SaltStack插件，因为docker镜像中已默认安装salt-api等组件。
+## Build and Run Docker Image
 
-## docker镜像和插件包制作
+Before executing the following command, please make sure docker command is installed on the CentOS host. Click here to know [How to Install Docker](https://docs.docker.com/install/linux/docker-ce/centos/).
 
-详情请查看 [SaltStack插件docker镜像包和插件包制作指引](docs/compile/wecube-plugins-saltstack_compile_guide.md)
+1. Git clone source code 
 
-## 运行插件
-
-执行以下命令运行SaltStack插件容器,其中变量`{$HOST_IP}`需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量`{$TAG_NUM}`对应代码最后一次提交的commit号。
-
-插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
-
+```shell script
+git clone https://github.com/WeBankPartners/wecube-plugins-saltstack.git
 ```
+
+![saltstack_dir](docs/compile/images/saltstack_dir.png)
+
+2. Build plugin binary
+
+```shell script
+make build 
+```
+
+![saltstack_build](docs/compile/images/saltstack_build.png)
+
+3. Build plugin docker image, the docker image tag is github's commit number.
+
+```shell script
+make image
+```
+
+![saltstack_image](docs/compile/images/saltstack_image.png)
+
+4. Run plugin container. Please replace variable `{$HOST_IP}` with your host ip, replace variable `{$IMAGE_TAG}` with your image tag, and execute the following command.
+
+```shell script
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
 ```
 
-**插件日志路径**:/home/app/wecube-plugins-saltstack/logs/wecube-plugins-saltstack.log
+5. after running the SaltStack Plugin, use the following curl command to check if SaltStack plugin works fine. 
 
-使用容器的方式运行插件后，在另外一台linux主机上安装salt-minion来测试。
-
-在SaltStack插件所在的机器上运行如下curl命令，其中json参数host为需要安装salt-minion的主机ip，password为加密后的密码，本例中对应的原始密码为qq123456，插件会根据seed和guid生成一个key来解密输入的password获取原始密码。
-
-```
+```shell script
 curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: no-cache"  -H "content-type: application/json" -d "{\"inputs\":[{\"guid\":\"1234\",\"seed\":\"abc12345\",\"host\":\"10.0.0.14\",\"password\": \"251f54c3f5be75e171ae1eb516dbacd9\"}]}"
 ```
 
-如看到以下返回，表示salt-minion安装成功
+salt-minion has been installed on host：`10.0.0.14` when you saw the message below:
 
-```
+```json
 {
     "resultCode": "0",
     "resultMessage": "success",
@@ -77,21 +92,33 @@ curl -X POST  http://127.0.0.1:8082/v1/deploy/agent/install -H "cache-control: n
 }
 ```
 
-## API使用说明
+## Build Plugin Package for Wecube
 
-关于SaltStack插件的API说明，请查看以下文档
-[SaltStack插件API手册](docs/api/wecube_plugins_saltstack_api_guide.md)
+If you want to build a plugin package to work with Wecube, please execute the following command. You can replace variable `{$package_version}` with the version number you want.
+
+```shell script
+make package PLUGIN_VERSION=v{$package_version}
+```
+
+![saltstack_zip](docs/compile/images/saltstack_zip.png)
+
+Read more in [Build SaltStack Plugin Docker Image Guide](docs/compile/wecube-plugins-saltstack_compile_guide_en.md).
+
+## API Reference
+
+Please refer to the [SaltStack API Guide](docs/api/wecube_plugins_saltstack_api_guide_en.md)
 
 ## License
 
-SaltStack插件是基于 Apache License 2.0 协议，详情请参考[license](http://www.apache.org/licenses/LICENSE-2.0)
+SaltStack Plugin is licensed under the Apache License Version 2.0, please refer to the [license](http://www.apache.org/licenses/LICENSE-2.0) for details.
 
-## 社区
 
-- 如果您想得到最快的响应，请给我们提[Issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose)或扫描下面的二维码，我们会第一时间反馈。
+## Community
 
-	<div align="left">
-	<img src="docs/images/wecube_qr_code.png"  height="200" width="200">
-	</div>
+- For quick response, please [open an issue](https://github.com/WeBankPartners/wecube-plugins-saltstack/issues/new/choose) to us, or you can also scan the following QR code to join our community, we will provide feedback as quickly as we can.
 
-- 联系我们：fintech@webank.com
+  <div align="left">
+  <img src="docs/images/wecube_qr_code.png"  height="200" width="200">
+  </div>
+
+- Contact us: fintech@webank.com
