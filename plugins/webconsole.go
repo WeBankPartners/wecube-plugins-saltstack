@@ -3,29 +3,29 @@ package plugins
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
 	"net"
 	"net/http"
+	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
-	"encoding/json"
-	"sync"
-	"strconv"
 )
 
 const (
 	WEB_CONSOLE_DEFAULT_USER_NAME = "root"
-	WEB_CONSOLE_DEFAULT_PORT      =22
-	WEB_CONSOLE_DEFAULT_COLS      =800
-	WEB_CONSOLE_DEFUALT_ROWS      =600
+	WEB_CONSOLE_DEFAULT_PORT      = 22
+	WEB_CONSOLE_DEFAULT_COLS      = 800
+	WEB_CONSOLE_DEFUALT_ROWS      = 600
 )
 
-
 var (
-	sshTokenMap=make(map[string]*ssh)
-	tokenMutex sync.Mutex
+	sshTokenMap          = make(map[string]*ssh)
+	webConsoleTokenMutex sync.Mutex
 )
 
 var upgrader = websocket.Upgrader{
@@ -86,32 +86,30 @@ type ptyRequestMsg struct {
 }
 
 type RunWebConsoleParam struct {
-	Token     string `json:"token,omitempty"`
-	Rows      uint   `json:"rows,omitempty"`
-	Columns   uint   `json:"columns,omitempty"`
+	Token   string `json:"token,omitempty"`
+	Rows    uint32 `json:"rows,omitempty"`
+	Columns uint32 `json:"columns,omitempty"`
 }
 
 type RunWebConsoleErr struct {
-	ResultCode string      `json:"resultCode"`
-	ResultMsg  string      `json:"resultMessage"`
+	ResultCode string `json:"resultCode"`
+	ResultMsg  string `json:"resultMessage"`
 }
 
-func getRunWebConsoleBytes(err error)([]bytes){
-	consoleErr:=RunWebConsoleErr{
-		ResultCode :-1,
-		ResultMsg:err.Error(),
+func getRunWebConsoleBytes(err error) []byte {
+	consoleErr := RunWebConsoleErr{
+		ResultCode: "-1",
+		ResultMsg:  err.Error(),
 	}
-	b, _:= json.Marshal(consoleErr)
-	return b 
+	b, _ := json.Marshal(consoleErr)
+	return b
 }
-
 
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
-	var err error 
+	var err error
 	var param RunWebConsoleParam
-	var password string
 
-	defer func(){
+	defer func() {
 		if err != nil {
 			w.Header().Set("content-type", "application/json")
 			w.Write(getRunWebConsoleBytes(err))
@@ -119,12 +117,12 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	}()
 
-	if err = UnmarshalJson(r.Body,&param);err!= nil {
-		return 
+	if err = UnmarshalJson(r.Body, &param); err != nil {
+		return
 	}
-	ssh,err:=getSshInfoByTimeStamp(param.Token)
+	sh, err := getSshInfoByTimeStamp(param.Token)
 	if err != nil {
-		return 
+		return
 	}
 
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -138,12 +136,18 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("ssh connect failed,err=%v\n", err)
 		return
 	}
+	defer func() {
+		sh.client.Close()
+	}()
 
 	channel, incomingRequests, err := sh.client.Conn.OpenChannel("session", nil)
 	if err != nil {
 		fmt.Printf("ssh open channel failed,err=%v\n", err)
 		return
 	}
+	defer func() {
+		channel.Close()
+	}()
 
 	go func() {
 		for req := range incomingRequests {
@@ -170,7 +174,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := ptyRequestMsg{
 		Term:     "xterm",
-		Columns:  param.Columns ,
+		Columns:  param.Columns,
 		Rows:     param.Rows,
 		Width:    param.Columns * 8,
 		Height:   param.Rows * 8,
@@ -204,7 +208,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if m == websocket.TextMessage {
-				fmt.Printf("command=%v\n",p)
+				fmt.Printf("command=%v\n", p)
 				if _, err := channel.Write(p); nil != err {
 					fmt.Printf("channel.Write meet err=%v\n", err)
 					return
@@ -267,7 +271,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 //-----------get web console url plugin--------------------//
-var WebConsolePluginActions = make(map[string]Action)
+var WebConsoleActions = make(map[string]Action)
 
 func init() {
 	WebConsoleActions["get_webconsole_url"] = new(GetWebConsoleUrlAction)
@@ -290,11 +294,11 @@ type WebConsoleUrlInputs struct {
 
 type WebConsoleUrlInput struct {
 	Guid      string `json:"guid,omitempty"`
-    HostIp    string `json:"host_ip,omitempty"`
-    ShellPort uint   `json:"shell_port,omitempty"`
-    UserName  string `json:"user_name,omitempty"`
-    Seed      string `json:"seed,omitempty"`
-    Password  string `json:"password,omitempty"`
+	HostIp    string `json:"host_ip,omitempty"`
+	ShellPort uint   `json:"shell_port,omitempty"`
+	UserName  string `json:"user_name,omitempty"`
+	Seed      string `json:"seed,omitempty"`
+	Password  string `json:"password,omitempty"`
 }
 
 type WebConsoleOutputs struct {
@@ -302,8 +306,8 @@ type WebConsoleOutputs struct {
 }
 
 type WebConsoleOutput struct {
-	Guid   string `json:"guid,omitempty"`
-	Token  string `json:"token,omitempty"`
+	Guid        string `json:"guid,omitempty"`
+	Token       string `json:"token,omitempty"`
 	ReDirectUrl string `json:"redirect_url,omitempty"`
 }
 
@@ -324,7 +328,7 @@ func (action *GetWebConsoleUrlAction) CheckParam(input interface{}) error {
 	if !ok {
 		return fmt.Errorf("AddUserAction:input type=%T not right", input)
 	}
-	for _,input:=range inputs {
+	for _, input := range inputs.Inputs {
 		if input.HostIp == "" {
 			return errors.New("host_ip is empty")
 		}
@@ -335,71 +339,72 @@ func (action *GetWebConsoleUrlAction) CheckParam(input interface{}) error {
 			return errors.New("password is empty")
 		}
 	}
-	return nil 
+	return nil
 }
 
 type SshConnectResult struct {
-	Err         error
-	Input *WebConsoleUrlInput
+	Err      error
+	Input    *WebConsoleUrlInput
 	Password string
 }
 
-func trySshConnect(input *WebConsoleUrlInput, password string,ch chan SshConnectResult){
-	result:=SshConnectResult{
-		Input:input,
-		Password:password,
+func trySshConnect(input *WebConsoleUrlInput, password string, ch chan SshConnectResult) {
+	result := SshConnectResult{
+		Input:    input,
+		Password: password,
 	}
 
 	sh := &ssh{
 		user: input.UserName,
 		pwd:  password,
-		addr: fmt.Sprintf("%s:%v",input.HostIp,input.ShellPort),
+		addr: fmt.Sprintf("%s:%v", input.HostIp, input.ShellPort),
 	}
 
-	sh, err = sh.Connect()
+	sh, err := sh.Connect()
 	if err != nil {
-		result.Err =err
-	}else {
+		result.Err = err
+	} else {
 		sh.client.Close()
 	}
 
 	ch <- result
 }
-func getSshInfoByTimeStamp(timeStamp string)(ssh,error)
-   tokenMutex.Lock()
-   defer tokenMutex.Unlock()
-   ssh,ok:=sshTokenMap[timeStamp]
-   if !ok {
-	   return ssh,fmt.Errorf("can't found token in map")
-   }
-   return ssh ,nil 
+
+func getSshInfoByTimeStamp(timeStamp string) (*ssh, error) {
+	webConsoleTokenMutex.Lock()
+	defer webConsoleTokenMutex.Unlock()
+	sh, ok := sshTokenMap[timeStamp]
+	if !ok {
+		return sh, fmt.Errorf("can't found token in map")
+	}
+	return sh, nil
 }
 
-func addSshInfoToMap(token string ,password string,input *WebConsoleUrlInput){
-	tokenMutex.Lock()
-	defer tokenMutex.Unlock()
-	delKeys:=[]string
+func addSshInfoToMap(token string, password string, input *WebConsoleUrlInput) {
+	webConsoleTokenMutex.Lock()
+	defer webConsoleTokenMutex.Unlock()
+	delKeys := []string{}
 
-	for timestamp,sshInfo:=range sshTokenMap{
-		k,_:=strconv.ParseInt(timestamp,10,64)
-		tm:=time.Unix(0,k)
-		passedTime:=time.Since(tm)
-		if passedTime.Minutes() >5 {
-			delKeys=append(delKeys,timestamp)
+	for timestamp, _ := range sshTokenMap {
+		k, _ := strconv.ParseInt(timestamp, 10, 64)
+		tm := time.Unix(0, k)
+		passedTime := time.Since(tm)
+		if passedTime.Minutes() > 5 {
+			delKeys = append(delKeys, timestamp)
 		}
 	}
 
-	for _,key:=range delKeys{
-		delete(sshTokenMap,key)
+	for _, key := range delKeys {
+		delete(sshTokenMap, key)
 	}
 
 	sh := &ssh{
 		user: input.UserName,
 		pwd:  password,
-		addr: fmt.Sprintf("%s:%v",input.HostIp,input.ShellPort),
+		addr: fmt.Sprintf("%s:%v", input.HostIp, input.ShellPort),
 	}
 
-	sshTokenMap[token]=&sh
+	sshTokenMap[token] = sh
 }
 
 func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error) {
@@ -407,40 +412,38 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 	chResult := make(chan SshConnectResult)
 	outputs := WebConsoleOutputs{}
 
-	for i:=0;i<len(inputs);i++{
-		if inputs[i].ShellPort == 0 {
-			inputs[i].ShellPort = WEB_CONSOLE_DEFAULT_PORT
+	for i := 0; i < len(inputs.Inputs); i++ {
+		if inputs.Inputs[i].ShellPort == 0 {
+			inputs.Inputs[i].ShellPort = WEB_CONSOLE_DEFAULT_PORT
 		}
-		if inputs[i].UserName == "" {
-			inputs[i].UserName = WEB_CONSOLE_DEFAULT_USER_NAME
+		if inputs.Inputs[i].UserName == "" {
+			inputs.Inputs[i].UserName = WEB_CONSOLE_DEFAULT_USER_NAME
 		}
 	}
 
-	for _,input:=range inputs {
+	for _, input := range inputs.Inputs {
 		md5sum := Md5Encode(input.Guid + input.Seed)
-		password, err = AesDecode(md5sum[0:16], input.Password)
+		password, err := AesDecode(md5sum[0:16], input.Password)
 		if err != nil {
-			return outputs,err 
+			return outputs, err
 		}
 
-		go trySshConnect(&input,password,chResult)
+		go trySshConnect(&input, password, chResult)
 	}
 
-	for _,input:=range inputs{
+	for _, _ = range inputs.Inputs {
 		result := <-chResult
 		if result.Err != nil {
-			return outputs,fmt.Errorf("host(%v) ssh connect failed,err=%v",result.HostIp,result.Err)
+			return outputs, fmt.Errorf("host(%v) ssh connect failed,err=%v", result.Input.HostIp, result.Err)
 		}
-		token:=fmt.Sprintf("%v",time.Now().UnixNano())
-		output:=WebConsoleOutput {
-			Guid:result.Guid,
-			Token:token,
-			ReDirectUrl:"/v1/deploy/webconsole",
+		token := fmt.Sprintf("%v", time.Now().UnixNano())
+		output := WebConsoleOutput{
+			Guid:        result.Input.Guid,
+			Token:       token,
+			ReDirectUrl: "/v1/deploy/webconsole",
 		}
-		addSshInfoToMap(token,result.Password,result.Input)
-		outputs.Outputs=append(outputs.Outputs,output)
+		addSshInfoToMap(token, result.Password, result.Input)
+		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	return outputs,nil 
+	return outputs, nil
 }
-
-
