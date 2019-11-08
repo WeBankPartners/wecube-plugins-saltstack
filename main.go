@@ -51,6 +51,9 @@ func initRouter() {
 	//path should be defined as "/[version]/[pacakge]/[plugin]/[action]"
 	http.HandleFunc("/v1/deploy/", routeDispatcher)
 	http.HandleFunc("/v1/deploy/webconsole", plugins.WebConsoleHandler)
+	http.HandleFunc("/v1/deploy/webconsoleStaticPage", plugins.WebConsoleStaticPageHandler)
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/", fs)
 }
 
 func routeDispatcher(w http.ResponseWriter, r *http.Request) {
