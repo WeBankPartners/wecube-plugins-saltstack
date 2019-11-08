@@ -152,7 +152,7 @@
                     var appbar_height = $("#c-appbar").height();
                     var body_height = $(window).height();
                     var body_width = $(window).width() - 20;
-                    var terminal_height = body_height - appbar_height - 26;
+                    var terminal_height = body_height - appbar_height - 26 -30;
                     return {
                         width: body_width,
                         height: terminal_height
@@ -171,7 +171,9 @@
             var cols = getSize().cols;
             var rows = getSize().rows;
             var term = null;
-            var socket = new WebSocket(wsaddr + "?cols=" + cols + "&rows=" + rows);
+	    console.log(wsaddr)
+	    console.log(wsaddr + "&cols=" + cols + "&rows=" + rows)
+            var socket = new WebSocket(wsaddr + "&cols=" + cols + "&rows=" + rows);
 
             Terminal.applyAddon(fit);
             Terminal.applyAddon(attach);

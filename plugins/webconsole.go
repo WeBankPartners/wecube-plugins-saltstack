@@ -3,28 +3,30 @@ package plugins
 import (
 	"bufio"
 	"bytes"
+	"compress/flate"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
+	"io"
+	"io/ioutil"
 	"net"
-	"compress/flate"
-	"compress/gzip"
 	"net/http"
 	"strconv"
-	"text/template"
+	"strings"
 	"sync"
+	"text/template"
 	"time"
 	"unicode/utf8"
-
 )
 
 const (
+	Zip_gZip                      = "gzip"
+	Zip_Deflate                   = "deflate"
 	WEB_CONSOLE_DEFAULT_USER_NAME = "root"
 	WEB_CONSOLE_DEFAULT_PORT      = 22
-	WEB_CONSOLE_DEFAULT_COLS      = 800
-	WEB_CONSOLE_DEFUALT_ROWS      = 600
 )
 
 var (
@@ -46,9 +48,6 @@ type ssh struct {
 	addr    string
 	client  *gossh.Client
 	session *gossh.Session
-	rows    uint32 
-	columns uint32 
-	
 }
 
 func (s *ssh) Connect() (*ssh, error) {
@@ -93,9 +92,7 @@ type ptyRequestMsg struct {
 }
 
 type RunWebConsoleParam struct {
-	Token   string `json:"token,omitempty"`
-	Rows    uint32 `json:"rows,omitempty"`
-	Columns uint32 `json:"columns,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 type RunWebConsoleErr struct {
@@ -112,24 +109,23 @@ func getRunWebConsoleBytes(err error) []byte {
 	return b
 }
 
-func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request){
+func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		http.Error(w, e"token is empty", http.StatusInternalServerError)
-		return 
+		http.Error(w, "token is empty", http.StatusInternalServerError)
+		return
 	}
-
-	if _,err:=getSshInfoByTimeStamp(token);err!= nil {
+	if _, err := getSshInfoByTimeStamp(token); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 
+		return
 	}
 
 	//output template
 	type WebSocketInfo struct {
 		WsAddr string
-   } 
-	wsInfo := WebSocketInfo {
-		WsAddr:r.Host + "/v1/deploy/webconsoleStaticPage?token=" + token,
+	}
+	wsInfo := WebSocketInfo{
+		WsAddr: r.Host + "/v1/deploy/webconsole?token=" + token,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
@@ -137,15 +133,15 @@ func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request){
 	tmpl, err := template.ParseFiles("./template/console_main.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 
+		return
 	}
-	if err = tmpl.Execute(rb, wsInfo);err!= nil {
+	if err = tmpl.Execute(rb, wsInfo); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 
+		return
 	}
 
-	//write html to 
-	Gzip_Html(rb,w,r)
+	//write html to
+	Gzip_Html(rb, w, r)
 }
 
 func Accept_Encoding(r *http.Request) string {
@@ -153,9 +149,14 @@ func Accept_Encoding(r *http.Request) string {
 	ae = strings.ToLower(ae)
 	return ae
 }
+func Uint32(str string) (uint32, error) {
+	v, err := strconv.ParseUint(str, 10, 32)
+	return uint32(v), err
+}
 
 func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
 	ae := Accept_Encoding(r)
+
 	if strings.Contains(ae, Zip_gZip) {
 		w.Header().Set("Content-Encoding", Zip_gZip)
 		gw, err := gzip.NewWriterLevel(w, gzip.BestCompression)
@@ -208,22 +209,22 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	token := r.URL.Query().Get("token")
+	colsStr := r.URL.Query().Get("cols")
+	rowsStr := r.URL.Query().Get("rows")
+	rows, _ := Uint32(rowsStr)
+	cols, _ := Uint32(colsStr)
+	fmt.Printf("token=%v,rows=%v,cols=%v\n", token, rows, cols)
+
 	if token == "" {
 		err = errors.New("token is empty")
-		return 
+		return
 	}
 
 	sh, err := getSshInfoByTimeStamp(token)
 	if err != nil {
+		fmt.Printf("getSshbyTimeStamp meet err=%v\n", err)
 		return
 	}
-
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Printf("upgrader failed err=%v\n", err)
-		return
-	}
-	defer ws.Close()
 	sh, err = sh.Connect()
 	if err != nil {
 		fmt.Printf("ssh connect failed,err=%v\n", err)
@@ -232,6 +233,13 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		sh.client.Close()
 	}()
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Printf("upgrader failed err=%v\n", err)
+		return
+	}
+	defer ws.Close()
 
 	channel, incomingRequests, err := sh.client.Conn.OpenChannel("session", nil)
 	if err != nil {
@@ -267,10 +275,10 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := ptyRequestMsg{
 		Term:     "xterm",
-		Columns:  sh.cols,
-		Rows:     sh.rows,
-		Width:    sh.cols * 8,
-		Height:   sh.rows * 8,
+		Columns:  cols,
+		Rows:     rows,
+		Width:    cols * 8,
+		Height:   rows * 8,
 		Modelist: string(modeList),
 	}
 
@@ -301,7 +309,6 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if m == websocket.TextMessage {
-				fmt.Printf("command=%v\n", p)
 				if _, err := channel.Write(p); nil != err {
 					fmt.Printf("channel.Write meet err=%v\n", err)
 					return
@@ -392,8 +399,6 @@ type WebConsoleUrlInput struct {
 	UserName  string `json:"user_name,omitempty"`
 	Seed      string `json:"seed,omitempty"`
 	Password  string `json:"password,omitempty"`
-	Rows    uint32   `json:"rows,omitempty"`
-	Columns uint32   `json:"columns,omitempty"`
 }
 
 type WebConsoleOutputs struct {
@@ -471,7 +476,7 @@ func getSshInfoByTimeStamp(timeStamp string) (*ssh, error) {
 	defer webConsoleTokenMutex.Unlock()
 	sh, ok := sshTokenMap[timeStamp]
 	if !ok {
-		return sh, fmt.Errorf("(can't found token(%v) in map",timeStamp)
+		return sh, fmt.Errorf("(can't found token(%v) in map", timeStamp)
 	}
 	return sh, nil
 }
@@ -498,8 +503,6 @@ func addSshInfoToMap(token string, password string, input *WebConsoleUrlInput) {
 		user: input.UserName,
 		pwd:  password,
 		addr: fmt.Sprintf("%s:%v", input.HostIp, input.ShellPort),
-		rows:input.Rows,
-		columns:input.Columns,
 	}
 
 	sshTokenMap[token] = sh
@@ -516,12 +519,6 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 		}
 		if inputs.Inputs[i].UserName == "" {
 			inputs.Inputs[i].UserName = WEB_CONSOLE_DEFAULT_USER_NAME
-		}
-		if input.Inputs[i].Rows==0{
-			input.Inputs[i].Rows = 	WEB_CONSOLE_DEFUALT_ROWS  
-		}
-		if input.Inputs[i].Columns == 0 {
-			input.Inputs[i].Columns = WEB_CONSOLE_DEFUALT_COLS
 		}
 	}
 
@@ -544,8 +541,8 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 		output := WebConsoleOutput{
 			Guid:        result.Input.Guid,
 			Token:       token,
-			ReDirectUrl: "/v1/deploy/webconsoleStaticPage",
-			Method: "GET",
+			ReDirectUrl: "/v1/deploy/webconsoleStaticPage?token=" + token,
+			Method:      "GET",
 		}
 		addSshInfoToMap(token, result.Password, result.Input)
 		outputs.Outputs = append(outputs.Outputs, output)
