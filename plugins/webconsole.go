@@ -9,11 +9,15 @@ import (
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
 	"net"
+	"compress/flate"
+	"compress/gzip"
 	"net/http"
 	"strconv"
+	"text/template"
 	"sync"
 	"time"
 	"unicode/utf8"
+
 )
 
 const (
@@ -42,6 +46,9 @@ type ssh struct {
 	addr    string
 	client  *gossh.Client
 	session *gossh.Session
+	rows    uint32 
+	columns uint32 
+	
 }
 
 func (s *ssh) Connect() (*ssh, error) {
@@ -105,10 +112,93 @@ func getRunWebConsoleBytes(err error) []byte {
 	return b
 }
 
+func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request){
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, e"token is empty", http.StatusInternalServerError)
+		return 
+	}
+
+	if _,err:=getSshInfoByTimeStamp(token);err!= nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return 
+	}
+
+	//output template
+	type WebSocketInfo struct {
+		WsAddr string
+   } 
+	wsInfo := WebSocketInfo {
+		WsAddr:r.Host + "/v1/deploy/webconsoleStaticPage?token=" + token,
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	rb := bytes.NewBufferString("")
+	tmpl, err := template.ParseFiles("./template/console_main.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return 
+	}
+	if err = tmpl.Execute(rb, wsInfo);err!= nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return 
+	}
+
+	//write html to 
+	Gzip_Html(rb,w,r)
+}
+
+func Accept_Encoding(r *http.Request) string {
+	ae := r.Header.Get("Accept-Encoding")
+	ae = strings.ToLower(ae)
+	return ae
+}
+
+func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
+	ae := Accept_Encoding(r)
+	if strings.Contains(ae, Zip_gZip) {
+		w.Header().Set("Content-Encoding", Zip_gZip)
+		gw, err := gzip.NewWriterLevel(w, gzip.BestCompression)
+		if nil != err {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		defer gw.Close()
+		b, err := ioutil.ReadAll(b)
+		if nil != err {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		gw.Write(b)
+		return
+	} else if strings.Contains(ae, Zip_Deflate) {
+		w.Header().Set("Content-Encoding", Zip_Deflate)
+		fw, err := flate.NewWriter(w, flate.BestCompression)
+		if nil != err {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		defer fw.Close()
+		b, err := ioutil.ReadAll(b)
+		if nil != err {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		fw.Write(b)
+		return
+	} else {
+		b, err := ioutil.ReadAll(b)
+		if nil != err {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "%s", string(b))
+		return
+	}
+}
+
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var param RunWebConsoleParam
-
 	defer func() {
 		if err != nil {
 			w.Header().Set("content-type", "application/json")
@@ -117,10 +207,13 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	}()
 
-	if err = UnmarshalJson(r.Body, &param); err != nil {
-		return
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		err = errors.New("token is empty")
+		return 
 	}
-	sh, err := getSshInfoByTimeStamp(param.Token)
+
+	sh, err := getSshInfoByTimeStamp(token)
 	if err != nil {
 		return
 	}
@@ -174,10 +267,10 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := ptyRequestMsg{
 		Term:     "xterm",
-		Columns:  param.Columns,
-		Rows:     param.Rows,
-		Width:    param.Columns * 8,
-		Height:   param.Rows * 8,
+		Columns:  sh.cols,
+		Rows:     sh.rows,
+		Width:    sh.cols * 8,
+		Height:   sh.rows * 8,
 		Modelist: string(modeList),
 	}
 
@@ -299,6 +392,8 @@ type WebConsoleUrlInput struct {
 	UserName  string `json:"user_name,omitempty"`
 	Seed      string `json:"seed,omitempty"`
 	Password  string `json:"password,omitempty"`
+	Rows    uint32   `json:"rows,omitempty"`
+	Columns uint32   `json:"columns,omitempty"`
 }
 
 type WebConsoleOutputs struct {
@@ -309,6 +404,7 @@ type WebConsoleOutput struct {
 	Guid        string `json:"guid,omitempty"`
 	Token       string `json:"token,omitempty"`
 	ReDirectUrl string `json:"redirect_url,omitempty"`
+	Method      string `json:"method,omitempty"`
 }
 
 type GetWebConsoleUrlAction struct {
@@ -375,7 +471,7 @@ func getSshInfoByTimeStamp(timeStamp string) (*ssh, error) {
 	defer webConsoleTokenMutex.Unlock()
 	sh, ok := sshTokenMap[timeStamp]
 	if !ok {
-		return sh, fmt.Errorf("can't found token in map")
+		return sh, fmt.Errorf("(can't found token(%v) in map",timeStamp)
 	}
 	return sh, nil
 }
@@ -402,6 +498,8 @@ func addSshInfoToMap(token string, password string, input *WebConsoleUrlInput) {
 		user: input.UserName,
 		pwd:  password,
 		addr: fmt.Sprintf("%s:%v", input.HostIp, input.ShellPort),
+		rows:input.Rows,
+		columns:input.Columns,
 	}
 
 	sshTokenMap[token] = sh
@@ -418,6 +516,12 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 		}
 		if inputs.Inputs[i].UserName == "" {
 			inputs.Inputs[i].UserName = WEB_CONSOLE_DEFAULT_USER_NAME
+		}
+		if input.Inputs[i].Rows==0{
+			input.Inputs[i].Rows = 	WEB_CONSOLE_DEFUALT_ROWS  
+		}
+		if input.Inputs[i].Columns == 0 {
+			input.Inputs[i].Columns = WEB_CONSOLE_DEFUALT_COLS
 		}
 	}
 
@@ -440,7 +544,8 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 		output := WebConsoleOutput{
 			Guid:        result.Input.Guid,
 			Token:       token,
-			ReDirectUrl: "/v1/deploy/webconsole",
+			ReDirectUrl: "/v1/deploy/webconsoleStaticPage",
+			Method: "GET",
 		}
 		addSshInfoToMap(token, result.Password, result.Input)
 		outputs.Outputs = append(outputs.Outputs, output)
