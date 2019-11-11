@@ -130,7 +130,7 @@ func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	rb := bytes.NewBufferString("")
-	tmpl, err := template.ParseFiles("./template/console_main.html")
+	tmpl, err := template.ParseFiles("/conf/template/console_main.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
