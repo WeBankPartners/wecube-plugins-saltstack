@@ -23,7 +23,8 @@ package: image
 	sed -i 's/{{IMAGENAME}}/$(project_name):$(version)/' ./register.xml
 	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml 
 	docker save -o  image.tar $(project_name):$(version)
-	zip  $(project_name)_$(verson).zip image.tar register.xml
+	zip  $(project_name)-$(version).zip image.tar register.xml
 	rm -rf $(project_name)
+	rm -f register.xml
 	rm -rf ./*.tar
 	docker rmi $(project_name):$(version)	
