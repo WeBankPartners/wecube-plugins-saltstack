@@ -18,8 +18,7 @@ image: build
 	docker build -t $(project_name):$(version) .
      
 package: image
-	chmod +x ./build/register.xml.tpl
-	sed -i 's/{{PLUGIN_VERSION}}/$(version)/' ./build/register.xml.tpl > ./register.xml
+	sed 's/{{PLUGIN_VERSION}}/$(version)/' ./build/register.xml.tpl > ./register.xml
 	sed -i 's/{{IMAGENAME}}/$(project_name):$(version)/' ./register.xml
 	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml 
 	docker save -o  image.tar $(project_name):$(version)
