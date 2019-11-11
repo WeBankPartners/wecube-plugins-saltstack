@@ -1,9 +1,9 @@
-export GOPATH=$(PWD)
 current_dir=$(shell pwd)
-version=$(shell ./build/version.sh)
-project_name=$(shell basename "${current_dir}" )
+version=$(PLUGIN_VERSION)
+project_name=$(shell basename "${current_dir}")
 
 APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
+PORT_BINDING={{host_port}}:8081
 
 archive:
 	tar cvfz source.tar.gz *
@@ -34,10 +34,12 @@ image: build
 	docker build -t $(project_name):$(version) .
      
 package: image 
-	sed 's/{{IMAGE_TAG}}/$(version)/' ./build/register.xml.tpl > ./register.xml
-	sed -i 's/{{PLUGIN_VERSION}}/$(PLUGIN_VERSION)/' ./register.xml 
-	docker save -o  $(project_name).tar $(project_name):$(version)
-	zip  $(project_name)_$(PLUGIN_VERSION).zip $(project_name).tar register.xml
+	./build/register.xml.tpl > ./register.xml
+	sed -i 's/{{PLUGIN_VERSION}}/$(version)/' ./register.xml
+	sed -i 's/{{IMAGENAME}}/$(project_name):$(version)/' ./register.xml
+	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml 
+	docker save -o  image.tar $(project_name):$(version)
+	zip  $(project_name)_$(verson).zip image.tar register.xml
 	rm -rf $(project_name)
 	rm -rf ./*.tar
 	docker rmi $(project_name):$(version)	
