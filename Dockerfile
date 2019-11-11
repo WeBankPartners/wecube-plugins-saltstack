@@ -6,6 +6,7 @@ ENV LOG_PATH=$APP_HOME/logs
 RUN mkdir -p $APP_HOME $LOG_PATH
 
 ADD wecube-plugins-saltstack $APP_HOME/
+ADD static  $APP_HOME/static
 ADD build/start.sh /start.sh
 ADD scripts/salt/minions /srv/salt/minions
 ADD conf/s3conf /conf/s3conf
