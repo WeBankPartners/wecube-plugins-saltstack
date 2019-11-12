@@ -240,7 +240,6 @@ func isHighRiskCommand(inputCommandStr string) bool {
 	for _, highRiskCommand := range HighRiskCommands {
 		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
 		inputCmd := deleteUnusedSpaces(inputCommandStr)
-		fmt.Printf("highRiskCmd =%v,input=%v\n", highRiskCmd, inputCmd)
 		if highRiskCmd == inputCmd {
 			return true
 		}
