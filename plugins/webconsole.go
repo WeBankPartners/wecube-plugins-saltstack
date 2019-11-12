@@ -39,6 +39,11 @@ const (
 var (
 	sshTokenMap          = make(map[string]*ssh)
 	webConsoleTokenMutex sync.Mutex
+	HighRiskCommands     = []string{
+		"rm /* -rf "
+		"rm -rf /* "
+		"rm /* "
+	}
 )
 
 var upgrader = websocket.Upgrader{
@@ -212,8 +217,33 @@ func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deleteUnusedSpaces(inputStr string)string{
+	result:= []byte{}
+	lastByte :=byte(32)
+
+	for _,ch:=range []byte(inputStr){
+			if ch != 32{
+					result = append(result,ch)
+
+			}else {
+					if lastByte != 32{
+							result = append(result,ch)
+					}
+			}
+			lastByte= ch
+	}
+	return strings.TrimSpace(string(result))
+}
+
 func isHighRiskCommand(inputCommandStr string) bool {
-	return true
+	for _,highRiskCommand:=range HighRiskCommands {
+		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
+		intputCmd := deleteUnusedSpaces(inputCommandStr)
+		if highRiskCmd == intputCmd{
+			return true
+		}
+	}
+	return false
 }
 
 func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) error {
