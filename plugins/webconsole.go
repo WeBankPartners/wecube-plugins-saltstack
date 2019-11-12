@@ -60,9 +60,9 @@ type ssh struct {
 	state        int
 }
 
-func getHighRiskNotice(command string) []byte {
+func getHighRiskNotice(command string) string {
 	notice := fmt.Sprintf("%c%c%c[0m%c[01;36m%s is high risk command,if you want to continue,please press yes.%c[0m", 0x0D, 0x0A, 0x1B, 0x1B, command, 0x1B)
-	return []byte(notice)
+	return notice
 }
 
 func (s *ssh) Connect() (*ssh, error) {
@@ -217,7 +217,7 @@ func isHighRiskCommand(inputCommandStr string) bool {
 	return true
 }
 
-func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel) error {
+func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) error {
 	var err error
 	writeData := []byte{}
 
@@ -225,8 +225,8 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel) error {
 		if p[0] == KEY_CR {
 			if isHighRiskCommand(sh.lastInputStr) {
 				writeData = []byte{KEY_CANCEL}
-				noticeBytes := getHighRiskNotice(sh.lastInputStr)
-				writeData = append(writeData, noticeBytes...)
+				notice := getHighRiskNotice(sh.lastInputStr)
+				r <- []rune(notice)
 				sh.state = STATE_HIGH_RISK_WAIT_CONFIRM
 				sh.lastCommand = sh.lastInputStr
 			} else {
@@ -269,6 +269,8 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel) error {
 
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
+	r := make(chan rune)
+
 	defer func() {
 		if err != nil {
 			w.Header().Set("content-type", "application/json")
@@ -380,7 +382,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 			if m == websocket.TextMessage {
 				if ENABLE_HIGH_RISK_COMMAND_INTERRUPT {
-					if err = highRiskCommandWrite(sh, p, channel); err != nil {
+					if err = highRiskCommandWrite(sh, p, channel,r); err != nil {
 						fmt.Printf("highRiskCommandWrite meet err=%v\n", err)
 						return
 					}
@@ -404,7 +406,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 		t := time.NewTimer(time.Millisecond * 100)
 		defer t.Stop()
-		r := make(chan rune)
+	
 
 		go func() {
 			for {
