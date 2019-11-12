@@ -32,6 +32,7 @@ const (
 	ENABLE_HIGH_RISK_COMMAND_INTERRUPT = true
 	KEY_CR                             = 13
 	KEY_CANCEL                         = 3
+	KEY_SPACE                          =32
 	STATE_WAIT_COMMAND_INPUT           = 0
 	STATE_HIGH_RISK_WAIT_CONFIRM       = 1
 )
@@ -220,14 +221,14 @@ func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
 
 func deleteUnusedSpaces(inputStr string) string {
 	result := []byte{}
-	lastByte := byte(32)
+	lastByte := byte(KEY_SPACE)
 
 	for _, ch := range []byte(inputStr) {
-		if ch != 32 {
+		if ch != KEY_SPACE {
 			result = append(result, ch)
 
 		} else {
-			if lastByte != 32 {
+			if lastByte != KEY_SPACE {
 				result = append(result, ch)
 			}
 		}
@@ -240,6 +241,7 @@ func isHighRiskCommand(inputCommandStr string) bool {
 	for _, highRiskCommand := range HighRiskCommands {
 		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
 		inputCmd := deleteUnusedSpaces(inputCommandStr)
+		fmt.Printf("highRiskCmd=%v,inputCmd=%v\n",highRiskCmd,inputCmd)
 		if highRiskCmd == inputCmd {
 			return true
 		}
@@ -251,6 +253,11 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel, r chan rune)
 	var err error
 	writeData := []byte{}
 	runes := []rune{}
+
+	if len(p)!=1{
+		fmt.Printf("highRiskCommandWrite len(p)=%v\n",len(p))
+		return nil 
+	}
 
 	if sh.state == STATE_WAIT_COMMAND_INPUT {
 		if p[0] == KEY_CR {
