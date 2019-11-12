@@ -29,7 +29,7 @@ const (
 	WEB_CONSOLE_DEFAULT_PORT      = 22
 
 	//命令行拦截实现相关
-	ENABLE_HIGH_RISK_COMMAND_INTERRUPT = true
+	ENABLE_HIGH_RISK_COMMAND_INTERRUPT = false
 	KEY_CR                             = 13
 	KEY_CANCEL                         = 3
 	KEY_SPACE                          =32
