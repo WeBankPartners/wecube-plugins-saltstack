@@ -27,6 +27,13 @@ const (
 	Zip_Deflate                   = "deflate"
 	WEB_CONSOLE_DEFAULT_USER_NAME = "root"
 	WEB_CONSOLE_DEFAULT_PORT      = 22
+
+	//命令行拦截实现相关
+	ENABLE_HIGH_RISK_COMMAND_INTERRUPT = true
+	KEY_CR = 13
+	KEY_CANCEL = 3
+	STATE_WAIT_COMMAND_INPUT  =0 
+	STATE_HIGH_RISK_WAIT_CONFIRM =1
 )
 
 var (
@@ -48,6 +55,14 @@ type ssh struct {
 	addr    string
 	client  *gossh.Client
 	session *gossh.Session
+	lastCommand string
+	lastInputStr string 
+	state    int 
+}
+
+func getHighRiskNotice(command string)[]byte{
+	notice:=fmt.Sprintf("%c%c%c[0m%c[01;36m%s is high risk command,if you want to continue,please press yes.%c[0m",0x0D, 0x0A, 0x1B, 0x1B,command, 0x1B)
+	return []byte(notice)
 }
 
 func (s *ssh) Connect() (*ssh, error) {
@@ -198,6 +213,60 @@ func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func isHighRiskCommand(inputCommandStr string)(bool){
+	return true
+}
+
+func highRiskCommandWrite(sh *ssh,p []byte,channel gossh.Channel)error{
+	var err error 
+	writeData:=[]byte{}
+
+	if ssh.state == STATE_WAIT_COMMAND_INPUT {
+		if p[0] == KEY_CR {
+			if isHighRiskCommand(ssh.lastInputStr){
+				writeData=[]byte{KEY_CANCEL}
+				noticeBytes:=getHighRiskNotice(ssh.lastInputStr)
+				writeData =append(writeData,notice...)
+				ssh.state  = STATE_HIGH_RISK_WAIT_CONFIRM
+				ssh.lastCommand = ssh.lastInputStr
+			}else {
+				writeData = p
+			}
+		}else {
+			writeData = p
+			if p[0] == KEY_CANCEL {
+				ssh.lastInputStr = ""
+			}else {
+				ssh.lastInputStr+=string(p[0])
+			}
+		}
+	}else if  ssh.state == STATE_HIGH_RISK_WAIT_CONFIRM {
+		if p[0] == KEY_CR {
+			if string.EqualFold("yes",ssh.lastInputStr){
+				writeData=[]byte{KEY_CANCEL}
+				writeData=append(writeData,([]byte(sh.lastCommand))...)
+				writeData=append(writeData,KEY_CR)
+			}
+			ssh.state=STATE_WAIT_COMMAND_INPUT
+			ssh.lastInputStr=""
+		}else {
+			writeData = p
+			if p[0] == KEY_CANCEL {
+				ssh.state == STATE_WAIT_COMMAND_INPUT
+				ssh.lastInputStr = ""
+			}else {
+				ssh.lastInputStr+=string(p[0])
+			}
+		}
+	}
+
+	if len(writeData) > 0 {
+		_, err = channel.Write(writeData)
+	}
+
+	return err 
+}
+
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
@@ -233,6 +302,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		sh.client.Close()
 	}()
+	sh.state = STATE_WAIT_COMMAND_INPUT
 
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -309,6 +379,13 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if m == websocket.TextMessage {
+				if ENABLE_HIGH_RISK_COMMAND_INTERRUPT {
+					if err = highRiskCommandWrite(sh,p,channel);err != nil {
+						fmt.Printf("highRiskCommandWrite meet err=%v\n", err)
+						return
+					}
+					continue
+				}
 				if _, err := channel.Write(p); nil != err {
 					fmt.Printf("channel.Write meet err=%v\n", err)
 					return
