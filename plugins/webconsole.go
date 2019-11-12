@@ -61,7 +61,7 @@ type ssh struct {
 }
 
 func getHighRiskNotice(command string) string {
-	notice := fmt.Sprintf("%c%c%c[0m%c[01;36m%s is high risk command,if you want to continue,please press yes.%c[0m", 0x0D, 0x0A, 0x1B, 0x1B, command, 0x1B)
+	notice := fmt.Sprintf("%c%c%c[0m%c[01;36m(%s) is high risk command,if you want to continue,please press yes.%c[0m", 0x0D, 0x0A, 0x1B, 0x1B, command, 0x1B)
 	return notice
 }
 
@@ -148,8 +148,7 @@ func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("/conf/template/console_main.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+		return	}
 	if err = tmpl.Execute(rb, wsInfo); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -220,15 +219,18 @@ func isHighRiskCommand(inputCommandStr string) bool {
 func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) error {
 	var err error
 	writeData := []byte{}
+        runes:=[]rune{}
 
 	if sh.state == STATE_WAIT_COMMAND_INPUT {
 		if p[0] == KEY_CR {
 			if isHighRiskCommand(sh.lastInputStr) {
 				writeData = []byte{KEY_CANCEL}
 				notice := getHighRiskNotice(sh.lastInputStr)
-				r <- []rune(notice)
-				sh.state = STATE_HIGH_RISK_WAIT_CONFIRM
+				  runes=[]rune(notice)
+
+                                sh.state = STATE_HIGH_RISK_WAIT_CONFIRM
 				sh.lastCommand = sh.lastInputStr
+				sh.lastInputStr=""
 			} else {
 				writeData = p
 			}
@@ -242,8 +244,9 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) 
 		}
 	} else if sh.state == STATE_HIGH_RISK_WAIT_CONFIRM {
 		if p[0] == KEY_CR {
+                        writeData = []byte{KEY_CANCEL}
 			if strings.EqualFold("yes", sh.lastInputStr) {
-				writeData = []byte{KEY_CANCEL}
+                                writeData =append(writeData,KEY_CR)
 				writeData = append(writeData, ([]byte(sh.lastCommand))...)
 				writeData = append(writeData, KEY_CR)
 			}
@@ -263,13 +266,19 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) 
 	if len(writeData) > 0 {
 		_, err = channel.Write(writeData)
 	}
+	if len(runes)  >0 {
+		time.Sleep(time.Millisecond * 100)
+		for _,data:=range runes {
+                                        r<-data
+                                }
 
+        }
 	return err
 }
 
 func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	r := make(chan rune)
+	chanWebsocketInput := make(chan rune)
 
 	defer func() {
 		if err != nil {
@@ -284,7 +293,6 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 	rowsStr := r.URL.Query().Get("rows")
 	rows, _ := Uint32(rowsStr)
 	cols, _ := Uint32(colsStr)
-	fmt.Printf("token=%v,rows=%v,cols=%v\n", token, rows, cols)
 
 	if token == "" {
 		err = errors.New("token is empty")
@@ -382,7 +390,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 			if m == websocket.TextMessage {
 				if ENABLE_HIGH_RISK_COMMAND_INTERRUPT {
-					if err = highRiskCommandWrite(sh, p, channel,r); err != nil {
+					if err = highRiskCommandWrite(sh, p, channel,chanWebsocketInput ); err != nil {
 						fmt.Printf("highRiskCommandWrite meet err=%v\n", err)
 						return
 					}
@@ -417,7 +425,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				if size > 0 {
-					r <- x
+					chanWebsocketInput  <- x
 				}
 			}
 		}()
@@ -434,7 +442,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				t.Reset(time.Millisecond * 100)
-			case d := <-r:
+			case d := <-chanWebsocketInput :
 				if d != utf8.RuneError {
 					p := make([]byte, utf8.RuneLen(d))
 					utf8.EncodeRune(p, d)
