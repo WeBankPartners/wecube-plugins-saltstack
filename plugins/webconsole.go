@@ -40,9 +40,9 @@ var (
 	sshTokenMap          = make(map[string]*ssh)
 	webConsoleTokenMutex sync.Mutex
 	HighRiskCommands     = []string{
-		"rm /* -rf "
-		"rm -rf /* "
-		"rm /* "
+		"rm /* -rf ",
+		"rm -rf /* ",
+		"rm /* ",
 	}
 )
 
@@ -153,7 +153,8 @@ func WebConsoleStaticPageHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("/conf/template/console_main.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return	}
+		return
+	}
 	if err = tmpl.Execute(rb, wsInfo); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -217,52 +218,54 @@ func Gzip_Html(b io.Reader, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteUnusedSpaces(inputStr string)string{
-	result:= []byte{}
-	lastByte :=byte(32)
+func deleteUnusedSpaces(inputStr string) string {
+	result := []byte{}
+	lastByte := byte(32)
 
-	for _,ch:=range []byte(inputStr){
-			if ch != 32{
-					result = append(result,ch)
+	for _, ch := range []byte(inputStr) {
+		if ch != 32 {
+			result = append(result, ch)
 
-			}else {
-					if lastByte != 32{
-							result = append(result,ch)
-					}
+		} else {
+			if lastByte != 32 {
+				result = append(result, ch)
 			}
-			lastByte= ch
+		}
+		lastByte = ch
 	}
 	return strings.TrimSpace(string(result))
 }
 
 func isHighRiskCommand(inputCommandStr string) bool {
-	for _,highRiskCommand:=range HighRiskCommands {
+	for _, highRiskCommand := range HighRiskCommands {
 		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
-		intputCmd := deleteUnusedSpaces(inputCommandStr)
-		if highRiskCmd == intputCmd{
+		inputCmd := deleteUnusedSpaces(inputCommandStr)
+		fmt.Printf("highRiskCmd =%v,input=%v\n", highRiskCmd, inputCmd)
+		if highRiskCmd == inputCmd {
 			return true
 		}
 	}
 	return false
 }
 
-func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) error {
+func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel, r chan rune) error {
 	var err error
 	writeData := []byte{}
-        runes:=[]rune{}
+	runes := []rune{}
 
 	if sh.state == STATE_WAIT_COMMAND_INPUT {
 		if p[0] == KEY_CR {
 			if isHighRiskCommand(sh.lastInputStr) {
 				writeData = []byte{KEY_CANCEL}
 				notice := getHighRiskNotice(sh.lastInputStr)
-				  runes=[]rune(notice)
+				runes = []rune(notice)
 
-                                sh.state = STATE_HIGH_RISK_WAIT_CONFIRM
+				sh.state = STATE_HIGH_RISK_WAIT_CONFIRM
 				sh.lastCommand = sh.lastInputStr
-				sh.lastInputStr=""
+				sh.lastInputStr = ""
 			} else {
 				writeData = p
+				sh.lastInputStr = ""
 			}
 		} else {
 			writeData = p
@@ -274,9 +277,9 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) 
 		}
 	} else if sh.state == STATE_HIGH_RISK_WAIT_CONFIRM {
 		if p[0] == KEY_CR {
-                        writeData = []byte{KEY_CANCEL}
+			writeData = []byte{KEY_CANCEL}
 			if strings.EqualFold("yes", sh.lastInputStr) {
-                                writeData =append(writeData,KEY_CR)
+				writeData = append(writeData, KEY_CR)
 				writeData = append(writeData, ([]byte(sh.lastCommand))...)
 				writeData = append(writeData, KEY_CR)
 			}
@@ -296,13 +299,13 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel,r chan rune) 
 	if len(writeData) > 0 {
 		_, err = channel.Write(writeData)
 	}
-	if len(runes)  >0 {
+	if len(runes) > 0 {
 		time.Sleep(time.Millisecond * 100)
-		for _,data:=range runes {
-                                        r<-data
-                                }
+		for _, data := range runes {
+			r <- data
+		}
 
-        }
+	}
 	return err
 }
 
@@ -420,7 +423,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 			if m == websocket.TextMessage {
 				if ENABLE_HIGH_RISK_COMMAND_INTERRUPT {
-					if err = highRiskCommandWrite(sh, p, channel,chanWebsocketInput ); err != nil {
+					if err = highRiskCommandWrite(sh, p, channel, chanWebsocketInput); err != nil {
 						fmt.Printf("highRiskCommandWrite meet err=%v\n", err)
 						return
 					}
@@ -444,7 +447,6 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 
 		t := time.NewTimer(time.Millisecond * 100)
 		defer t.Stop()
-	
 
 		go func() {
 			for {
@@ -455,7 +457,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				if size > 0 {
-					chanWebsocketInput  <- x
+					chanWebsocketInput <- x
 				}
 			}
 		}()
@@ -472,7 +474,7 @@ func WebConsoleHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				t.Reset(time.Millisecond * 100)
-			case d := <-chanWebsocketInput :
+			case d := <-chanWebsocketInput:
 				if d != utf8.RuneError {
 					p := make([]byte, utf8.RuneLen(d))
 					utf8.EncodeRune(p, d)
