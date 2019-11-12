@@ -238,14 +238,18 @@ func deleteUnusedSpaces(inputStr string) string {
 }
 
 func isHighRiskCommand(inputCommandStr string) bool {
+	if len(inputCommandStr) == 0{
+		return false
+	}
 	for _, highRiskCommand := range HighRiskCommands {
 		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
 		inputCmd := deleteUnusedSpaces(inputCommandStr)
-		fmt.Printf("highRiskCmd=%v,inputCmd=%v\n",highRiskCmd,inputCmd)
 		if highRiskCmd == inputCmd {
+			fmt.Printf("highRiskCmd=%v,inputCmd=%v is same\n",highRiskCmd,inputCmd)
 			return true
 		}
 	}
+	fmt.Printf("inputCmd=%v is not high risk command\n",inputCmd)
 	return false
 }
 
