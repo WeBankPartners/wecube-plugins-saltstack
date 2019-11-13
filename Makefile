@@ -33,3 +33,4 @@ upload: package
 	docker exec $(container_id) mc config host add wecubeS3 $(s3_server_url) $(s3_access_key) $(s3_secret_key) wecubeS3
 	docker exec $(container_id) mc cp /package/$(project_name)-$(version).zip wecubeS3/wecube-plugin-package-bucket
 	docker rm -f $(container_id)
+	rm -rf $(project_name)-$(version).zip
