@@ -29,8 +29,7 @@ package: image
 	docker rmi $(project_name):$(version)	
 
 upload: package
-	docker run --name qcloud-minio-client -v `pwd`:/package -itd --entrypoint=/bin/sh minio/mc
-	docker exec minio-client mc config host add wecubeS3 $(s3_server_url) $(s3_access_key) $(s3_secret_key) wecubeS3
-	docker exec minio-client mc cp /package/$(project_name)-$(version).zip wecubeS3/wecube-plugin-package-bucket
-	docker stop qcloud-minio-client
-	docker rm -f  qcloud-minio-client
+	$(eval container_id:=$(shell docker run -v $(current_dir):/package -itd --entrypoint=/bin/sh minio/mc))
+	docker exec $(container_id) mc config host add wecubeS3 $(s3_server_url) $(s3_access_key) $(s3_secret_key) wecubeS3
+	docker exec $(container_id) mc cp /package/$(project_name)-$(version).zip wecubeS3/wecube-plugin-package-bucket
+	docker rm -f $(container_id)
