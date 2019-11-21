@@ -3,7 +3,7 @@ version=$(PLUGIN_VERSION)
 project_name=$(shell basename "${current_dir}")
 
 APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
-PORT_BINDING={{host_port}}:8081
+PORT_BINDING={{host_port}}:8082
 
 clean:
 	rm -rf $(project_name)
