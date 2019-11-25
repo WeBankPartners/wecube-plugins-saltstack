@@ -22,7 +22,7 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{IMAGENAME}}" containerName="{{IMAGENAME}}" portBindings="9099:80,9090:8080,4505:4505,4506:4506,{{PORTBINDING}}" volumeBindings="/etc/localtime:/etc/localtime,{{base_mount_path}}/data/minions_pki:/etc/salt/pki/master/minions,{{base_mount_path}}/saltstack/logs:/home/app/saltstack/logs,/{{base_mount_path}}/data:/home/app/data" envVariables="minion_master_ip={{minion_master_ip}},minion_passwd=Ab888888,minion_port=22"/>
+        <docker imageName="{{IMAGENAME}}" containerName="{{CONTAINERNAME}}" portBindings="9099:80,9090:8080,4505:4505,4506:4506,{{PORTBINDING}}" volumeBindings="/etc/localtime:/etc/localtime,{{base_mount_path}}/data/minions_pki:/etc/salt/pki/master/minions,{{base_mount_path}}/saltstack/logs:/home/app/saltstack/logs,/{{base_mount_path}}/data:/home/app/data" envVariables="minion_master_ip={{minion_master_ip}},minion_passwd=Ab888888,minion_port=22"/>
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
