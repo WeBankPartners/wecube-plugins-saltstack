@@ -28,7 +28,7 @@
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
     <plugins>
         <plugin name="file">
-            <interface action="copy" path="/saltstack/v1/deploy/file/copy">
+            <interface action="copy" path="/saltstack/v1/file/copy">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
@@ -43,7 +43,7 @@
             </interface>
         </plugin>
         <plugin name="agent">
-            <interface action="install" path="/saltstack/v1/deploy/agent/install">
+            <interface action="install" path="/saltstack/v1/agent/install">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
@@ -56,7 +56,7 @@
             </interface>
         </plugin>
         <plugin name="variable">
-            <interface action="copy" path="/saltstack/v1/deploy/variable/replace">
+            <interface action="copy" path="/saltstack/v1/variable/replace">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
@@ -70,7 +70,7 @@
             </interface>
         </plugin>
         <plugin name="script">
-            <interface action="run" path="/saltstack/v1/deploy/script/run">
+            <interface action="run" path="/saltstack/v1/script/run">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">endpointType</parameter>
@@ -85,7 +85,7 @@
             </interface>
         </plugin>
         <plugin name="user">
-            <interface action="add" path="/saltstack/v1/deploy/user/add">
+            <interface action="add" path="/saltstack/v1/user/add">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
@@ -100,7 +100,7 @@
                     <parameter datatype="string" mappingType='context'>guid</parameter>
                 </outputParameters>
             </interface>
-            <interface action="remove" path="/saltstack/v1/deploy/user/remove">
+            <interface action="remove" path="/saltstack/v1/user/remove">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
@@ -112,7 +112,7 @@
             </interface>
         </plugin>
         <plugin name="database">
-            <interface action="runScript" path="/saltstack/v1/deploy/database/runScript">
+            <interface action="runScript" path="/saltstack/v1/database/runScript">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
@@ -129,7 +129,7 @@
             </interface>
         </plugin>
         <plugin name="disk">
-            <interface action="getUnformatedDisk" path="/saltstack/v1/deploy/disk/getUnformatedDisk">
+            <interface action="getUnformatedDisk" path="/saltstack/v1/disk/getUnformatedDisk">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
@@ -139,7 +139,7 @@
                     <parameter datatype="string" mappingType='context'>unformatedDisks</parameter>
                 </outputParameters>
             </interface>
-            <interface action="formatAndMountDisk" path="/saltstack/v1/deploy/disk/formatAndMountDisk">
+            <interface action="formatAndMountDisk" path="/saltstack/v1/disk/formatAndMountDisk">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
@@ -154,7 +154,7 @@
             </interface>
         </plugin>
         <plugin name="apply-deployment">
-            <interface action="new" path="/saltstack/v1/deploy/apply-deployment/new">
+            <interface action="new" path="/saltstack/v1/apply-deployment/new">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
@@ -170,7 +170,7 @@
                     <parameter datatype="string" mappingType='context'>guid</parameter>
                 </outputParameters>
             </interface>
-            <interface action="update" path="/saltstack/v1/deploy/apply-deployment/update">
+            <interface action="update" path="/saltstack/v1/apply-deployment/update">
                 <inputParameters>
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
