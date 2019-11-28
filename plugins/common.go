@@ -18,6 +18,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type CallBackParameter struct {
+	Parameter string `json:"callbackParameter,omitempty"`
+}
+
 func Md5Encode(rawData string) string {
 	data := []byte(rawData)
 	return fmt.Sprintf("%x", md5.Sum(data))

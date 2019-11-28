@@ -34,6 +34,7 @@ type AddUserInputs struct {
 }
 
 type AddUserInput struct {
+	CallBackParameter
 	Guid      string `json:"guid,omitempty"`
 	Target    string `json:"target,omitempty"`
 	UserName  string `json:"userName,omitempty"`
@@ -49,6 +50,7 @@ type AddUserOutputs struct {
 }
 
 type AddUserOutput struct {
+	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -138,6 +140,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			Detail: result,
 			Guid:   input.Guid,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
@@ -149,6 +152,7 @@ type RemoveUserInputs struct {
 }
 
 type RemoveUserInput struct {
+	CallBackParameter
 	Guid     string `json:"guid,omitempty"`
 	Target   string `json:"target,omitempty"`
 	UserName string `json:"userName,omitempty"`
@@ -159,6 +163,7 @@ type RemoveUserOutputs struct {
 }
 
 type RemoveUserOutput struct {
+	CallBackParameter
 	Detail string `json:"detail,omitempty"`
 	Guid   string `json:"guid,omitempty"`
 }
@@ -222,6 +227,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 			Detail: result,
 			Guid:   input.Guid,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
