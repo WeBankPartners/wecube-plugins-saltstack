@@ -34,14 +34,15 @@ type FileCopyInputs struct {
 }
 
 type FileCopyInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
-	// AccessKey string `json:"accessKey,omitempty"`
-	// SecretKey string `json:"secretKey,omitempty"`
+	CallBackParameter
+	EndPoint        string `json:"endpoint,omitempty"`
 	Guid            string `json:"guid,omitempty"`
 	Target          string `json:"target,omitempty"`
 	DestinationPath string `json:"destinationPath,omitempty"`
 	Unpack          string `json:"unpack,omitempty"`
 	FileOwner       string `json:"fileOwner,omitempty"`
+	// AccessKey string `json:"accessKey,omitempty"`
+	// SecretKey string `json:"secretKey,omitempty"`
 }
 
 type FileCopyOutputs struct {
@@ -49,6 +50,7 @@ type FileCopyOutputs struct {
 }
 
 type FileCopyOutput struct {
+	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -243,6 +245,8 @@ func (action *FileCopyAction) Do(input interface{}) (interface{}, error) {
 	outputs := FileCopyOutputs{}
 	for _, file := range files.Inputs {
 		fileCopyOutput, err := action.copyFile(&file)
+		fileCopyOutput.CallBackParameter.Parameter = file.CallBackParameter.Parameter
+
 		if err != nil {
 			return nil, err
 		}

@@ -33,10 +33,11 @@ type ListFilesInputs struct {
 }
 
 type ListFilesInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
+	CallBackParameter
+	EndPoint   string `json:"endpoint,omitempty"`
+	CurrentDir string `json:"currentDir,omitempty"`
 	// AccessKey  string `json:"accessKey,omitempty"`
 	// SecretKey  string `json:"secretKey,omitempty"`
-	CurrentDir string `json:"currentDir,omitempty"`
 }
 
 type ListFilesOutputs struct {
@@ -44,6 +45,7 @@ type ListFilesOutputs struct {
 }
 
 type ListFilesOutput struct {
+	CallBackParameter
 	Files []FileNode `json:"files,omitempty"`
 }
 
@@ -139,6 +141,7 @@ func (action *ListCurrentDirAction) Do(input interface{}) (interface{}, error) {
 		output := ListFilesOutput{
 			Files: nodes,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
@@ -150,10 +153,11 @@ type GetConfigFileKeyInputs struct {
 }
 
 type GetConfigFileKeyInput struct {
+	CallBackParameter
 	EndPoint string `json:"endpoint,omitempty"`
+	FilePath string `json:"filePath,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
-	FilePath string `json:"filePath,omitempty"`
 }
 
 type GetConfigFileKeyOutputs struct {
@@ -161,6 +165,7 @@ type GetConfigFileKeyOutputs struct {
 }
 
 type GetConfigFileKeyOutput struct {
+	CallBackParameter
 	FilePath       string          `json:"filePath,omitempty"`
 	ConfigKeyInfos []ConfigKeyInfo `json:"configKeyInfos"`
 }
@@ -209,6 +214,7 @@ func (action *GetConfigFileKeyAction) Do(input interface{}) (interface{}, error)
 
 	for _, input := range inputs.Inputs {
 		output := GetConfigFileKeyOutput{}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		packageName, err := getPackageNameFromEndpoint(input.EndPoint)
 		if err != nil {
 			return &outputs, err
