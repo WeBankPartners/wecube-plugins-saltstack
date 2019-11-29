@@ -48,9 +48,9 @@ func initLogger() {
 }
 
 func initRouter() {
-	//path should be defined as "/[version]/[pacakge]/[plugin]/[action]"
-	http.HandleFunc("/v1/deploy/", routeDispatcher)
-	http.HandleFunc("/v1/deploy/webconsole", plugins.WebConsoleHandler)
+	//path should be defined as "/[package]/[version]/[plugin]/[action]"
+	http.HandleFunc("/saltstack/v1/", routeDispatcher)
+  http.HandleFunc("/v1/deploy/webconsole", plugins.WebConsoleHandler)
 	http.HandleFunc("/v1/deploy/webconsoleStaticPage", plugins.WebConsoleStaticPageHandler)
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
