@@ -5,6 +5,9 @@ project_name=$(shell basename "${current_dir}")
 APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
 PORT_BINDING={{host_port}}:8082
 
+fmt:
+	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) -w /go/src/github.com/WeBankPartners/$(project_name)/  golang:1.12.5 go fmt ./...
+
 clean:
 	rm -rf $(project_name)
 	rm -rf  ./*.tar
