@@ -1,201 +1,192 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package name="salt-stack-deployment" version="{{PLUGIN_VERSION}}">
-    <docker-image-file>wecube-plugins-saltstack.tar</docker-image-file>
-    <docker-image-repository>wecube-plugins-saltstack</docker-image-repository>
-    <docker-image-tag>{{IMAGE_TAG}}</docker-image-tag>
-    <container-port>8082</container-port>
-    <container-config-directory>/home/app/wecube-plugins-saltstack/conf</container-config-directory>
-    <container-log-directory>/home/app/wecube-plugins-saltstack/logs</container-log-directory>
-    <container-start-param>-v /etc/localtime:/etc/localtime -e minion_master_ip={{HOST_IP}} -e minion_passwd=Ab888888 -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data </container-start-param>
-    <plugin id="file" name="File Operation" >
-        <interface name="copy" path="/v1/deploy/file/copy">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">destinationPath</parameter>
-                <parameter datatype="string">unpack</parameter>
-                <parameter datatype="string">fileOwner</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-                <!--
-                <parameter datatype="string">resultCode</parameter>
-                <parameter datatype="string">resultMessage</parameter>
-                 -->
-            </output-parameters>
-        </interface>
-    </plugin>
-	<plugin id="agent" name="Salt-Stack Agent">
-        <interface name="install" path="/v1/deploy/agent/install">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">seed</parameter>
-                 <parameter datatype="string">password</parameter>
-				<parameter datatype="string">host</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-                <!--
-                <parameter datatype="string">resultCode</parameter>
-                <parameter datatype="string">resultMessage</parameter>
-                -->
-            </output-parameters>
-        </interface>
-    </plugin>
-    <plugin id="variable" name="Variable Operation">
-        <interface name="copy" path="/v1/deploy/variable/replace">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">confFiles</parameter>
-                <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">variableList</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-                 <parameter datatype="string">s3PkgPath</parameter>
-                 <!--
-                <parameter datatype="string">detail</parameter>
-                -->
-            </output-parameters>
-        </interface>
-    </plugin>
-   <plugin id="script" name="Script Operation">
-        <interface name="run" path="/v1/deploy/script/run">
-            <input-parameters>
-	        <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">endpointType</parameter>
-                <parameter datatype="string">endpoint</parameter>
-                <!-- <parameter datatype="string">accessKey</parameter>
-                <parameter datatype="string">secretKey</parameter> -->
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">runAs</parameter>
-                <parameter datatype="string">args</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-            <!--
-                <parameter datatype="string">detail</parameter>
-            -->
-            </output-parameters>
-        </interface>
-    </plugin>
-    <plugin id="user" name="User Management">
-        <interface name="add" path="/v1/deploy/user/add">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">userName</parameter>
-                <parameter datatype="string">password</parameter>
-                <parameter datatype="string">userGroup</parameter>
-                <parameter datatype="string">userId</parameter>
-                <parameter datatype="string">groupId</parameter>
-                <parameter datatype="string">homeDir</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-             <!--
-                <parameter datatype="string">detail</parameter>
-             -->
-            </output-parameters>
-        </interface>
-        <interface name="remove" path="/v1/deploy/user/remove">
-            <input-parameters>
-                 <parameter datatype="string">guid</parameter>
-                 <parameter datatype="string">target</parameter>
-                <parameter datatype="string">userName</parameter>
-            </input-parameters>
-            <output-parameters>
-              <!--
-                <parameter datatype="string">detail</parameter>
-              -->
-                <parameter datatype="string">guid</parameter>
-            </output-parameters>
-        </interface>
-    </plugin>
-    <plugin id="database" name="Database Operation">
-        <interface name="runScript" path="/v1/deploy/database/runScript">
-            <input-parameters>
-                <parameter datatype="string">endpoint</parameter>
-                <!-- <parameter datatype="string">accessKey</parameter>
-                <parameter datatype="string">secretKey</parameter> -->
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">seed</parameter>
-                <parameter datatype="string">host</parameter>
-                <parameter datatype="string">userName</parameter>
-                <parameter datatype="string">password</parameter>
-                <parameter datatype="string">port</parameter>
-                <parameter datatype="string">databaseName</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-                <!--
-                <parameter datatype="string">detail</parameter>
-                 -->
-            </output-parameters>
-        </interface>
-    </plugin>
-    <plugin id="disk" name="Storage Disk Operation" >
-        <interface name="getUnformatedDisk" path="/v1/deploy/disk/getUnformatedDisk">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">target</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">unformatedDisks</parameter>
-            </output-parameters>
-        </interface>
-        <interface name="formatAndMountDisk" path="/v1/deploy/disk/formatAndMountDisk">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">diskName</parameter>
-                <parameter datatype="string">fileSystemType</parameter>
-                <parameter datatype="string">mountDir</parameter>
-            </input-parameters>
+<package name="saltstack" version="{{PLUGIN_VERSION}}">
+    <!-- 1.依赖分析 - 描述运行本插件包需要的其他插件包 -->
+    <packageDependencies>
+    </packageDependencies>
 
-            <output-parameters>
-              <parameter datatype="string">guid</parameter>
-            <!--
-                <parameter datatype="string">detail</parameter>
-             -->
-            </output-parameters>
-        </interface>
-    </plugin>
-     <plugin id="apply-deployment" name="Apply Deployment Operation" >
-        <interface name="new" path="/v1/deploy/apply-deployment/new">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">userName</parameter>
-                <parameter datatype="string">destinationPath</parameter>
-                <parameter datatype="string">confFiles</parameter>
-                <parameter datatype="string">variableList</parameter>
-                <parameter datatype="string">startScript</parameter>
-                <parameter datatype="string">args</parameter>
-            </input-parameters>
-            <output-parameters>
-                <parameter datatype="string">guid</parameter>
-            </output-parameters>
-        </interface>
-        <interface name="update" path="/v1/deploy/apply-deployment/update">
-            <input-parameters>
-                <parameter datatype="string">guid</parameter>
-                <parameter datatype="string">target</parameter>
-                <parameter datatype="string">userName</parameter>
-                <parameter datatype="string">endpoint</parameter>
-                <parameter datatype="string">confFiles</parameter>
-                <parameter datatype="string">destinationPath</parameter>
-                <parameter datatype="string">variableList</parameter>
-                <parameter datatype="string">stopScript</parameter>
-                <parameter datatype="string">startScript</parameter>
-                <parameter datatype="string">args</parameter>
-            </input-parameters>
-            <output-parameters>
-              <parameter datatype="string">guid</parameter>
-            </output-parameters>
-        </interface>
-    </plugin>
+    <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
+    <menus>
+    </menus>
+
+    <!-- 3.数据模型 - 描述本插件包的数据模型,并且描述和Framework数据模型的关系 -->
+    <dataModel>
+    </dataModel>
+
+    <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
+    <systemParameters>
+    </systemParameters>
+
+    <!-- 5.权限设定 -->
+    <authorities>
+    </authorities>
+
+    <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
+    <resourceDependencies>
+        <docker imageName="{{IMAGENAME}}" containerName="{{CONTAINERNAME}}" portBindings="9099:80,9090:8080,4505:4505,4506:4506,{{PORTBINDING}}" volumeBindings="/etc/localtime:/etc/localtime,{{base_mount_path}}/data/minions_pki:/etc/salt/pki/master/minions,{{base_mount_path}}/saltstack/logs:/home/app/saltstack/logs,/{{base_mount_path}}/data:/home/app/data" envVariables="minion_master_ip={{minion_master_ip}},minion_passwd=Ab888888,minion_port=22"/>
+    </resourceDependencies>
+
+    <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
+    <plugins>
+        <plugin name="file">
+            <interface action="copy" path="/saltstack/v1/file/copy">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">unpack</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">fileOwner</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="agent">
+            <interface action="install" path="/saltstack/v1/agent/install">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="variable">
+            <interface action="copy" path="/saltstack/v1/variable/replace">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>s3PkgPath</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="script">
+            <interface action="run" path="/saltstack/v1/script/run">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpointType</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">runAs</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="user">
+            <interface action="add" path="/saltstack/v1/user/add">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">password</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">userGroup</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">userId</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">groupId</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">homeDir</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+            <interface action="remove" path="/saltstack/v1/user/remove">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="database">
+            <interface action="runScript" path="/saltstack/v1/database/runScript">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">port</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">databaseName</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="disk">
+            <interface action="getUnformatedDisk" path="/saltstack/v1/disk/getUnformatedDisk">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>unformatedDisks</parameter>
+                </outputParameters>
+            </interface>
+            <interface action="formatAndMountDisk" path="/saltstack/v1/disk/formatAndMountDisk">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">diskName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">fileSystemType</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">mountDir</parameter>
+                </inputParameters>
+
+                <outputParameters>
+                <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="apply-deployment">
+            <interface action="new" path="/saltstack/v1/apply-deployment/new">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">startScript</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+            <interface action="update" path="/saltstack/v1/apply-deployment/update">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">stopScript</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">startScript</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                </inputParameters>
+                <outputParameters>
+                <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+    </plugins>
 </package>
