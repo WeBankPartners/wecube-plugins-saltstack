@@ -257,13 +257,13 @@ func GetInputVariableMap(variable string) (map[string]string, error) {
 
 	inputVariableMap := make(map[string]string)
 	if strings.Contains(newVariableList, ",") {
-		str2 := strings.Split(str1, ",")
+		str2 := strings.Split(newVariableList, ",")
 		for _, v := range str2 {
 			str3 := strings.Split(v, "=")
 			inputVariableMap[str3[0]] = str3[1]
 		}
 	} else {
-		str2 := strings.Split(str1, "=")
+		str2 := strings.Split(newVariableList, "=")
 		inputVariableMap[str2[0]] = str2[1]
 	}
 
