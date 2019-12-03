@@ -41,11 +41,12 @@ type SearchTextInputs struct {
 }
 
 type SearchTextInput struct {
-	Target   string `json:"target,omitempty"`
-	EndPoint string `json:"endpoint,omitempty"`
+	CallBackParameter
+	Target        string `json:"target,omitempty"`
+	EndPoint      string `json:"endpoint,omitempty"`
+	SearchPattern string `json:"pattern,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
-	SearchPattern string `json:"pattern,omitempty"`
 }
 
 type SearchTextOutputs struct {
@@ -58,6 +59,7 @@ type SearchResult struct {
 }
 
 type SearchTextOutput struct {
+	CallBackParameter
 	Host    string         `json:"host"`
 	Results []SearchResult `json:"result"`
 }
@@ -177,6 +179,7 @@ func (action *SearchTextAction) Do(input interface{}) (interface{}, error) {
 			Results: results,
 			Host:    input.Target,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
@@ -189,11 +192,12 @@ type GetContextInputs struct {
 }
 
 type GetContextInput struct {
+	CallBackParameter
 	EndPoint string `json:"endpoint,omitempty"`
+	LineNum  int    `json:"lineNum,omitempty"`
+	Offset   int    `json:"offset,omitempty"`
 	// AccessKey string  `json:"accessKey,omitempty"`
 	// SecretKey string  `json:"secretKey,omitempty"`
-	LineNum int `json:"lineNum,omitempty"`
-	Offset  int `json:"offset,omitempty"`
 }
 
 type GetContextOutputs struct {
@@ -201,6 +205,7 @@ type GetContextOutputs struct {
 }
 
 type GetContextOutput struct {
+	CallBackParameter
 	ContextText string `json:"context"`
 }
 
@@ -279,6 +284,7 @@ func (action *GetContextAction) Do(input interface{}) (interface{}, error) {
 		output := GetContextOutput{
 			ContextText: contextText,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 

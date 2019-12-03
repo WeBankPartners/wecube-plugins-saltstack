@@ -3,8 +3,9 @@ package plugins
 import (
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os/exec"
+
+	"github.com/sirupsen/logrus"
 )
 
 var AgentActions = make(map[string]Action)
@@ -30,6 +31,7 @@ type AgentInstallInputs struct {
 }
 
 type AgentInstallInput struct {
+	CallBackParameter
 	Guid     string `json:"guid,omitempty"`
 	Seed     string `json:"seed,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -41,6 +43,7 @@ type AgentInstallOutputs struct {
 }
 
 type AgentInstallOutput struct {
+	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -135,6 +138,7 @@ func (action *AgentInstallAction) Do(input interface{}) (interface{}, error) {
 	for _, agent := range agents.Inputs {
 		action.removeSaltKeys(agent.Host)
 		agentInstallOutput, err := action.installAgent(&agent)
+		agentInstallOutput.CallBackParameter.Parameter = agent.CallBackParameter.Parameter
 		if err != nil {
 			return nil, err
 		}

@@ -32,6 +32,7 @@ type RunDatabaseScriptInputs struct {
 }
 
 type RunDatabaseScriptInput struct {
+	CallBackParameter
 	EndPoint string `json:"endpoint,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
@@ -49,6 +50,7 @@ type RunDatabaseScriptOutputs struct {
 }
 
 type RunDatabaseScriptOutput struct {
+	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -159,6 +161,7 @@ func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error
 			Detail: result,
 			Guid:   input.Guid,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 

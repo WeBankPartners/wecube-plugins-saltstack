@@ -31,6 +31,7 @@ type ApplyNewDeploymentInputs struct {
 	Inputs []ApplyNewDeploymentInput `json:"inputs,omitempty"`
 }
 type ApplyNewDeploymentInput struct {
+	CallBackParameter
 	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
 	UserName         string `json:"userName,omitempty"`
@@ -49,6 +50,7 @@ type ApplyNewDeploymentOutputs struct {
 }
 
 type ApplyNewDeploymentOutput struct {
+	CallBackParameter
 	Guid            string `json:"guid,omitempty"`
 	UserDetail      string `json:"userDetail,omitempty"`
 	FileDetail      string `json:"fileDetail,omitempty"`
@@ -113,6 +115,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			Guid:   input.Guid,
 			Target: input.Target,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 
 		//create apply deployment user
 		addUserRequest := AddUserInputs{
@@ -232,6 +235,7 @@ type ApplyUpdateDeploymentInputs struct {
 }
 
 type ApplyUpdateDeploymentInput struct {
+	CallBackParameter
 	EndPoint         string `json:"endpoint,omitempty"`
 	Guid             string `json:"guid,omitempty"`
 	UserName         string `json:"userName,omitempty"`
@@ -249,6 +253,7 @@ type ApplyUpdateDeploymentOutputs struct {
 }
 
 type ApplyUpdateDeploymentOutput struct {
+	CallBackParameter
 	Guid                 string `json:"guid,omitempty"`
 	FileDetail           string `json:"fileDetail,omitempty"`
 	NewS3PkgPath         string `json:"s3PkgPath,omitempty"`
@@ -314,6 +319,7 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 			Guid:   input.Guid,
 			Target: input.Target,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 
 		// stop apply script
 		runStopScriptRequest := RunScriptInputs{
