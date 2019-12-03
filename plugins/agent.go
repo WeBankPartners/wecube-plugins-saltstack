@@ -45,7 +45,7 @@ type AgentInstallOutputs struct {
 type AgentInstallOutput struct {
 	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	//Detail string `json:"detail,omitempty"`
 }
 
 type Roster struct {
@@ -128,7 +128,7 @@ func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (*Agent
 
 	output := AgentInstallOutput{}
 	output.Guid = input.Guid
-	output.Detail = string(out)
+	fmt.Printf("out=%v",string(out))
 	return &output, nil
 }
 
