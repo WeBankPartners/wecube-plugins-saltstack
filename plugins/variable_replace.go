@@ -42,12 +42,13 @@ type VariableReplaceInputs struct {
 
 //VariableReplaceInput .
 type VariableReplaceInput struct {
-	EndPoint string `json:"endpoint,omitempty"`
-	// AccessKey    string `json:"accessKey,omitempty"`
-	// SecretKey    string `json:"secretKey,omitempty"`
+	CallBackParameter
+	EndPoint     string `json:"endpoint,omitempty"`
 	Guid         string `json:"guid,omitempty"`
 	FilePath     string `json:"confFiles,omitempty"`
 	VariableList string `json:"variableList,omitempty"`
+	// AccessKey    string `json:"accessKey,omitempty"`
+	// SecretKey    string `json:"secretKey,omitempty"`
 }
 
 //VariableReplaceOutputs .
@@ -57,10 +58,11 @@ type VariableReplaceOutputs struct {
 
 //VariableReplaceOutput .
 type VariableReplaceOutput struct {
-	Guid string `json:"guid,omitempty"`
+	CallBackParameter
+	Guid         string `json:"guid,omitempty"`
+	NewS3PkgPath string `json:"s3PkgPath,omitempty"`
 	//Detail     string `json:"detail,omitempty"`
 	//MD5        string `json:"md5,omitempty"`
-	NewS3PkgPath string `json:"s3PkgPath,omitempty"`
 }
 
 type VariableReplaceAction struct {
@@ -173,6 +175,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 			Guid:         input.Guid,
 			NewS3PkgPath: newS3Endpoint,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 

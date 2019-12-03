@@ -42,15 +42,15 @@ type RunScriptInputs struct {
 }
 
 type RunScriptInput struct {
+	CallBackParameter
 	EndPointType string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
 	EndPoint     string `json:"endpoint,omitempty"`
+	Target       string `json:"target,omitempty"`
+	RunAs        string `json:"runAs,omitempty"`
+	ExecArg      string `json:"args,omitempty"`
+	Guid         string `json:"guid,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
-
-	Target  string `json:"target,omitempty"`
-	RunAs   string `json:"runAs,omitempty"`
-	ExecArg string `json:"args,omitempty"`
-	Guid    string `json:"guid,omitempty"`
 }
 
 type RunScriptOutputs struct {
@@ -58,6 +58,7 @@ type RunScriptOutputs struct {
 }
 
 type RunScriptOutput struct {
+	CallBackParameter
 	Target  string `json:"target"`
 	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
@@ -288,6 +289,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		output := RunScriptOutput{
 			Target: input.Target,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		scriptPath := input.EndPoint
 		if input.EndPointType == END_POINT_TYPE_S3 {
 			scriptPath, err = downLoadScript(input)

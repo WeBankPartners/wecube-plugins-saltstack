@@ -30,6 +30,7 @@ type SaltApiCallInputs struct {
 }
 
 type SaltApiCallInput struct {
+	CallBackParameter
 	Guid     string   `json:"guid,omitempty"`
 	Client   string   `json:"client,omitempty"`
 	Target   string   `json:"target,omitempty"`
@@ -42,6 +43,7 @@ type SaltApiCallOutputs struct {
 }
 
 type SaltApiCallOutput struct {
+	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -133,6 +135,7 @@ func (action *SaltApiCallAction) Do(input interface{}) (interface{}, error) {
 	outputs := SaltApiCallOutputs{}
 	for _, file := range files.Inputs {
 		fileOutput, err := action.callSaltApiCall(&file)
+		fileOutput.CallBackParameter.Parameter = file.CallBackParameter.Parameter
 		if err != nil {
 			return nil, err
 		}
