@@ -249,7 +249,6 @@ func isHighRiskCommand(inputCommandStr string) bool {
 			return true
 		}
 	}
-	fmt.Printf("inputCmd=%v is not high risk command\n",inputCmd)
 	return false
 }
 
