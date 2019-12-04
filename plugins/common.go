@@ -9,14 +9,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"reflect"
 	"strings"
-	"math/rand"
 	"time"
-	"github.com/sirupsen/logrus"
 )
 
 type CallBackParameter struct {
