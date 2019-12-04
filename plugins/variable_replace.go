@@ -219,7 +219,6 @@ func ReplaceFileVar(filepath, variablelist string) error {
 }
 
 func GetInputVariableMap(variable string) (map[string]string, error) {
-
 	if !strings.Contains(variable, "=") {
 		return nil, fmt.Errorf("input variable don't have '=' could't get variable key value pair")
 	}
