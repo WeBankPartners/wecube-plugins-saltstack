@@ -13,7 +13,7 @@ var DatabasePluginActions = make(map[string]Action)
 
 func init() {
 	DatabasePluginActions["runScript"] = new(RunDatabaseScriptAction)
-	DatabasePluginActions["addDatabase"] = new(AddDatabaseUserAction)
+	DatabasePluginActions["addDatabase"] = new(AddDatabaseAction)
 }
 
 type DatabasePlugin struct {
@@ -180,18 +180,18 @@ type AddDatabaseInput struct {
 
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
-	Guid         string `json:"guid,omitempty"`
-	Seed         string `json:"seed,omitempty"`
-	Host         string `json:"host,omitempty"`
-	UserName     string `json:"userName,omitempty"`
-	Password     string `json:"password,omitempty"`
-	Port         string `json:"port,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Host     string `json:"host,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	Password string `json:"password,omitempty"`
+	Port     string `json:"port,omitempty"`
 
 	//new database info
-	DatabaseName string             `json:"databaseName,omitempty"`
-	DatabaseOwnerGuid  string       `json:"databaseOwnerGuid,omitempty"`
-	DatabaseOwnerName  string       `json:"databaseOwnerName,omitempty"`
-	DatabaseOwnerPassword  string   `json:"databaseOwnerPassword,omitempty"`
+	DatabaseName          string `json:"databaseName,omitempty"`
+	DatabaseOwnerGuid     string `json:"databaseOwnerGuid,omitempty"`
+	DatabaseOwnerName     string `json:"databaseOwnerName,omitempty"`
+	DatabaseOwnerPassword string `json:"databaseOwnerPassword,omitempty"`
 	//DatabaseOwnerPermissions string `json:"databaseOwnerPermissions,omitempty"`
 }
 
@@ -200,8 +200,8 @@ type AddDatabaseOutputs struct {
 }
 
 type AddDatabaseOutput struct {
-	DatabaseOwnerGuid      string      `json:"databaseOwnerGuid,omitempty"`
-	DatabaseOwnerPassword  string      `json:"databaseOwnerPassword,omitempty"`
+	DatabaseOwnerGuid     string `json:"databaseOwnerGuid,omitempty"`
+	DatabaseOwnerPassword string `json:"databaseOwnerPassword,omitempty"`
 }
 
 func (action *AddDatabaseAction) ReadParam(param interface{}) (interface{}, error) {
@@ -241,10 +241,10 @@ func (action *AddDatabaseAction) CheckParam(input interface{}) error {
 		if input.DatabaseName == "" {
 			return errors.New("DatabaseName is empty")
 		}
-		if input.DatabaseOwnerGuid == ""{
+		if input.DatabaseOwnerGuid == "" {
 			return errors.New("DatabaseOwnerGuid is empty")
 		}
-		if input.DatabaseOwnerName ==""{
+		if input.DatabaseOwnerName == "" {
 			return errors.New("DatabaseOwnerName is empty")
 		}
 	}
@@ -252,22 +252,30 @@ func (action *AddDatabaseAction) CheckParam(input interface{}) error {
 	return nil
 }
 
-func runDatabaseCommand(host string,port string,loginUser string,loginPwd string,cmd string)(error){
-	cmd := exec.Command("/usr/bin/mysql", " -u"+loginUser," -p"+loginPwd + " -P"+port, " -h"+host," -e "+cmd)
-	out, err := cmd.CombinedOutput()
-	fmt.Printf("runDatabaseCommand(%s) output=%v,err=%v\n",cmd,out,err)
-	return err 
+func runDatabaseCommand(host string, port string, loginUser string, loginPwd string, cmd string) error {
+	argv := []string{
+		"-h" + host,
+		"-u" + loginUser,
+		"-p" + loginPwd,
+		"-P" + port,
+		"-e",
+		cmd,
+	}
+	command := exec.Command("/usr/bin/mysql", argv...)
+	out, err := command.CombinedOutput()
+	fmt.Printf("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
+	return err
 }
 
-func (action *AddDatabaseUserAction) Do(input interface{}) (interface{}, error) {
-	inputs, _ := input.(AddDatabaseUserInputs)
-	outputs := AddDatabaseUserOutputs{}
+func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(AddDatabaseInputs)
+	outputs := AddDatabaseOutputs{}
 
 	for _, input := range inputs.Inputs {
-		output:=AddDatabaseUserOutputs{
-			DatabaseOwnerGuid :input.DatabaseOwnerGuid ,
+		output := AddDatabaseOutput{
+			DatabaseOwnerGuid: input.DatabaseOwnerGuid,
 		}
-		//get root password 
+		//get root password
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		password, err := AesDecode(md5sum[0:16], input.Password)
 		if err != nil {
@@ -276,26 +284,26 @@ func (action *AddDatabaseUserAction) Do(input interface{}) (interface{}, error) 
 		}
 
 		//create database
-		cmd := fmt.Sprintf("create database %s ;",input.DatabaseName)
-		if err = runDatabaseCommand(input.Host,input.Port,input.UserName,password,cmd);err != nil {
-			return outputs,err
+		cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			return outputs, err
 		}
-	
+
 		//create user
-		dbOwnerPassword:=input.DatabaseOwnerPassword
+		dbOwnerPassword := input.DatabaseOwnerPassword
 		if dbOwnerPassword == "" {
 			dbOwnerPassword = createRandomPassword()
 		}
-		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY %s ;",input.DatabaseOwnerName,dbOwnerPassword)
-		if err = runDatabaseCommand(input.Host,input.Port,input.UserName,password,cmd);err != nil {
-			return outputs,err
+		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			return outputs, err
 		}
 
-		//grant permissions 
-		permission:="ALL PRIVILEGES"
-		cmd = fmt.Sprintf("GRANT %s ON %s TO %s ;" permission,input.DatabaseOwnerName,input.DatabaseOwnerName)
-		if err = runDatabaseCommand(input.Host,input.Port,input.UserName,password,cmd);err != nil {
-			return outputs,err
+		//grant permissions
+		permission := "ALL PRIVILEGES"
+		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			return outputs, err
 		}
 
 		//create new password
@@ -307,7 +315,6 @@ func (action *AddDatabaseUserAction) Do(input interface{}) (interface{}, error) 
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	
-	return outputs,nil 
-}
 
+	return outputs, nil
+}

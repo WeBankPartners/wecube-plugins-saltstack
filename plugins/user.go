@@ -52,9 +52,9 @@ type AddUserOutputs struct {
 
 type AddUserOutput struct {
 	CallBackParameter
-	Guid   string `json:"guid,omitempty"`
-	Password  string `json:"password,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Password string `json:"password,omitempty"`
+	Detail   string `json:"detail,omitempty"`
 }
 
 type AddUserAction struct {
@@ -87,8 +87,8 @@ func (action *AddUserAction) CheckParam(input interface{}) error {
 		if input.Guid == "" {
 			return errors.New("AddUserAction guid is empty")
 		}
-		
-		if input.Seed == ""{
+
+		if input.Seed == "" {
 			return errors.New("AddUserAction seed is empty")
 		}
 
@@ -110,7 +110,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	runAs := ""
 
 	for _, input := range inputs.Inputs {
-		password:=""
+		password := ""
 		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
 		if input.Password != "" {
 			password = input.Password
@@ -120,10 +120,10 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		execArg += " --password " + password
 
 		if input.UserGroup != "" {
-			execArg += " --userId " + input.UserId
+			execArg += " --group " + input.UserGroup
 		}
 		if input.UserId != "" {
-			execArg += " --group " + input.UserGroup
+			execArg += " --userId " + input.UserId
 		}
 		if input.GroupId != "" {
 			execArg += " --groupId " + input.GroupId
@@ -152,13 +152,13 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		encryptPassword, err := AesEncode(md5sum[0:16], password)
 		if err != nil {
-			logrus.Errorf("AesEncode meet error(%v)", err)
+			fmt.Printf("AesEncode meet error(%v)\n", err)
 			return nil, err
 		}
 
 		output := AddUserOutput{
-			Detail: result,
-			Guid:   input.Guid,
+			Detail:   result,
+			Guid:     input.Guid,
 			Password: encryptPassword,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
