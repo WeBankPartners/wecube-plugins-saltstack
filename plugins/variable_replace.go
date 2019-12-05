@@ -218,23 +218,51 @@ func ReplaceFileVar(filepath, variablelist string) error {
 	return nil
 }
 
+//var1,var2=value1,value2  to  var1=value1, var2=value2
+func changeVariableListFormat(variableList string) (string, error) {
+	index := strings.Index(variableList, "=")
+	if index == -1 {
+			return "", fmt.Errorf("variableList(%s) do not have =", variableList)
+	}
+
+	varsStr := variableList[0:index]
+	valuesStr := variableList[index+1 : len(variableList)]
+	vars := strings.Split(varsStr, ",")
+	values := strings.Split(valuesStr, ",")
+	if len(vars) == 0 || len(values) == 0 || len(vars) != len(values) {
+			return "", fmt.Errorf("len(vars)=%v,len(values)=%v", len(vars), len(values))
+	}
+
+	result := ""
+	for i, _ := range vars {
+			text := vars[i] + "=" + values[i]
+			result += text
+			if i != len(vars)-1 {
+					result += ","
+			}
+	}
+	return result, nil
+}
+
 func GetInputVariableMap(variable string) (map[string]string, error) {
 	if !strings.Contains(variable, "=") {
 		return nil, fmt.Errorf("input variable don't have '=' could't get variable key value pair")
 	}
 
-	inputVariableMap := make(map[string]string)
+	newVariableList,err := changeVariableListFormat(strings.Replace(variable, " ", "", -1))
+	if err != nil {
+		return nil, err
+	}
 
-	str1 := strings.Replace(variable, " ", "", -1)
-	if strings.Contains(str1, ",") {
-		str2 := strings.Split(str1, ",")
+	inputVariableMap := make(map[string]string)
+	if strings.Contains(newVariableList, ",") {
+		str2 := strings.Split(newVariableList, ",")
 		for _, v := range str2 {
 			str3 := strings.Split(v, "=")
 			inputVariableMap[str3[0]] = str3[1]
 		}
-
 	} else {
-		str2 := strings.Split(str1, "=")
+		str2 := strings.Split(newVariableList, "=")
 		inputVariableMap[str2[0]] = str2[1]
 	}
 
@@ -242,7 +270,6 @@ func GetInputVariableMap(variable string) (map[string]string, error) {
 }
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {
-
 	for _, va := range variablelist {
 		if _, ok := input[va]; !ok {
 			return fmt.Errorf("variable %s not input", va)
