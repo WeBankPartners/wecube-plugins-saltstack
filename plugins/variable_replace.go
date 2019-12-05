@@ -244,7 +244,6 @@ func changeVariableListFormat(variableList string) (string, error) {
 	return result, nil
 }
 
-
 func GetInputVariableMap(variable string) (map[string]string, error) {
 	if !strings.Contains(variable, "=") {
 		return nil, fmt.Errorf("input variable don't have '=' could't get variable key value pair")
@@ -271,7 +270,6 @@ func GetInputVariableMap(variable string) (map[string]string, error) {
 }
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {
-
 	for _, va := range variablelist {
 		if _, ok := input[va]; !ok {
 			return fmt.Errorf("variable %s not input", va)
