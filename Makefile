@@ -40,6 +40,7 @@ upload: package
 	rm -rf $(project_name)-$(version).zip
 
 push: image
+	pwd
 	docker login -u $(dockerhub_user) -p $(dockerhub_pass) $(dockerhub_server)
 	docker tag $(project_name):$(version) wecube-statstack:$(version)
 	docekr push $(dockerhub_server)/$(dockerhub_path)/wecube-statstack:$(version)
