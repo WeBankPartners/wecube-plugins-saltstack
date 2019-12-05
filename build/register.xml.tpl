@@ -98,7 +98,7 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
-                    <parameter datatype="password" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>password</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
