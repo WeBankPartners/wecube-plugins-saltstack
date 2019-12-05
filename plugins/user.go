@@ -36,6 +36,7 @@ type AddUserInputs struct {
 type AddUserInput struct {
 	CallBackParameter
 	Guid      string `json:"guid,omitempty"`
+	Seed      string `json:"seed,omitempty"`
 	Target    string `json:"target,omitempty"`
 	UserName  string `json:"userName,omitempty"`
 	UserId    string `json:"userId,omitempty"`
@@ -51,8 +52,9 @@ type AddUserOutputs struct {
 
 type AddUserOutput struct {
 	CallBackParameter
-	Guid   string `json:"guid,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Password string `json:"password,omitempty"`
+	Detail   string `json:"detail,omitempty"`
 }
 
 type AddUserAction struct {
@@ -82,6 +84,14 @@ func (action *AddUserAction) CheckParam(input interface{}) error {
 			return errors.New("AddUserAction userName is empty")
 		}
 
+		if input.Guid == "" {
+			return errors.New("AddUserAction guid is empty")
+		}
+
+		if input.Seed == "" {
+			return errors.New("AddUserAction seed is empty")
+		}
+
 		// if input.Password == "" {
 		// 	return errors.New("AddUserAction password is empty")
 		// }
@@ -100,17 +110,20 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	runAs := ""
 
 	for _, input := range inputs.Inputs {
+		password := ""
 		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
 		if input.Password != "" {
-			execArg += " --password " + input.Password
+			password = input.Password
 		} else {
-			execArg += " --password " + ADD_USER_DEFALUT_PASSWORD
+			password = createRandomPassword()
 		}
+		execArg += " --password " + password
+
 		if input.UserGroup != "" {
-			execArg += " --userId " + input.UserId
+			execArg += " --group " + input.UserGroup
 		}
 		if input.UserId != "" {
-			execArg += " --group " + input.UserGroup
+			execArg += " --userId " + input.UserId
 		}
 		if input.GroupId != "" {
 			execArg += " --groupId " + input.GroupId
@@ -131,14 +144,22 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
+				return nil, fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
 
+		md5sum := Md5Encode(input.Guid + input.Seed)
+		encryptPassword, err := AesEncode(md5sum[0:16], password)
+		if err != nil {
+			fmt.Printf("AesEncode meet error(%v)\n", err)
+			return nil, err
+		}
+
 		output := AddUserOutput{
-			Detail: result,
-			Guid:   input.Guid,
+			Detail:   result,
+			Guid:     input.Guid,
+			Password: encryptPassword,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)

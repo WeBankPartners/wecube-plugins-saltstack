@@ -98,6 +98,7 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>password</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
@@ -125,6 +126,25 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                </outputParameters>
+            </interface>
+
+              <interface action="addDatabase" path="/saltstack/v1/database/addDatabase">
+                <inputParameters>
+                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">port</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerGuid</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerName</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerPassword</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType='context'>databaseOwnerGuid</parameter>
+                    <parameter datatype="string" mappingType='context'>databaseOwnerPassword</parameter>
                 </outputParameters>
             </interface>
         </plugin>
