@@ -45,5 +45,5 @@ push: image
 	docekr push $(dockerhub_server)/$(dockerhub_path)/wecube-statstack:$(version)
 
 run_container: push
-    shell echo $(current_dir)
+	pwd=$(shell pwd)
 	docker run -d -H $(server_addr) -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p $(server_port):8082 -v /etc/localtime:/etc/localtime -v $(base_mount_path)/data/minions_pki:/etc/salt/pki/master/minions -v $(base_mount_path)/saltstack/logs:/home/app/saltstack/logs -v $(base_mount_path)/data:/home/app/data  -e minion_master_ip=$(minion_master_ip) -e minion_passwd=$(minion_passwd) -e minion_port=$(minion_port)
