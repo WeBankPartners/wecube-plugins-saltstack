@@ -45,6 +45,6 @@ push: image
 	docker push $(dockerhub_server)/$(dockerhub_path)/wecube-statstack:$(version)
 
 run_container: push
-	docker rm -f $(docker ps -a | grep "wecube-statstack-smoke" | awk '{print $1}')
+	docker rm -f $(docker ps -a | grep "wecube-statstack-smoke" | awk '{print $1}') | true
 	docker -H $(server_addr) pull $(dockerhub_server)/$(dockerhub_path)/wecube-statstack:$(version)
 	docker -H $(server_addr) run -d --name wecube-statstack-smoke -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p $(server_port):8082 -v /etc/localtime:/etc/localtime -v $(base_mount_path)/data/minions_pki:/etc/salt/pki/master/minions -v $(base_mount_path)/saltstack/logs:/home/app/saltstack/logs -v $(base_mount_path)/data:/home/app/data  -e minion_master_ip=$(minion_master_ip) -e minion_passwd=$(minion_passwd) -e minion_port=$(minion_port) $(dockerhub_server)/$(dockerhub_path)/wecube-statstack:$(version)
