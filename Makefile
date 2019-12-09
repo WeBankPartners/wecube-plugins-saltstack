@@ -38,3 +38,13 @@ upload: package
 	docker exec $(container_id) mc cp /package/$(project_name)-$(version).zip wecubeS3/wecube-plugin-package-bucket
 	docker rm -f $(container_id)
 	rm -rf $(project_name)-$(version).zip
+
+push: image
+	docker login -u $(dockerhub_user) -p $(dockerhub_pass) $(dockerhub_server)
+	docker tag $(project_name):$(version) $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
+	docker push $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
+
+run_container: push
+	docker -H $(server_addr) rm -f $(shell docker -H $(server_addr) ps -a | grep "wecube-saltstack-smoke" | awk '{print $$1}') | true
+	docker -H $(server_addr) pull $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
+	docker -H $(server_addr) run -d --name wecube-saltstack-smoke -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p $(server_port):8082 -v /etc/localtime:/etc/localtime -v $(base_mount_path)/data/minions_pki:/etc/salt/pki/master/minions -v $(base_mount_path)/saltstack/logs:/home/app/saltstack/logs -v $(base_mount_path)/data:/home/app/data  -e minion_master_ip=$(minion_master_ip) -e minion_passwd=$(minion_passwd) -e minion_port=$(minion_port) $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)

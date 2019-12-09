@@ -222,7 +222,7 @@ func ReplaceFileVar(filepath, variablelist string) error {
 func changeVariableListFormat(variableList string) (string, error) {
 	index := strings.Index(variableList, "=")
 	if index == -1 {
-			return "", fmt.Errorf("variableList(%s) do not have =", variableList)
+		return "", fmt.Errorf("variableList(%s) do not have =", variableList)
 	}
 
 	varsStr := variableList[0:index]
@@ -230,16 +230,16 @@ func changeVariableListFormat(variableList string) (string, error) {
 	vars := strings.Split(varsStr, ",")
 	values := strings.Split(valuesStr, ",")
 	if len(vars) == 0 || len(values) == 0 || len(vars) != len(values) {
-			return "", fmt.Errorf("len(vars)=%v,len(values)=%v", len(vars), len(values))
+		return "", fmt.Errorf("len(vars)=%v,len(values)=%v", len(vars), len(values))
 	}
 
 	result := ""
 	for i, _ := range vars {
-			text := vars[i] + "=" + values[i]
-			result += text
-			if i != len(vars)-1 {
-					result += ","
-			}
+		text := vars[i] + "=" + values[i]
+		result += text
+		if i != len(vars)-1 {
+			result += ","
+		}
 	}
 	return result, nil
 }
@@ -249,7 +249,7 @@ func GetInputVariableMap(variable string) (map[string]string, error) {
 		return nil, fmt.Errorf("input variable don't have '=' could't get variable key value pair")
 	}
 
-	newVariableList,err := changeVariableListFormat(strings.Replace(variable, " ", "", -1))
+	newVariableList, err := changeVariableListFormat(strings.Replace(variable, " ", "", -1))
 	if err != nil {
 		return nil, err
 	}
