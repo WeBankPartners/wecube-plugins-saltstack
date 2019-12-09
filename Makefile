@@ -24,8 +24,8 @@ package: image
 	sed 's/{{PLUGIN_VERSION}}/$(version)/' ./build/register.xml.tpl > ./register.xml
 	sed -i 's/{{IMAGENAME}}/$(project_name):$(version)/g' ./register.xml
 	sed -i 's/{{CONTAINERNAME}}/$(project_name)-$(version)/g' ./register.xml
-	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml 
-	docker save -o  image.tar $(project_name):$(version)
+	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml
+	docker save -o image.tar $(project_name):$(version)
 	zip  $(project_name)-$(version).zip image.tar register.xml
 	rm -rf $(project_name)
 	rm -f register.xml
@@ -42,7 +42,9 @@ upload: package
 push: image
 	docker login -u $(dockerhub_user) -p $(dockerhub_pass) $(dockerhub_server)
 	docker tag $(project_name):$(version) $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
+	docker rmi $(project_name):$(version)
 	docker push $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
+	docker rmi $(dockerhub_server)/$(dockerhub_path)/wecube-saltstack:$(version)
 
 run_container: push
 	docker -H $(server_addr) rm -f $(shell docker -H $(server_addr) ps -a | grep "wecube-saltstack-smoke" | awk '{print $$1}') | true
