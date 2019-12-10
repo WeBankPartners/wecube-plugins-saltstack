@@ -39,6 +39,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -52,6 +54,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -66,6 +70,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
                     <parameter datatype="string" mappingType='context'>s3PkgPath</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -81,6 +87,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -98,6 +106,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
@@ -108,6 +118,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -125,6 +137,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -137,6 +151,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
                     <parameter datatype="string" mappingType='context'>unformatedDisks</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="formatAndMountDisk" path="/saltstack/v1/disk/formatAndMountDisk">
@@ -150,6 +166,8 @@
 
                 <outputParameters>
                 <parameter datatype="string" mappingType='context'>guid</parameter>
+                <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -168,6 +186,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="update" path="/saltstack/v1/apply-deployment/update">
@@ -184,7 +204,9 @@
                     <parameter datatype="string" mappingType='entity' required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
-                <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
