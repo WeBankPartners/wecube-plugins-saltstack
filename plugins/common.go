@@ -18,8 +18,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	CHARGE_TYPE_PREPAID = "PREPAID"
+	RESULT_CODE_SUCCESS = "ok"
+	RESULT_CODE_ERROR   = "error"
+)
+
 type CallBackParameter struct {
 	Parameter string `json:"callbackParameter,omitempty"`
+}
+
+type Result struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"msg,omitempty"`
 }
 
 func Md5Encode(rawData string) string {

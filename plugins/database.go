@@ -51,6 +51,7 @@ type RunDatabaseScriptOutputs struct {
 
 type RunDatabaseScriptOutput struct {
 	CallBackParameter
+	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -67,35 +68,28 @@ func (action *RunDatabaseScriptAction) ReadParam(param interface{}) (interface{}
 	return inputs, nil
 }
 
-func (action *RunDatabaseScriptAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(RunDatabaseScriptInputs)
-	if !ok {
-		return fmt.Errorf("RunDatabaseScriptAction:input type=%T not right", input)
+func (action *RunDatabaseScriptAction) CheckParam(input RunDatabaseScriptInput) error {
+	if input.Host == "" {
+		return errors.New("Host is empty")
+	}
+	if input.Guid == "" {
+		return errors.New("Guid is empty")
+	}
+	if input.Seed == "" {
+		return errors.New("Seed is empty")
+	}
+	if input.UserName == "" {
+		return errors.New("UserName is empty")
+	}
+	if input.Password == "" {
+		return errors.New("Password is empty")
+	}
+	if input.EndPoint == "" {
+		return errors.New("EndPoint is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.Host == "" {
-			return errors.New("Host is empty")
-		}
-		if input.Guid == "" {
-			return errors.New("Guid is empty")
-		}
-		if input.Seed == "" {
-			return errors.New("Seed is empty")
-		}
-		if input.UserName == "" {
-			return errors.New("UserName is empty")
-		}
-		if input.Password == "" {
-			return errors.New("Password is empty")
-		}
-		if input.EndPoint == "" {
-			return errors.New("EndPoint is empty")
-		}
-
-		if input.Port == "" {
-			input.Port = "3306"
-		}
+	if input.Port == "" {
+		input.Port = "3306"
 	}
 
 	return nil
@@ -132,38 +126,59 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	return string(out), nil
 }
 
+func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScriptInput) (output RunDatabaseScriptOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err != nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	if err != nil {
+		logrus.Infof("RunScriptAction downloads3 file error=%v", err)
+		return output, err
+	}
+
+	md5sum := Md5Encode(input.Guid + input.Seed)
+	password, err := AesDecode(md5sum[0:16], input.Password)
+	if err != nil {
+		logrus.Errorf("AesDecode meet error(%v)", err)
+		return output, err
+	}
+
+	result, err := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, fileName)
+	os.Remove(fileName)
+	if err != nil {
+		return output, err
+	}
+	logrus.Infof("RunDatabaseScriptAction execSqlScript: result is %++v", result)
+
+	return output, err
+}
+
 func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunDatabaseScriptInputs)
 	outputs := RunDatabaseScriptOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		output, err := action.runDatabaseScript(&input)
 		if err != nil {
-			logrus.Infof("RunScriptAction downloads3 file error=%v", err)
-			return nil, err
+			finalErr = err
 		}
-
-		md5sum := Md5Encode(input.Guid + input.Seed)
-		password, err := AesDecode(md5sum[0:16], input.Password)
-		if err != nil {
-			logrus.Errorf("AesDecode meet error(%v)", err)
-			return nil, err
-		}
-
-		result, err := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, fileName)
-		os.Remove(fileName)
-		if err != nil {
-			return nil, err
-		}
-
-		output := RunDatabaseScriptOutput{
-			Detail: result,
-			Guid:   input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }

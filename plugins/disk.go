@@ -47,6 +47,7 @@ type GetUnformatedDiskOutputs struct {
 
 type GetUnformatedDiskOutput struct {
 	CallBackParameter
+	Result
 	Guid            string   `json:"guid,omitempty"`
 	UnformatedDisks []string `json:"unformatedDisks,omitempty"`
 }
@@ -60,19 +61,56 @@ func (action *GetUnformatedDiskAction) ReadParam(param interface{}) (interface{}
 	return inputs, nil
 }
 
-func (action *GetUnformatedDiskAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(GetUnformatedDiskInputs)
-	if !ok {
-		return fmt.Errorf("GetUnformatedDiskAction:input type=%T not right", input)
-	}
-
-	for _, input := range inputs.Inputs {
-		if input.Target == "" {
-			return errors.New("Target is empty")
-		}
+func (action *GetUnformatedDiskAction) CheckParam(input GetUnformatedDiskInput) error {
+	if input.Target == "" {
+		return errors.New("Target is empty")
 	}
 
 	return nil
+}
+
+func (action *GetUnformatedDiskAction) getUnformatedDisk(input *GetUnformatedDiskInput) (output GetUnformatedDiskOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err != nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	result, err := executeS3Script("getUnformatedDisk.py", input.Target, "", "")
+	if err != nil {
+		return output, err
+	}
+
+	saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+	if err != nil {
+		logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
+		return output, err
+	}
+
+	for k, v := range saltApiResult.Results[0] {
+		if v.RetCode != 0 {
+			logrus.Errorf("GetUnformatedDiskAction ip=%v,stderr=%v", k, v.Stderr)
+			err = fmt.Errorf("GetUnformatedDiskAction ip=%v,stderr=%v", k, v.Stderr)
+			return output, err
+		}
+		if err = json.Unmarshal([]byte(v.Stdout), &output); err != nil {
+			logrus.Errorf("GetUnformatedDiskAction Unmarshal failed err=%v,stdOut=%v", err, v.Stdout)
+			err = fmt.Errorf("GetUnformatedDiskAction Unmarshal failed err=%v,stdOut=%v", err, v.Stdout)
+			return output, err
+		}
+	}
+
+	return output, err
 }
 
 func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error) {
