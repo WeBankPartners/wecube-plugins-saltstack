@@ -51,6 +51,7 @@ type AddUserOutputs struct {
 
 type AddUserOutput struct {
 	CallBackParameter
+	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -67,84 +68,100 @@ func (action *AddUserAction) ReadParam(param interface{}) (interface{}, error) {
 	return inputs, nil
 }
 
-func (action *AddUserAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(AddUserInputs)
-	if !ok {
-		return fmt.Errorf("AddUserAction:input type=%T not right", input)
+func (action *AddUserAction) CheckParam(input AddUserInput) error {
+	if input.Target == "" {
+		return errors.New("AddUserAction target is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.Target == "" {
-			return errors.New("AddUserAction target is empty")
-		}
-
-		if input.UserName == "" {
-			return errors.New("AddUserAction userName is empty")
-		}
-
-		// if input.Password == "" {
-		// 	return errors.New("AddUserAction password is empty")
-		// }
-
-		// if input.UserGroup == "" {
-		// 	return errors.New("AddUserAction userGroup is empty")
-		// }
+	if input.UserName == "" {
+		return errors.New("AddUserAction userName is empty")
 	}
+
+	// if input.Password == "" {
+	// 	return errors.New("AddUserAction password is empty")
+	// }
+
+	// if input.UserGroup == "" {
+	// 	return errors.New("AddUserAction userGroup is empty")
+	// }
 
 	return nil
+}
+
+func (action *AddUserAction) addUser(input *AddUserInput) (output AddUserOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	execArg := fmt.Sprintf("--action add --user %s", input.UserName)
+	if input.Password != "" {
+		execArg += " --password " + input.Password
+	} else {
+		execArg += " --password " + ADD_USER_DEFALUT_PASSWORD
+	}
+	if input.UserGroup != "" {
+		execArg += " --userId " + input.UserId
+	}
+	if input.UserId != "" {
+		execArg += " --group " + input.UserGroup
+	}
+	if input.GroupId != "" {
+		execArg += " --groupId " + input.GroupId
+	}
+	if input.HomeDir != "" {
+		execArg += " --home " + input.HomeDir
+	}
+
+	result, err := executeS3Script("user_manage.sh", input.Target, "", execArg)
+	if err != nil {
+		return output, err
+	}
+
+	saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+	if err != nil {
+		output.Detail = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+		return output, err
+	}
+
+	for _, v := range saltApiResult.Results[0] {
+		if v.RetCode != 0 {
+			output.Detail = v.Stderr
+			err = fmt.Errorf("%s", v.Stdout+v.Stderr)
+			return output, err
+		}
+		break
+	}
+	output.Detail = result
+
+	return output, err
 }
 
 func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(AddUserInputs)
 	outputs := AddUserOutputs{}
-	runAs := ""
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
-		if input.Password != "" {
-			execArg += " --password " + input.Password
-		} else {
-			execArg += " --password " + ADD_USER_DEFALUT_PASSWORD
-		}
-		if input.UserGroup != "" {
-			execArg += " --userId " + input.UserId
-		}
-		if input.UserId != "" {
-			execArg += " --group " + input.UserGroup
-		}
-		if input.GroupId != "" {
-			execArg += " --groupId " + input.GroupId
-		}
-		if input.HomeDir != "" {
-			execArg += " --home " + input.HomeDir
-		}
-
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		output, err := action.addUser(&input)
 		if err != nil {
-			return nil, err
+			finalErr = err
 		}
-
-		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
-		if err != nil {
-			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
-		}
-
-		for _, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
-			}
-			break
-		}
-
-		output := AddUserOutput{
-			Detail: result,
-			Guid:   input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 type RemoveUserInputs struct {
@@ -164,6 +181,7 @@ type RemoveUserOutputs struct {
 
 type RemoveUserOutput struct {
 	CallBackParameter
+	Result
 	Detail string `json:"detail,omitempty"`
 	Guid   string `json:"guid,omitempty"`
 }
@@ -179,57 +197,72 @@ func (action *RemoveUserAction) ReadParam(param interface{}) (interface{}, error
 	return inputs, nil
 }
 
-func (action *RemoveUserAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(RemoveUserInputs)
-	if !ok {
-		return fmt.Errorf("RemoveUserAction:input type=%T not right", input)
+func (action *RemoveUserAction) CheckParam(input RemoveUserInput) error {
+	if input.Target == "" {
+		return errors.New("RemoveUserAction target is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.Target == "" {
-			return errors.New("RemoveUserAction target is empty")
-		}
-
-		if input.UserName == "" {
-			return errors.New("RemoveUserAction userName is empty")
-		}
+	if input.UserName == "" {
+		return errors.New("RemoveUserAction userName is empty")
 	}
 
 	return nil
 }
 
+func (action *RemoveUserAction) removeUser(input *RemoveUserInput) (output RemoveUserOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
+
+	result, err := executeS3Script("user_manage.sh", input.Target, "", execArg)
+	if err != nil {
+		return output, err
+	}
+
+	saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+	if err != nil {
+		output.Detail = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+		return output, err
+	}
+
+	for _, v := range saltApiResult.Results[0] {
+		if v.RetCode != 0 {
+			output.Detail = v.Stderr
+			err = fmt.Errorf("%s", v.Stdout+v.Stderr)
+			return output, err
+		}
+		break
+	}
+	output.Detail = result
+
+	return output, err
+}
+
 func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RemoveUserInputs)
 	outputs := RemoveUserOutputs{}
-	runAs := ""
-
+	var finalErr error
 	for _, input := range inputs.Inputs {
-		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
-
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		output, err := action.removeUser(&input)
 		if err != nil {
-			return nil, err
+			finalErr = err
 		}
-
-		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
-		if err != nil {
-			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
-		}
-
-		for _, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
-			}
-			break
-		}
-
-		output := RemoveUserOutput{
-			Detail: result,
-			Guid:   input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }

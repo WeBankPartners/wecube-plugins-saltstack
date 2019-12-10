@@ -130,7 +130,7 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 	defer func() {
 		output.Guid = input.Guid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err != nil {
+		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
 		} else {
 			output.Result.Code = RESULT_CODE_ERROR

@@ -73,7 +73,7 @@ func (action *GetUnformatedDiskAction) getUnformatedDisk(input *GetUnformatedDis
 	defer func() {
 		output.Guid = input.Guid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err != nil {
+		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
 		} else {
 			output.Result.Code = RESULT_CODE_ERROR
@@ -116,37 +116,16 @@ func (action *GetUnformatedDiskAction) getUnformatedDisk(input *GetUnformatedDis
 func (action *GetUnformatedDiskAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(GetUnformatedDiskInputs)
 	outputs := GetUnformatedDiskOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		result, err := executeS3Script("getUnformatedDisk.py", input.Target, "", "")
+		output, err := action.getUnformatedDisk(&input)
 		if err != nil {
-			return nil, err
-		}
-
-		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
-		if err != nil {
-			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
-			return nil, err
-		}
-
-		output := GetUnformatedDiskOutput{
-			Guid: input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-
-		for k, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				logrus.Errorf("GetUnformatedDiskAction ip=%v,stderr=%v", k, v.Stderr)
-				return nil, fmt.Errorf("GetUnformatedDiskAction ip=%v,stderr=%v", k, v.Stderr)
-			}
-			if err = json.Unmarshal([]byte(v.Stdout), &output); err != nil {
-				logrus.Errorf("GetUnformatedDiskAction Unmarshal failed err=%v,stdOut=%v", err, v.Stdout)
-				return nil, fmt.Errorf("GetUnformatedDiskAction Unmarshal failed err=%v,stdOut=%v", err, v.Stdout)
-			}
+			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 type FormatAndMountDiskAction struct {
@@ -170,6 +149,7 @@ type FormatAndMountDiskOutputs struct {
 
 type FormatAndMountDiskOutput struct {
 	CallBackParameter
+	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -192,63 +172,78 @@ func isValidFileSystemType(fileSystemType string) error {
 	return fmt.Errorf("invalid fileSystemType(%s)", fileSystemType)
 }
 
-func (action *FormatAndMountDiskAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(FormatAndMountDiskInputs)
-	if !ok {
-		return fmt.Errorf("FormatAndMountDiskInputs:input type=%T not right", input)
+func (action *FormatAndMountDiskAction) CheckParam(input FormatAndMountDiskInput) error {
+	if input.Target == "" {
+		return errors.New("Target is empty")
 	}
-
-	for _, input := range inputs.Inputs {
-		if input.Target == "" {
-			return errors.New("Target is empty")
-		}
-		if input.DiskName == "" {
-			return errors.New("DiskName is empty")
-		}
-		if input.FileSystemType == "" {
-			return errors.New("FileSystemType is empty")
-		}
-		if input.MountDir == "" {
-			return errors.New("MountDir is empty")
-		}
-		if err := isValidFileSystemType(input.FileSystemType); err != nil {
-			return err
-		}
+	if input.DiskName == "" {
+		return errors.New("DiskName is empty")
+	}
+	if input.FileSystemType == "" {
+		return errors.New("FileSystemType is empty")
+	}
+	if input.MountDir == "" {
+		return errors.New("MountDir is empty")
+	}
+	if err := isValidFileSystemType(input.FileSystemType); err != nil {
+		return err
 	}
 
 	return nil
 }
 
+func (action *FormatAndMountDiskAction) formatAndMountDisk(input *FormatAndMountDiskInput) (output FormatAndMountDiskOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	execArgs := "-d " + input.DiskName + " -f " + input.FileSystemType + " -m " + input.MountDir
+	result, err := executeS3Script("formatAndMountDisk.py", input.Target, "", execArgs)
+	if err != nil {
+		return output, err
+	}
+
+	saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+	if err != nil {
+		logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
+		return output, err
+	}
+
+	for k, v := range saltApiResult.Results[0] {
+		if v.RetCode != 0 {
+			logrus.Errorf("FormatAndMountDiskAction ip=%v,stderr=%v", k, v.Stderr)
+			err = fmt.Errorf("FormatAndMountDiskAction ip=%v,stderr=%v", k, v.Stderr)
+			return output, err
+		}
+		output.Detail = v.Stdout
+	}
+
+	return output, err
+}
+
 func (action *FormatAndMountDiskAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(FormatAndMountDiskInputs)
 	outputs := FormatAndMountDiskOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		execArgs := "-d " + input.DiskName + " -f " + input.FileSystemType + " -m " + input.MountDir
-		result, err := executeS3Script("formatAndMountDisk.py", input.Target, "", execArgs)
+		output, err := action.formatAndMountDisk(&input)
 		if err != nil {
-			return nil, err
-		}
-
-		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
-		if err != nil {
-			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
-			return nil, err
-		}
-
-		output := FormatAndMountDiskOutput{
-			Guid: input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-
-		for k, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				logrus.Errorf("FormatAndMountDiskAction ip=%v,stderr=%v", k, v.Stderr)
-				return nil, fmt.Errorf("FormatAndMountDiskAction ip=%v,stderr=%v", k, v.Stderr)
-			}
-			output.Detail = v.Stdout
+			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	return &outputs, nil
+	return &outputs, finalErr
 }

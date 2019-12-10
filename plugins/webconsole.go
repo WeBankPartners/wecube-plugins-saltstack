@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
-	gossh "golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"net"
@@ -20,6 +18,9 @@ import (
 	"text/template"
 	"time"
 	"unicode/utf8"
+
+	"github.com/gorilla/websocket"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 	ENABLE_HIGH_RISK_COMMAND_INTERRUPT = false
 	KEY_CR                             = 13
 	KEY_CANCEL                         = 3
-	KEY_SPACE                          =32
+	KEY_SPACE                          = 32
 	STATE_WAIT_COMMAND_INPUT           = 0
 	STATE_HIGH_RISK_WAIT_CONFIRM       = 1
 )
@@ -238,14 +239,14 @@ func deleteUnusedSpaces(inputStr string) string {
 }
 
 func isHighRiskCommand(inputCommandStr string) bool {
-	if len(inputCommandStr) == 0{
+	if len(inputCommandStr) == 0 {
 		return false
 	}
 	for _, highRiskCommand := range HighRiskCommands {
 		highRiskCmd := deleteUnusedSpaces(highRiskCommand)
 		inputCmd := deleteUnusedSpaces(inputCommandStr)
 		if highRiskCmd == inputCmd {
-			fmt.Printf("highRiskCmd=%v,inputCmd=%v is same\n",highRiskCmd,inputCmd)
+			fmt.Printf("highRiskCmd=%v,inputCmd=%v is same\n", highRiskCmd, inputCmd)
 			return true
 		}
 	}
@@ -257,9 +258,9 @@ func highRiskCommandWrite(sh *ssh, p []byte, channel gossh.Channel, r chan rune)
 	writeData := []byte{}
 	runes := []rune{}
 
-	if len(p)!=1{
-		fmt.Printf("highRiskCommandWrite len(p)=%v\n",len(p))
-		return nil 
+	if len(p) != 1 {
+		fmt.Printf("highRiskCommandWrite len(p)=%v\n", len(p))
+		return nil
 	}
 
 	if sh.state == STATE_WAIT_COMMAND_INPUT {

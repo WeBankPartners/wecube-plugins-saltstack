@@ -59,6 +59,7 @@ type VariableReplaceOutputs struct {
 //VariableReplaceOutput .
 type VariableReplaceOutput struct {
 	CallBackParameter
+	Result
 	Guid         string `json:"guid,omitempty"`
 	NewS3PkgPath string `json:"s3PkgPath,omitempty"`
 	//Detail     string `json:"detail,omitempty"`
@@ -77,20 +78,12 @@ func (action *VariableReplaceAction) ReadParam(param interface{}) (interface{}, 
 	return inputs, nil
 }
 
-func (action *VariableReplaceAction) CheckParam(input interface{}) error {
-	data, ok := input.(VariableReplaceInputs)
-	if !ok {
-		return fmt.Errorf("VariableReplaceAction:input type=%T not right", input)
+func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) error {
+	if input.EndPoint == "" || input.FilePath == "" || input.VariableList == "" {
+		return fmt.Errorf("VariableReplaceAction endpoint, file_path, variable_list could not be empty")
 	}
-	if len(data.Inputs) > 0 {
-		for _, d := range data.Inputs {
-			if d.EndPoint == "" || d.FilePath == "" || d.VariableList == "" {
-				return fmt.Errorf("VariableReplaceAction endpoint, file_path, variable_list could not be empty")
-			}
-			if !strings.Contains(d.VariableList, "=") {
-				return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
-			}
-		}
+	if !strings.Contains(input.VariableList, "=") {
+		return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
 	}
 
 	return nil
@@ -106,80 +99,102 @@ func getPackageNameWithoutSuffix(packageName string) string {
 	return packageName[0:index]
 }
 
+func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput) (output VariableReplaceOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	suffix, err := getCompressFileSuffix(input.EndPoint)
+	if err != nil {
+		return output, err
+	}
+
+	packageName, err := getPackageNameFromEndpoint(input.EndPoint)
+	if err != nil {
+		return output, err
+	}
+	logrus.Info("package name = >", packageName)
+
+	decompressDirName := getDecompressDirName(packageName)
+	if err = isDirExist(decompressDirName); err == nil {
+		os.RemoveAll(decompressDirName)
+	}
+
+	if err = os.MkdirAll(decompressDirName, os.ModePerm); err != nil {
+		return output, err
+	}
+
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	if err != nil {
+		logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
+		return output, err
+	}
+
+	if err = decompressFile(compressedFileFullPath, decompressDirName); err != nil {
+		logrus.Errorf("VariableReplaceAction decompressFile fullPath=%v,err=%v", compressedFileFullPath, err)
+		os.RemoveAll(compressedFileFullPath)
+		return output, err
+	}
+	os.RemoveAll(compressedFileFullPath)
+
+	for _, filePath := range strings.Split(input.FilePath, "|") {
+		confFilePath := decompressDirName + "/" + filePath
+		if err := ReplaceFileVar(confFilePath, input.VariableList); err != nil {
+			os.RemoveAll(decompressDirName)
+			return output, err
+		}
+	}
+
+	//compress file
+	nowTime := time.Now().Format("200601021504")
+	newPackageName := fmt.Sprintf("%s-%v%s", getPackageNameWithoutSuffix(packageName), nowTime, suffix)
+	fmt.Printf("newPackageName=%s\n", newPackageName)
+	if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
+		logrus.Errorf("compressDir meet error=%v", err)
+		os.RemoveAll(decompressDirName)
+		return output, err
+	}
+	os.RemoveAll(decompressDirName)
+
+	//upload to s3
+	newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
+	fmt.Printf("NewS3EndpointName=%s\n", newS3Endpoint)
+
+	if _, err = uploadS3File(newS3Endpoint, "access_key", "secret_key"); err != nil {
+		logrus.Errorf("uploadS3File meet error=%v", err)
+		return output, err
+	}
+	output.NewS3PkgPath = newS3Endpoint
+
+	return output, err
+}
+
 func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) {
 	files, _ := input.(VariableReplaceInputs)
 	outputs := VariableReplaceOutputs{}
+	var finalErr error
 
 	for _, input := range files.Inputs {
-		suffix, err := getCompressFileSuffix(input.EndPoint)
+		output, err := action.variableReplace(&input)
 		if err != nil {
-			return &outputs, err
+			finalErr = err
 		}
-
-		packageName, err := getPackageNameFromEndpoint(input.EndPoint)
-		if err != nil {
-			return &outputs, err
-		}
-		logrus.Info("package name = >", packageName)
-
-		decompressDirName := getDecompressDirName(packageName)
-		if err = isDirExist(decompressDirName); err == nil {
-			os.RemoveAll(decompressDirName)
-		}
-
-		if err = os.MkdirAll(decompressDirName, os.ModePerm); err != nil {
-			return &outputs, err
-		}
-
-		compressedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
-		if err != nil {
-			logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
-			return &outputs, err
-		}
-
-		if err = decompressFile(compressedFileFullPath, decompressDirName); err != nil {
-			logrus.Errorf("VariableReplaceAction decompressFile fullPath=%v,err=%v", compressedFileFullPath, err)
-			os.RemoveAll(compressedFileFullPath)
-			return &outputs, err
-		}
-		os.RemoveAll(compressedFileFullPath)
-
-		for _, filePath := range strings.Split(input.FilePath, "|") {
-			confFilePath := decompressDirName + "/" + filePath
-			if err := ReplaceFileVar(confFilePath, input.VariableList); err != nil {
-				os.RemoveAll(decompressDirName)
-				return &outputs, err
-			}
-		}
-
-		//compress file
-		nowTime := time.Now().Format("200601021504")
-		newPackageName := fmt.Sprintf("%s-%v%s", getPackageNameWithoutSuffix(packageName), nowTime, suffix)
-		fmt.Printf("newPackageName=%s\n", newPackageName)
-		if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
-			logrus.Errorf("compressDir meet error=%v", err)
-			os.RemoveAll(decompressDirName)
-			return &outputs, err
-		}
-		os.RemoveAll(decompressDirName)
-
-		//upload to s3
-		newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
-		fmt.Printf("NewS3EndpointName=%s\n", newS3Endpoint)
-
-		if _, err = uploadS3File(newS3Endpoint, "access_key", "secret_key"); err != nil {
-			logrus.Errorf("uploadS3File meet error=%v", err)
-			return &outputs, err
-		}
-		output := VariableReplaceOutput{
-			Guid:         input.Guid,
-			NewS3PkgPath: newS3Endpoint,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 func ReplaceFileVar(filepath, variablelist string) error {
@@ -222,7 +237,7 @@ func ReplaceFileVar(filepath, variablelist string) error {
 func changeVariableListFormat(variableList string) (string, error) {
 	index := strings.Index(variableList, "=")
 	if index == -1 {
-			return "", fmt.Errorf("variableList(%s) do not have =", variableList)
+		return "", fmt.Errorf("variableList(%s) do not have =", variableList)
 	}
 
 	varsStr := variableList[0:index]
@@ -230,27 +245,26 @@ func changeVariableListFormat(variableList string) (string, error) {
 	vars := strings.Split(varsStr, ",")
 	values := strings.Split(valuesStr, ",")
 	if len(vars) == 0 || len(values) == 0 || len(vars) != len(values) {
-			return "", fmt.Errorf("len(vars)=%v,len(values)=%v", len(vars), len(values))
+		return "", fmt.Errorf("len(vars)=%v,len(values)=%v", len(vars), len(values))
 	}
 
 	result := ""
 	for i, _ := range vars {
-			text := vars[i] + "=" + values[i]
-			result += text
-			if i != len(vars)-1 {
-					result += ","
-			}
+		text := vars[i] + "=" + values[i]
+		result += text
+		if i != len(vars)-1 {
+			result += ","
+		}
 	}
 	return result, nil
 }
-
 
 func GetInputVariableMap(variable string) (map[string]string, error) {
 	if !strings.Contains(variable, "=") {
 		return nil, fmt.Errorf("input variable don't have '=' could't get variable key value pair")
 	}
 
-	newVariableList,err := changeVariableListFormat(strings.Replace(variable, " ", "", -1))
+	newVariableList, err := changeVariableListFormat(strings.Replace(variable, " ", "", -1))
 	if err != nil {
 		return nil, err
 	}

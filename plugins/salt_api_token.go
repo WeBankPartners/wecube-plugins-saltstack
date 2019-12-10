@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -43,7 +44,6 @@ var (
 )
 
 //{"return": [{"perms": [".*"], "start": 1557300494.752942, "token": "f37858551ee3cb4f9d7f1653545e627215e1aaa5", "expire": 1557343694.752943, "user": "saltapi", "eauth": "pam"}]}
-
 type SaltApiTokenResult struct {
 	Token  string  `json:"token"`
 	Start  float64 `json:"start"`

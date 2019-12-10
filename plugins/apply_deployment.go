@@ -103,10 +103,10 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		output.Guid = input.Guid
 		output.Target = input.Target
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err != nil {
-			output.RetCode = 1
+		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
 		} else {
+			output.RetCode = 1
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 		}
@@ -319,7 +319,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		output.Guid = input.Guid
 		output.Target = input.Target
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err != nil {
+		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
 		} else {
 			output.RetCode = 1
