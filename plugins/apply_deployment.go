@@ -98,7 +98,7 @@ func (action *ApplyNewDeploymentAction) CheckParam(input ApplyNewDeploymentInput
 	return nil
 }
 
-func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploymentInput) (output *ApplyNewDeploymentOutput, err error) {
+func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploymentInput) (output ApplyNewDeploymentOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -232,7 +232,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		}
 		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
-		outputs.Outputs = append(outputs.Outputs, *output)
+		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
 	logrus.Infof("All new applications = %v have been done", inputs)

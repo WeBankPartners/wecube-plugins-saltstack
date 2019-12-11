@@ -104,7 +104,7 @@ func (action *AgentInstallAction) removeSaltKeys(host string) {
 	return
 }
 
-func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output *AgentInstallOutput, err error) {
+func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output AgentInstallOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
@@ -125,7 +125,7 @@ func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output
 	password, err := AesDecode(md5sum[0:16], input.Password)
 	if err != nil {
 		logrus.Errorf("AesDecode meet error(%v)", err)
-		return nil, err
+		return output, err
 	}
 	installMinionArgs := []string{
 		input.Host,
@@ -151,7 +151,7 @@ func (action *AgentInstallAction) Do(input interface{}) (interface{}, error) {
 		if err != nil {
 			finalErr = err
 		}
-		outputs.Outputs = append(outputs.Outputs, *agentInstallOutput)
+		outputs.Outputs = append(outputs.Outputs, agentInstallOutput)
 	}
 
 	logrus.Infof("all agents = %v have been installed", agents)
