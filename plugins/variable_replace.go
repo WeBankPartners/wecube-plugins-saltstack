@@ -151,7 +151,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	for _, filePath := range strings.Split(input.FilePath, "|") {
 		confFilePath := decompressDirName + "/" + filePath
-		if err := ReplaceFileVar(confFilePath, input.VariableList); err != nil {
+		if err = ReplaceFileVar(confFilePath, input.VariableList); err != nil {
 			os.RemoveAll(decompressDirName)
 			return output, err
 		}

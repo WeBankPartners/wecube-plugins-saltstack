@@ -165,8 +165,9 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		return output, err
 	}
 
+	var unpackRequest *SaltApiRequest
 	if input.Unpack == "true" {
-		unpackRequest, err := action.deriveUnpackRequest(input)
+		unpackRequest, err = action.deriveUnpackRequest(input)
 		if err != nil {
 			return output, err
 		}
@@ -175,7 +176,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 			return output, err
 		}
 		if input.FileOwner != "" {
-			if err := changeDirecoryOwner(input); err != nil {
+			if err = changeDirecoryOwner(input); err != nil {
 				return output, err
 			}
 		}

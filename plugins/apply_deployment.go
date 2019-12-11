@@ -139,6 +139,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 	logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 	// replace apply variable
+	var variableReplaceOutputs interface{}
 	if input.VariableFilePath != "" {
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
@@ -152,7 +153,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		}
 
 		logrus.Infof("ApplyNewDeploymentAction replaceApplyVariable: input=%++v", variableReplaceRequest)
-		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
+		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
 			logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
 			return output, err
@@ -357,6 +358,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 	logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 	// replace apply variable
+	var variableReplaceOutputs interface{}
 	if input.VariableFilePath != "" {
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
@@ -370,7 +372,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		}
 
 		logrus.Infof("ApplyUpdateAction replaceApplyVariable: input=%++v", variableReplaceRequest)
-		variableReplaceOutputs, err := replaceApplyVariable(variableReplaceRequest)
+		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
 			logrus.Errorf("ApplyUpdateAction replaceApplyVariable meet error=%v", err)
 			return output, err
