@@ -148,31 +148,6 @@
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="disk">
-            <interface action="getUnformatedDisk" path="/saltstack/v1/disk/getUnformatedDisk">
-                <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
-                    <parameter datatype="string" mappingType='context'>unformatedDisks</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="formatAndMountDisk" path="/saltstack/v1/disk/formatAndMountDisk">
-                <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">diskName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">fileSystemType</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">mountDir</parameter>
-                </inputParameters>
-
-                <outputParameters>
-                <parameter datatype="string" mappingType='context'>guid</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
         <plugin name="apply-deployment">
             <interface action="new" path="/saltstack/v1/apply-deployment/new">
                 <inputParameters>
