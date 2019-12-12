@@ -52,7 +52,6 @@ func init() {
 	registerPlugin("user", new(UserPlugin))
 	registerPlugin("database", new(DatabasePlugin))
 	registerPlugin("released-package", new(ReleasedPackagePlugin))
-	registerPlugin("disk", new(DiskPlugin))
 	registerPlugin("text-processor", new(TextProcessorPlugin))
 	registerPlugin("log", new(LogPlugin))
 	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
