@@ -3,7 +3,7 @@ FROM  webankpartners/salt-master-base:v1
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
 
 RUN export LOG_PATH=$APP_HOME/logs \
-    & mkdir -p $APP_HOME $LOG_PATH
+    && mkdir -p $APP_HOME $LOG_PATH
 
 COPY static  $APP_HOME/static
 
@@ -20,8 +20,8 @@ COPY scripts/salt/install_minion.sh $APP_HOME/scripts/salt/install_minion.sh
 COPY scripts/salt/remove_master_unused_key.sh $APP_HOME/scripts/salt/remove_master_unused_key.sh
 
 RUN chmod +x  /start.sh \
-    & chmod +x $APP_HOME/scripts/salt/install_minion.sh \
-    & chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh
+    && chmod +x $APP_HOME/scripts/salt/install_minion.sh \
+    && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh
 
 COPY wecube-plugins-saltstack $APP_HOME/
 
