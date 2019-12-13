@@ -9,13 +9,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -29,8 +29,8 @@ type CallBackParameter struct {
 }
 
 type Result struct {
-	Code    string `json:"code,omitempty"`
-	Message string `json:"msg,omitempty"`
+	Code    string `json:"code"`
+	Message string `json:"msg"`
 }
 
 func Md5Encode(rawData string) string {
@@ -180,4 +180,32 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	}
 
 	return result, nil
+}
+
+func getTempFile() (string, error) {
+	file, err := ioutil.TempFile("/tmp/", "qcloud_key")
+	if err != nil {
+		return "", err
+	}
+	file.Close()
+	return file.Name(), nil
+}
+
+func writeStringToFile(data string, fileName string) error {
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+	_, err = f.WriteString(data)
+	return err
+}
+
+func readStringFromFile(fileName string) (string, error) {
+	f, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", err
+	}
+	return string(f), nil
 }

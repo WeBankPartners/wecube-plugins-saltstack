@@ -65,7 +65,11 @@
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>

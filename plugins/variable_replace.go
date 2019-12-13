@@ -2,15 +2,15 @@ package plugins
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 //VariableActions .
@@ -27,7 +27,6 @@ type VariablePlugin struct {
 //GetActionByName .
 func (plugin *VariablePlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := VariableActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("File plugin,action = %s not found", actionName)
 	}
@@ -49,6 +48,12 @@ type VariableReplaceInput struct {
 	VariableList string `json:"variableList,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
+
+	//support aomp password encrypt
+	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed                 string `json:"seed,omitempty"`
+	AppPublicKey         string `json:"appPublicKey,omitempty"`
+	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 }
 
 //VariableReplaceOutputs .
@@ -151,7 +156,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	for _, filePath := range strings.Split(input.FilePath, "|") {
 		confFilePath := decompressDirName + "/" + filePath
-		if err = ReplaceFileVar(confFilePath, input.VariableList); err != nil {
+		if err = ReplaceFileVar(confFilePath, input); err != nil {
 			os.RemoveAll(decompressDirName)
 			return output, err
 		}
@@ -197,7 +202,14 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 	return &outputs, finalErr
 }
 
-func ReplaceFileVar(filepath, variablelist string) error {
+//variablelist,seed,publicKey,privateKey string
+func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
+	variablelist := input.VariableList
+	seed := input.Seed
+	publicKey := input.AppPublicKey
+	privateKey := input.SysPrivateKey
+	prefix := input.EncryptVariblePrefix
+
 	index := strings.LastIndexAny(filepath, "/")
 	if index == -1 {
 		return fmt.Errorf("Invalid endpoint %s", filepath)
@@ -224,7 +236,7 @@ func ReplaceFileVar(filepath, variablelist string) error {
 		return err
 	}
 
-	err = replaceFileVar(keyMap, filepath)
+	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
@@ -285,7 +297,6 @@ func GetInputVariableMap(variable string) (map[string]string, error) {
 }
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {
-
 	for _, va := range variablelist {
 		if _, ok := input[va]; !ok {
 			return fmt.Errorf("variable %s not input", va)
@@ -373,7 +384,106 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func replaceFileVar(keyMap map[string]string, filepath string) error {
+func isKeyNeedEncrypt(key string, prefix string) bool {
+	return strings.HasPrefix(key, prefix)
+}
+
+func encrpytSenstiveData(data, seed, guid, publicKey, privateKey string) (string, error) {
+	//get raw data
+	md5sum := Md5Encode(guid + seed)
+	rawData, err := AesDecode(md5sum[0:16], data)
+	if err != nil {
+		return "", fmt.Errorf("Decode senstive data meet err=%v", err)
+	}
+	publicKeyFile, err := getTempFile()
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(publicKeyFile)
+
+	privateKeyFile, err := getTempFile()
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(privateKeyFile)
+
+	rawDataFile, err := getTempFile()
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(rawDataFile)
+
+	encrpyDataFile, err := getTempFile()
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(encrpyDataFile)
+
+	if err = writeStringToFile(publicKey, publicKeyFile); err != nil {
+		return "", err
+	}
+
+	if err = writeStringToFile(privateKey, privateKeyFile); err != nil {
+		return "", err
+	}
+	if err = writeStringToFile(rawData, rawDataFile); err != nil {
+		return "", err
+	}
+
+	args := []string{
+		"enc",
+		publicKeyFile,
+		privateKeyFile,
+		rawDataFile,
+		encrpyDataFile,
+	}
+	out, err := runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh", args)
+	fmt.Printf("run script out=%v\n,err=%v\n", out, err)
+	if err != nil {
+		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n", out, err)
+		return "", err
+	}
+
+	encryptData, err := readStringFromFile(encrpyDataFile)
+	if err != nil {
+		return "", err
+	}
+
+	return encryptData, nil
+}
+
+func getVariableValue(key string, value string, keyMap map[string]string, seed string, publicKey string, privateKey string, prefix string) (string, error) {
+	needEncryt := isKeyNeedEncrypt(key, prefix)
+	if !needEncryt {
+		return value, nil
+	}
+
+	if seed == "" {
+		return "", errors.New("getVariableValue seed is empty")
+	}
+	if publicKey == "" {
+		return "", errors.New("getVariableValue publicKey is empty")
+	}
+	if privateKey == "" {
+		return "", errors.New("getVariableValue privateKey is empty")
+	}
+
+	guid := ""
+	for k, v := range keyMap {
+		if strings.ToUpper(k) == "GUID" {
+			guid = v
+			break
+		}
+	}
+
+	if guid == "" {
+		return "", errors.New("getVariableValue can't found guid in map")
+	}
+
+	return encrpytSenstiveData(value, seed, guid, publicKey, privateKey)
+}
+
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		logrus.Errorf("open file fail: %s", err)
@@ -408,7 +518,11 @@ func replaceFileVar(keyMap map[string]string, filepath string) error {
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					newLine = strings.Replace(newLine, oldStr, keyMap[s[1]], -1)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
+					if err != nil {
+						return err
+					}
+					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
 				if strings.Contains(key, "!") {
 					s := strings.Split(key, "!")
@@ -416,7 +530,11 @@ func replaceFileVar(keyMap map[string]string, filepath string) error {
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					newLine = strings.Replace(newLine, oldStr, keyMap[s[1]], -1)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
+					if err != nil {
+						return err
+					}
+					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
 				if strings.Contains(key, "&") {
 					s := strings.Split(key, "&")
@@ -424,7 +542,11 @@ func replaceFileVar(keyMap map[string]string, filepath string) error {
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					newLine = strings.Replace(newLine, oldStr, keyMap[s[1]], -1)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
+					if err != nil {
+						return err
+					}
+					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
 			}
 		}
