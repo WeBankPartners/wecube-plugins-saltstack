@@ -417,7 +417,7 @@ func encrpytSenstiveData(data, seed, guid, publicKey, privateKey string) (string
 	if err != nil {
 		return "", err
 	}
-	defer os.Remove(rawDataFile)
+	defer os.Remove(encrpyDataFile)
 
 	if err = writeStringToFile(publicKey, publicKeyFile); err != nil {
 		return "", err
