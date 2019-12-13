@@ -10,11 +10,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -181,3 +181,32 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 
 	return result, nil
 }
+
+func getTempFile() (string, error) {
+	file, err := ioutil.TempFile("/tmp/", "qcloud_key")
+	if err != nil {
+			return "", err
+	}
+	file.Close()
+	return file.Name(), nil
+}
+
+func writeStringToFile(data string, fileName string) error {
+	f, err := os.Create(fileName)
+	if err != nil {
+			return err
+	}
+
+	defer f.Close()
+	_, err = f.WriteString(data)
+	return err
+}
+
+func readStringFromFile(fileName string) (string, error) {
+	f, err := ioutil.ReadFile(fileName)
+	if err != nil {
+			return "", err
+	}
+	return string(f), nil
+}
+
