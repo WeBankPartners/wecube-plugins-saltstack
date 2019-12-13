@@ -393,7 +393,7 @@ func encrpytSenstiveData(data, seed, guid, publicKey, privateKey string) (string
 	md5sum := Md5Encode(guid + seed)
 	rawData, err := AesDecode(md5sum[0:16], data)
 	if err != nil {
-		return "", fmt.Errorf("Decode senstive ")
+		return "", fmt.Errorf("Decode senstive data meet err=%v", err)
 	}
 	publicKeyFile, err := getTempFile()
 	if err != nil {
@@ -437,8 +437,8 @@ func encrpytSenstiveData(data, seed, guid, publicKey, privateKey string) (string
 		rawDataFile,
 		encrpyDataFile,
 	}
-
 	out, err := runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh", args)
+	fmt.Printf("run script out=%v\n,err=%v\n", out, err)
 	if err != nil {
 		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n", out, err)
 		return "", err
