@@ -9,13 +9,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -185,7 +185,7 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 func getTempFile() (string, error) {
 	file, err := ioutil.TempFile("/tmp/", "qcloud_key")
 	if err != nil {
-			return "", err
+		return "", err
 	}
 	file.Close()
 	return file.Name(), nil
@@ -194,7 +194,7 @@ func getTempFile() (string, error) {
 func writeStringToFile(data string, fileName string) error {
 	f, err := os.Create(fileName)
 	if err != nil {
-			return err
+		return err
 	}
 
 	defer f.Close()
@@ -205,8 +205,7 @@ func writeStringToFile(data string, fileName string) error {
 func readStringFromFile(fileName string) (string, error) {
 	f, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			return "", err
+		return "", err
 	}
 	return string(f), nil
 }
-

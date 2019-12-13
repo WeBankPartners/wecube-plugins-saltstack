@@ -2,15 +2,15 @@ package plugins
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 //VariableActions .
@@ -48,12 +48,12 @@ type VariableReplaceInput struct {
 	VariableList string `json:"variableList,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
-	
-	//support aomp password encrypt 
+
+	//support aomp password encrypt
 	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
-	Seed          string `json:"seed,omitempty"`
-	AppPublicKey  string `json:"appPublicKey,omitempty"`
-	SysPrivateKey string `json:"sysPrivateKey,omitempty"`
+	Seed                 string `json:"seed,omitempty"`
+	AppPublicKey         string `json:"appPublicKey,omitempty"`
+	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 }
 
 //VariableReplaceOutputs .
@@ -203,11 +203,11 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 }
 
 //variablelist,seed,publicKey,privateKey string
-func ReplaceFileVar(filepath, input *VariableReplaceInput) error {
+func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
 	variablelist := input.VariableList
 	seed := input.Seed
-	publicKey:=input.AppPublicKey
-	privateKey:=input.SysPrivateKey
+	publicKey := input.AppPublicKey
+	privateKey := input.SysPrivateKey
 	prefix := input.EncryptVariblePrefix
 
 	index := strings.LastIndexAny(filepath, "/")
@@ -236,7 +236,7 @@ func ReplaceFileVar(filepath, input *VariableReplaceInput) error {
 		return err
 	}
 
-	err = replaceFileVar(keyMap, filepath,seed,publicKey,privateKey,prefix)
+	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
@@ -384,53 +384,53 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string,prefix string)bool {
-	return strings.HasPrefix(key,prefix)
+func isKeyNeedEncrypt(key string, prefix string) bool {
+	return strings.HasPrefix(key, prefix)
 }
 
-func encrpytSenstiveData(data,seed,guid,publicKey,privateKey string)(string,error){
+func encrpytSenstiveData(data, seed, guid, publicKey, privateKey string) (string, error) {
 	//get raw data
 	md5sum := Md5Encode(guid + seed)
-	rawData, err := AesDecode(md5sum[0:16], value)
+	rawData, err := AesDecode(md5sum[0:16], data)
 	if err != nil {
-		return "",fmt.Printf("Decode senstive ")
+		return "", fmt.Errorf("Decode senstive ")
 	}
-	publicKeyFile,err:=getTempFile()
+	publicKeyFile, err := getTempFile()
 	if err != nil {
-		return "",err 
+		return "", err
 	}
 	defer os.Remove(publicKeyFile)
 
-	privateKeyFile,err :=getTempFile()
+	privateKeyFile, err := getTempFile()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	defer os.Remove(privateKeyFile)
 
-	rawDataFile,err :=getTempFile()
+	rawDataFile, err := getTempFile()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	defer os.Remove(rawDataFile)
 
-	encrpyDataFile,err :=getTempFile()
+	encrpyDataFile, err := getTempFile()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	defer os.Remove(rawDataFile)
 
-	if err = writeStringToFile(publicKey,publicKeyFile);err != nil {
-		return "",err
+	if err = writeStringToFile(publicKey, publicKeyFile); err != nil {
+		return "", err
 	}
 
-	if err = writeStringToFile(privateKey,privateKeyFile);err != nil {
-		return "",err
+	if err = writeStringToFile(privateKey, privateKeyFile); err != nil {
+		return "", err
 	}
-	if err = writeStringToFile(rawData,rawDataFile);err != nil {
-		return "",err
+	if err = writeStringToFile(rawData, rawDataFile); err != nil {
+		return "", err
 	}
 
-	args:=[]string{
+	args := []string{
 		"enc",
 		publicKeyFile,
 		privateKeyFile,
@@ -438,52 +438,52 @@ func encrpytSenstiveData(data,seed,guid,publicKey,privateKey string)(string,erro
 		encrpyDataFile,
 	}
 
-	out,err:=runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh",args ...)
+	out, err := runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh", args)
 	if err != nil {
-		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n",out,err)
-		return "",err
+		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n", out, err)
+		return "", err
 	}
 
-	encryptData,err:=readStringFromFile(encrpyDataFile)
+	encryptData, err := readStringFromFile(encrpyDataFile)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
-	return encryptData,nil 
+	return encryptData, nil
 }
 
-func getVariableValue(key string,value string ,keyMap map[string]string,seed string ,publicKey string,privateKey string,prefix string) (string,error){
-   needEncryt := isKeyNeedEncrypt(key,prefix)
-   if !needEncryt{
-	   return value,nil 
-   }
+func getVariableValue(key string, value string, keyMap map[string]string, seed string, publicKey string, privateKey string, prefix string) (string, error) {
+	needEncryt := isKeyNeedEncrypt(key, prefix)
+	if !needEncryt {
+		return value, nil
+	}
 
-   if seed == "" {
-	   return "",errors.New("getVariableValue seed is empty")
-   }
-   if publicKey == "" {
-	   return "",errors.New("getVariableValue publicKey is empty")
-   }
-   if privateKey == "" {
-	   return "",errors.New("getVariableValue privateKey is empty")
-   }
+	if seed == "" {
+		return "", errors.New("getVariableValue seed is empty")
+	}
+	if publicKey == "" {
+		return "", errors.New("getVariableValue publicKey is empty")
+	}
+	if privateKey == "" {
+		return "", errors.New("getVariableValue privateKey is empty")
+	}
 
-   guid := ""
-   for k,v:=range keyMap{
-	   if string.ToUpper(k) == "GUID" {
-		   guid =v
-		   break
-	   }
-   }
+	guid := ""
+	for k, v := range keyMap {
+		if strings.ToUpper(k) == "GUID" {
+			guid = v
+			break
+		}
+	}
 
-   if guid == "" {
-	  return "",errors.New("getVariableValue can't found guid in map")
-   }
+	if guid == "" {
+		return "", errors.New("getVariableValue can't found guid in map")
+	}
 
-   return encrpytSenstiveData(value,seed,guid,publicKey,privateKey)
+	return encrpytSenstiveData(value, seed, guid, publicKey, privateKey)
 }
 
-func replaceFileVar(keyMap map[string]string, filepath ,seed,publicKey,privateKey,prefix string) error {
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		logrus.Errorf("open file fail: %s", err)
@@ -518,9 +518,9 @@ func replaceFileVar(keyMap map[string]string, filepath ,seed,publicKey,privateKe
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					variableValue,err:=getVariableValue(key,keyMap[s[1]],keyMap,seed,publicKey,privateKey,prefix)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
 					if err != nil {
-						return err 
+						return err
 					}
 					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
@@ -530,9 +530,9 @@ func replaceFileVar(keyMap map[string]string, filepath ,seed,publicKey,privateKe
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					variableValue,err:=getVariableValue(key,keyMap[s[1]],keyMap,seed,publicKey,privateKey,prefix)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
 					if err != nil {
-						return err 
+						return err
 					}
 					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
@@ -542,9 +542,9 @@ func replaceFileVar(keyMap map[string]string, filepath ,seed,publicKey,privateKe
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					variableValue,err:=getVariableValue(key,keyMap[s[1]],keyMap,seed,publicKey,privateKey,prefix)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], keyMap, seed, publicKey, privateKey, prefix)
 					if err != nil {
-						return err 
+						return err
 					}
 					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
