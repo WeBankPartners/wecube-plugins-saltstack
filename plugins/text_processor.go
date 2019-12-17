@@ -42,6 +42,7 @@ type SearchTextInputs struct {
 
 type SearchTextInput struct {
 	CallBackParameter
+	Guid          string `json:"guid,omitempty"`
 	Target        string `json:"target,omitempty"`
 	EndPoint      string `json:"endpoint,omitempty"`
 	SearchPattern string `json:"pattern,omitempty"`
@@ -60,8 +61,10 @@ type SearchResult struct {
 
 type SearchTextOutput struct {
 	CallBackParameter
-	Host    string         `json:"host"`
-	Results []SearchResult `json:"result"`
+	Result
+	Guid    string         `json:"guid,omitempty"`
+	Host    string         `json:"host,omitempty"`
+	Results []SearchResult `json:"result,omitempty"`
 }
 
 type SearchTextAction struct {
@@ -76,36 +79,29 @@ func (action *SearchTextAction) ReadParam(param interface{}) (interface{}, error
 	return inputs, nil
 }
 
-func (action *SearchTextAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(SearchTextInputs)
-	if !ok {
-		return fmt.Errorf(" SearchTextInputs:input type=%T not right", input)
+func (action *SearchTextAction) CheckParam(input SearchTextInput) error {
+	if input.EndPoint == "" {
+		return errors.New("endpoint is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.EndPoint == "" {
-			return errors.New("endpoint is empty")
-		}
+	if input.Target == "" {
+		return errors.New("target is empty")
+	}
 
-		if input.Target == "" {
-			return errors.New("target is empty")
-		}
+	if input.EndPoint == "" {
+		return errors.New("endpoint is empty")
+	}
 
-		if input.EndPoint == "" {
-			return errors.New("endpoint is empty")
-		}
+	// if input.AccessKey == "" {
+	// 	return errors.New("accessKey is empty")
+	// }
 
-		// if input.AccessKey == "" {
-		// 	return errors.New("accessKey is empty")
-		// }
+	// if input.SecretKey == "" {
+	// 	return errors.New("secretKey is empty")
+	// }
 
-		// if input.SecretKey == "" {
-		// 	return errors.New("secretKey is empty")
-		// }
-
-		if input.SearchPattern == "" {
-			return errors.New("search pattern is empty")
-		}
+	if input.SearchPattern == "" {
+		return errors.New("search pattern is empty")
 	}
 
 	return nil
@@ -158,32 +154,54 @@ func searchText(fileName string, pattern string) ([]SearchResult, error) {
 	return results, nil
 }
 
+func (action *SearchTextAction) searchText(input *SearchTextInput) (output SearchTextOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.Host = input.Target
+
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	if err != nil {
+		return output, err
+	}
+
+	results, err := searchText(fileName, input.SearchPattern)
+	os.Remove(fileName)
+	if err != nil {
+		return output, err
+	}
+	output.Results = results
+
+	return output, err
+}
+
 func (action *SearchTextAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(SearchTextInputs)
 	outputs := SearchTextOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		output, err := action.searchText(&input)
 		if err != nil {
-			return &outputs, err
+			finalErr = err
 		}
-
-		results, err := searchText(fileName, input.SearchPattern)
-		os.Remove(fileName)
-		if err != nil {
-			return &outputs, err
-		}
-
-		output := SearchTextOutput{
-			Results: results,
-			Host:    input.Target,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 //get context
@@ -193,6 +211,7 @@ type GetContextInputs struct {
 
 type GetContextInput struct {
 	CallBackParameter
+	Guid     string `json:"guid,omitempty"`
 	EndPoint string `json:"endpoint,omitempty"`
 	LineNum  int    `json:"lineNum,omitempty"`
 	Offset   int    `json:"offset,omitempty"`
@@ -206,6 +225,8 @@ type GetContextOutputs struct {
 
 type GetContextOutput struct {
 	CallBackParameter
+	Result
+	Guid        string `json:"guid,omitempty"`
 	ContextText string `json:"context"`
 }
 
@@ -221,28 +242,21 @@ func (action *GetContextAction) ReadParam(param interface{}) (interface{}, error
 	return inputs, nil
 }
 
-func (action *GetContextAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(GetContextInputs)
-	if !ok {
-		return fmt.Errorf(" SearchTextInputs:input type=%T not right", input)
+func (action *GetContextAction) CheckParam(input GetContextInput) error {
+	if input.EndPoint == "" {
+		return errors.New("endpoint is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.EndPoint == "" {
-			return errors.New("endpoint is empty")
-		}
+	// if input.AccessKey == "" {
+	// 	return errors.New("accessKey is empty")
+	// }
 
-		// if input.AccessKey == "" {
-		// 	return errors.New("accessKey is empty")
-		// }
+	// if input.SecretKey == "" {
+	// 	return errors.New("secretKey is empty")
+	// }
 
-		// if input.SecretKey == "" {
-		// 	return errors.New("secretKey is empty")
-		// }
-
-		if input.LineNum <= 0 {
-			return errors.New("invalid lineNum")
-		}
+	if input.LineNum <= 0 {
+		return errors.New("invalid lineNum")
 	}
 
 	return nil
@@ -264,29 +278,51 @@ func getTextContext(fileName string, lineNum int, offset int) (string, error) {
 	return runCmd(shellCmd)
 }
 
+func (action *GetContextAction) getContext(input *GetContextInput) (output GetContextOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	if err != nil {
+		return output, err
+	}
+
+	contextText, err := getTextContext(fileName, input.LineNum, input.Offset)
+	os.Remove(fileName)
+	if err != nil {
+		return output, err
+	}
+	output.ContextText = contextText
+
+	return output, err
+}
+
 func (action *GetContextAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(GetContextInputs)
 	outputs := GetContextOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		output, err := action.getContext(&input)
 		if err != nil {
-			return &outputs, err
+			finalErr = err
 		}
-
-		contextText, err := getTextContext(fileName, input.LineNum, input.Offset)
-		os.Remove(fileName)
-		if err != nil {
-			return &outputs, err
-		}
-
-		output := GetContextOutput{
-			ContextText: contextText,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
