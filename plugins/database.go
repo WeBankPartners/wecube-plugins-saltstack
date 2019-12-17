@@ -134,19 +134,19 @@ func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error
 
 	for _, input := range inputs.Inputs {
 		output := RunDatabaseScriptOutput{
-			Guid:   input.Guid,
+			Guid: input.Guid,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
 
-		if err:=runDatabaseScriptCheckParam(input);err != nil {
+		if err := runDatabaseScriptCheckParam(input); err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
 		}
-		
+
 		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
 		if err != nil {
@@ -194,7 +194,7 @@ type AddDatabaseInputs struct {
 }
 
 type AddDatabaseInput struct {
-
+	CallBackParameter
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 	Guid     string `json:"guid,omitempty"`
@@ -233,33 +233,33 @@ func (action *AddDatabaseAction) ReadParam(param interface{}) (interface{}, erro
 }
 
 func addDatabaseCheckParam(input AddDatabaseInput) error {
-		if input.Host == "" {
-			return errors.New("Host is empty")
-		}
-		if input.Guid == "" {
-			return errors.New("Guid is empty")
-		}
-		if input.Seed == "" {
-			return errors.New("Seed is empty")
-		}
-		if input.UserName == "" {
-			return errors.New("UserName is empty")
-		}
-		if input.Password == "" {
-			return errors.New("Password is empty")
-		}
-		if input.Port == "" {
-			return errors.New("Port is empty")
-		}
-		if input.DatabaseName == "" {
-			return errors.New("DatabaseName is empty")
-		}
-		if input.DatabaseOwnerGuid == "" {
-			return errors.New("DatabaseOwnerGuid is empty")
-		}
-		if input.DatabaseOwnerName == "" {
-			return errors.New("DatabaseOwnerName is empty")
-		}
+	if input.Host == "" {
+		return errors.New("Host is empty")
+	}
+	if input.Guid == "" {
+		return errors.New("Guid is empty")
+	}
+	if input.Seed == "" {
+		return errors.New("Seed is empty")
+	}
+	if input.UserName == "" {
+		return errors.New("UserName is empty")
+	}
+	if input.Password == "" {
+		return errors.New("Password is empty")
+	}
+	if input.Port == "" {
+		return errors.New("Port is empty")
+	}
+	if input.DatabaseName == "" {
+		return errors.New("DatabaseName is empty")
+	}
+	if input.DatabaseOwnerGuid == "" {
+		return errors.New("DatabaseOwnerGuid is empty")
+	}
+	if input.DatabaseOwnerName == "" {
+		return errors.New("DatabaseOwnerName is empty")
+	}
 	return nil
 }
 
@@ -351,5 +351,5 @@ func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return outputs, nil
+	return outputs, finalErr
 }

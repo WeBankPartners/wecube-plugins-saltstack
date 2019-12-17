@@ -2,15 +2,15 @@ package plugins
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 //VariableActions .
