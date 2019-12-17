@@ -110,6 +110,7 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>password</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
