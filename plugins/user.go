@@ -70,21 +70,21 @@ func (action *AddUserAction) ReadParam(param interface{}) (interface{}, error) {
 }
 
 func (action *AddUserAction) CheckParam(input AddUserInput) error {
-		if input.Target == "" {
-			return errors.New("AddUserAction target is empty")
-		}
+	if input.Target == "" {
+		return errors.New("AddUserAction target is empty")
+	}
 
-		if input.UserName == "" {
-			return errors.New("AddUserAction userName is empty")
-		}
+	if input.UserName == "" {
+		return errors.New("AddUserAction userName is empty")
+	}
 
-		if input.Guid == "" {
-			return errors.New("AddUserAction guid is empty")
-		}
+	if input.Guid == "" {
+		return errors.New("AddUserAction guid is empty")
+	}
 
-		if input.Seed == "" {
-			return errors.New("AddUserAction seed is empty")
-		}
+	if input.Seed == "" {
+		return errors.New("AddUserAction seed is empty")
+	}
 
 	return nil
 }
@@ -97,7 +97,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 	for _, input := range inputs.Inputs {
 		output := AddUserOutput{
-			Guid:     input.Guid,
+			Guid: input.Guid,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
@@ -127,7 +127,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message= err.Error()
+			output.Result.Message = err.Error()
 			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
@@ -135,9 +135,9 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
 			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message= err.Error()
+			output.Result.Message = err.Error()
 			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
@@ -145,14 +145,14 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				err =  fmt.Errorf("%s", v.Stdout+v.Stderr)
+				err = fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
 		if err != nil {
-			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
 			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message= err.Error()
+			output.Result.Message = err.Error()
 			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
@@ -161,16 +161,16 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		encryptPassword, err := AesEncode(md5sum[0:16], password)
 		if err != nil {
-			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
 			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message= err.Error()
+			output.Result.Message = err.Error()
 			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
 		}
 
-		output.Detail=result
-		output.Password=encryptPassword
+		output.Detail = result
+		output.Password = encryptPassword
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
@@ -211,13 +211,13 @@ func (action *RemoveUserAction) ReadParam(param interface{}) (interface{}, error
 }
 
 func removeUserCheckParam(input RemoveUserInput) error {
-		if input.Target == "" {
-			return errors.New("RemoveUserAction target is empty")
-		}
+	if input.Target == "" {
+		return errors.New("RemoveUserAction target is empty")
+	}
 
-		if input.UserName == "" {
-			return errors.New("RemoveUserAction userName is empty")
-		}
+	if input.UserName == "" {
+		return errors.New("RemoveUserAction userName is empty")
+	}
 
 	return nil
 }
@@ -230,7 +230,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 
 	for _, input := range inputs.Inputs {
 		output := RemoveUserOutput{
-			Guid:   input.Guid,
+			Guid: input.Guid,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
@@ -247,7 +247,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -257,7 +257,7 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				err =  v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
+				err = fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
@@ -269,9 +269,9 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 			continue
 		}
 
-		output.Detail=result
+		output.Detail = result
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
