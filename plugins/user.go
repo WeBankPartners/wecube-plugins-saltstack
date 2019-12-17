@@ -21,7 +21,6 @@ type UserPlugin struct {
 
 func (plugin *UserPlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := UserPluginActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("User plugin,action = %s not found", actionName)
 	}
@@ -52,6 +51,7 @@ type AddUserOutputs struct {
 
 type AddUserOutput struct {
 	CallBackParameter
+	Result
 	Guid     string `json:"guid,omitempty"`
 	Password string `json:"password,omitempty"`
 	Detail   string `json:"detail,omitempty"`
@@ -69,13 +69,7 @@ func (action *AddUserAction) ReadParam(param interface{}) (interface{}, error) {
 	return inputs, nil
 }
 
-func (action *AddUserAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(AddUserInputs)
-	if !ok {
-		return fmt.Errorf("AddUserAction:input type=%T not right", input)
-	}
-
-	for _, input := range inputs.Inputs {
+func (action *AddUserAction) CheckParam(input AddUserInput) error {
 		if input.Target == "" {
 			return errors.New("AddUserAction target is empty")
 		}
@@ -92,15 +86,6 @@ func (action *AddUserAction) CheckParam(input interface{}) error {
 			return errors.New("AddUserAction seed is empty")
 		}
 
-		// if input.Password == "" {
-		// 	return errors.New("AddUserAction password is empty")
-		// }
-
-		// if input.UserGroup == "" {
-		// 	return errors.New("AddUserAction userGroup is empty")
-		// }
-	}
-
 	return nil
 }
 
@@ -108,8 +93,15 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(AddUserInputs)
 	outputs := AddUserOutputs{}
 	runAs := ""
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
+		output := AddUserOutput{
+			Guid:     input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+
 		password := ""
 		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
 		if input.Password != "" {
@@ -134,38 +126,55 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
-			return nil, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message= err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message= err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				return nil, fmt.Errorf("%s", v.Stdout+v.Stderr)
+				err =  fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
+		}
+		if err != nil {
+			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message= err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		encryptPassword, err := AesEncode(md5sum[0:16], password)
 		if err != nil {
-			fmt.Printf("AesEncode meet error(%v)\n", err)
-			return nil, err
+			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message= err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
-		output := AddUserOutput{
-			Detail:   result,
-			Guid:     input.Guid,
-			Password: encryptPassword,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Detail=result
+		output.Password=encryptPassword
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 type RemoveUserInputs struct {
@@ -185,6 +194,7 @@ type RemoveUserOutputs struct {
 
 type RemoveUserOutput struct {
 	CallBackParameter
+	Result
 	Detail string `json:"detail,omitempty"`
 	Guid   string `json:"guid,omitempty"`
 }
@@ -200,13 +210,7 @@ func (action *RemoveUserAction) ReadParam(param interface{}) (interface{}, error
 	return inputs, nil
 }
 
-func (action *RemoveUserAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(RemoveUserInputs)
-	if !ok {
-		return fmt.Errorf("RemoveUserAction:input type=%T not right", input)
-	}
-
-	for _, input := range inputs.Inputs {
+func removeUserCheckParam(input RemoveUserInput) error {
 		if input.Target == "" {
 			return errors.New("RemoveUserAction target is empty")
 		}
@@ -214,7 +218,6 @@ func (action *RemoveUserAction) CheckParam(input interface{}) error {
 		if input.UserName == "" {
 			return errors.New("RemoveUserAction userName is empty")
 		}
-	}
 
 	return nil
 }
@@ -223,32 +226,50 @@ func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RemoveUserInputs)
 	outputs := RemoveUserOutputs{}
 	runAs := ""
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
+		output := RemoveUserOutput{
+			Guid:   input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
 
+		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
 		if err != nil {
-			return nil, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			err = fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		for _, v := range saltApiResult.Results[0] {
 			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
+				err =  v.Stderr, fmt.Errorf("%s", v.Stdout+v.Stderr)
 			}
 			break
 		}
-
-		output := RemoveUserOutput{
-			Detail: result,
-			Guid:   input.Guid,
+		if err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+
+		output.Detail=result
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 

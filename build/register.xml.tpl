@@ -39,6 +39,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -52,6 +54,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -61,11 +65,17 @@
                     <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
                     <parameter datatype="string" mappingType='context'>s3PkgPath</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -81,6 +91,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -98,7 +110,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
-                    <parameter datatype="string" mappingType='context'>password</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
@@ -109,6 +122,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -126,6 +141,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
 
@@ -145,6 +162,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>databaseOwnerGuid</parameter>
                     <parameter datatype="string" mappingType='context'>databaseOwnerPassword</parameter>
+		            <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -163,6 +182,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="update" path="/saltstack/v1/apply-deployment/update">
@@ -179,7 +200,9 @@
                     <parameter datatype="string" mappingType='entity' required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
-                <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>

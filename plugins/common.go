@@ -14,13 +14,25 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"time"
 )
+const (
+	CHARGE_TYPE_PREPAID = "PREPAID"
+	RESULT_CODE_SUCCESS = "ok"
+	RESULT_CODE_ERROR   = "error"
+)
+
 
 type CallBackParameter struct {
 	Parameter string `json:"callbackParameter,omitempty"`
+}
+
+type Result struct {
+	Code    string `json:"code"`
+	Message string `json:"msg"`
 }
 
 func Md5Encode(rawData string) string {
@@ -190,4 +202,31 @@ func createRandomPassword() string {
 	}
 
 	return string(result)
+}
+func getTempFile() (string, error) {
+	file, err := ioutil.TempFile("/tmp/", "qcloud_key")
+	if err != nil {
+		return "", err
+	}
+	file.Close()
+	return file.Name(), nil
+}
+
+func writeStringToFile(data string, fileName string) error {
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+	_, err = f.WriteString(data)
+	return err
+}
+
+func readStringFromFile(fileName string) (string, error) {
+	f, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", err
+	}
+	return string(f), nil
 }
