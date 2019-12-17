@@ -34,6 +34,7 @@ type ListFilesInputs struct {
 
 type ListFilesInput struct {
 	CallBackParameter
+	Guid       string `json:"guid,omitempty"`
 	EndPoint   string `json:"endpoint,omitempty"`
 	CurrentDir string `json:"currentDir,omitempty"`
 	// AccessKey  string `json:"accessKey,omitempty"`
@@ -46,6 +47,8 @@ type ListFilesOutputs struct {
 
 type ListFilesOutput struct {
 	CallBackParameter
+	Result
+	Guid  string     `json:"guid,omitempty"`
 	Files []FileNode `json:"files,omitempty"`
 }
 
@@ -61,26 +64,18 @@ func (action *ListCurrentDirAction) ReadParam(param interface{}) (interface{}, e
 	return inputs, nil
 }
 
-func (action *ListCurrentDirAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(ListFilesInputs)
-	if !ok {
-		return fmt.Errorf("ListCurrentDirAction:input type=%T not right", input)
+func (action *ListCurrentDirAction) CheckParam(input ListFilesInput) error {
+	if input.EndPoint == "" {
+		return errors.New("Endpoint is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.EndPoint == "" {
-			return errors.New("Endpoint is empty")
-		}
+	// if input.AccessKey == "" {
+	// 	return errors.New("AccessKey is empty")
+	// }
 
-		// if input.AccessKey == "" {
-		// 	return errors.New("AccessKey is empty")
-		// }
-
-		// if input.SecretKey == "" {
-		// 	return errors.New("SecretKey is empty")
-		// }
-	}
-
+	// if input.SecretKey == "" {
+	// 	return errors.New("SecretKey is empty")
+	// }
 	return nil
 }
 
@@ -93,8 +88,61 @@ func getPackageNameFromEndpoint(endpoint string) (string, error) {
 	return endpoint[index+1:], nil
 }
 
+func (action *ListCurrentDirAction) listCurrentDir(input *ListFilesInput) (output ListFilesOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	packageName, err := getPackageNameFromEndpoint(input.EndPoint)
+	if err != nil {
+		return output, err
+	}
+
+	if err := validateCompressedFile(packageName); err != nil {
+		return output, err
+	}
+
+	fullPath := getDecompressDirName(packageName)
+	if err = isDirExist(fullPath); err != nil {
+		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		if err != nil {
+			logrus.Errorf("ListCurrentDirAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
+			return output, err
+		}
+
+		if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
+			logrus.Errorf("ListCurrentDirAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
+			os.RemoveAll(comporessedFileFullPath)
+			return output, err
+		}
+		os.RemoveAll(comporessedFileFullPath)
+	}
+
+	nodes, err := listCurrentDirectory(fullPath + "/" + input.CurrentDir)
+	if err != nil {
+		return output, err
+	}
+	output.Files = nodes
+
+	return output, err
+}
+
 func (action *ListCurrentDirAction) Do(input interface{}) (interface{}, error) {
 	outputs := ListFilesOutputs{}
+	var finalErr error
 	inputs, ok := input.(ListFilesInputs)
 	if !ok {
 		return &outputs, fmt.Errorf("ListCurrentDirAction:input type=%T not right", input)
@@ -107,45 +155,14 @@ func (action *ListCurrentDirAction) Do(input interface{}) (interface{}, error) {
 	}()
 
 	for _, input := range inputs.Inputs {
-		packageName, err := getPackageNameFromEndpoint(input.EndPoint)
+		output, err := action.listCurrentDir(&input)
 		if err != nil {
-			return &outputs, err
+			finalErr = err
 		}
-
-		if err := validateCompressedFile(packageName); err != nil {
-			return &outputs, err
-		}
-
-		fullPath := getDecompressDirName(packageName)
-		if err = isDirExist(fullPath); err != nil {
-			// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-			comporessedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
-			if err != nil {
-				logrus.Errorf("ListCurrentDirAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
-				return &outputs, err
-			}
-
-			if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
-				logrus.Errorf("ListCurrentDirAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
-				os.RemoveAll(comporessedFileFullPath)
-				return &outputs, err
-			}
-			os.RemoveAll(comporessedFileFullPath)
-		}
-
-		nodes, err := listCurrentDirectory(fullPath + "/" + input.CurrentDir)
-		if err != nil {
-			return &outputs, err
-		}
-
-		output := ListFilesOutput{
-			Files: nodes,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 type GetConfigFileKeyInputs struct {
@@ -154,6 +171,7 @@ type GetConfigFileKeyInputs struct {
 
 type GetConfigFileKeyInput struct {
 	CallBackParameter
+	Guid     string `json:"guid,omitempty"`
 	EndPoint string `json:"endpoint,omitempty"`
 	FilePath string `json:"filePath,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
@@ -166,6 +184,8 @@ type GetConfigFileKeyOutputs struct {
 
 type GetConfigFileKeyOutput struct {
 	CallBackParameter
+	Result
+	Guid           string          `json:"guid,omitempty"`
 	FilePath       string          `json:"filePath,omitempty"`
 	ConfigKeyInfos []ConfigKeyInfo `json:"configKeyInfos"`
 }
@@ -187,22 +207,66 @@ func (action *GetConfigFileKeyAction) ReadParam(param interface{}) (interface{},
 	return inputs, nil
 }
 
-func (action *GetConfigFileKeyAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(GetConfigFileKeyInputs)
-	if !ok {
-		return fmt.Errorf("ListCurrentDirAction:input type=%T not right", input)
+func (action *GetConfigFileKeyAction) CheckParam(input GetConfigFileKeyInput) error {
+	if input.FilePath == "" {
+		return errors.New("FilePath is empty")
 	}
-
-	for _, input := range inputs.Inputs {
-		if input.FilePath == "" {
-			return errors.New("FilePath is empty")
-		}
-		if input.EndPoint == "" {
-			return errors.New("Endpoint is empty")
-		}
+	if input.EndPoint == "" {
+		return errors.New("Endpoint is empty")
 	}
 
 	return nil
+}
+
+func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyInput) (output GetConfigFileKeyOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	packageName, err := getPackageNameFromEndpoint(input.EndPoint)
+	if err != nil {
+		return output, err
+	}
+	logrus.Info("package name = >", packageName)
+
+	fullPath := getDecompressDirName(packageName)
+	if err = isDirExist(fullPath); err != nil {
+		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		if err != nil {
+			logrus.Errorf("GetConfigFileKeyAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
+			return output, err
+		}
+
+		if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
+			logrus.Errorf("GetConfigFileKeyAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
+			os.RemoveAll(comporessedFileFullPath)
+			return output, err
+		}
+		os.RemoveAll(comporessedFileFullPath)
+	}
+	logrus.Info("full path = >", fullPath)
+	keys, err := GetVariable(fullPath, input.FilePath)
+	if err != nil {
+		return output, err
+	}
+
+	output.FilePath = input.FilePath
+	output.ConfigKeyInfos = keys
+
+	return output, err
 }
 
 func (action *GetConfigFileKeyAction) Do(input interface{}) (interface{}, error) {
@@ -211,42 +275,15 @@ func (action *GetConfigFileKeyAction) Do(input interface{}) (interface{}, error)
 	if !ok {
 		return &outputs, fmt.Errorf("GetConfigFileKeyAction:input type=%T not right", input)
 	}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output := GetConfigFileKeyOutput{}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		packageName, err := getPackageNameFromEndpoint(input.EndPoint)
+		output, err := action.getConfigFileKey(&input)
 		if err != nil {
-			return &outputs, err
+			finalErr = err
 		}
-		logrus.Info("package name = >", packageName)
-
-		fullPath := getDecompressDirName(packageName)
-		if err = isDirExist(fullPath); err != nil {
-			// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-			comporessedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
-			if err != nil {
-				logrus.Errorf("GetConfigFileKeyAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
-				return &outputs, err
-			}
-
-			if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
-				logrus.Errorf("GetConfigFileKeyAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
-				os.RemoveAll(comporessedFileFullPath)
-				return &outputs, err
-			}
-			os.RemoveAll(comporessedFileFullPath)
-		}
-		logrus.Info("full path = >", fullPath)
-		keys, err := GetVariable(fullPath, input.FilePath)
-		if err != nil {
-			return nil, err
-		}
-
-		output.FilePath = input.FilePath
-		output.ConfigKeyInfos = keys
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return outputs, nil
+	return outputs, finalErr
 }

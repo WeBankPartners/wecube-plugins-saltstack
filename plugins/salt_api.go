@@ -44,6 +44,7 @@ type SaltApiCallOutputs struct {
 
 type SaltApiCallOutput struct {
 	CallBackParameter
+	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -60,12 +61,7 @@ func (action *SaltApiCallAction) ReadParam(param interface{}) (interface{}, erro
 	return inputs, nil
 }
 
-func (action *SaltApiCallAction) CheckParam(input interface{}) error {
-	_, ok := input.(SaltApiCallInputs)
-	if !ok {
-		return fmt.Errorf("saltApiAction:input type=%T not right", input)
-	}
-
+func (action *SaltApiCallAction) CheckParam(input SaltApiCallInput) error {
 	return nil
 }
 
@@ -112,7 +108,23 @@ func parseSaltApiCmdRunCallResult(jsonStr string) (*SaltApiCmdRunResults, error)
 	return &result, nil
 }
 
-func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (*SaltApiCallOutput, error) {
+func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (output SaltApiCallOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
 	request := SaltApiRequest{}
 	request.Client = input.Client
 	request.Function = input.Function
@@ -121,27 +133,25 @@ func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (*Salt
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request)
 	if err != nil {
-		return nil, err
+		return output, err
 	}
-
-	output := SaltApiCallOutput{}
-	output.Guid = input.Guid
 	output.Detail = result
-	return &output, nil
+
+	return output, err
 }
 
 func (action *SaltApiCallAction) Do(input interface{}) (interface{}, error) {
 	files, _ := input.(SaltApiCallInputs)
 	outputs := SaltApiCallOutputs{}
+	var finalErr error
 	for _, file := range files.Inputs {
 		fileOutput, err := action.callSaltApiCall(&file)
-		fileOutput.CallBackParameter.Parameter = file.CallBackParameter.Parameter
 		if err != nil {
-			return nil, err
+			finalErr = err
 		}
-		outputs.Outputs = append(outputs.Outputs, *fileOutput)
+		outputs.Outputs = append(outputs.Outputs, fileOutput)
 	}
 
 	logrus.Infof("all salt request = %v have been handled", files)
-	return &outputs, nil
+	return &outputs, finalErr
 }
