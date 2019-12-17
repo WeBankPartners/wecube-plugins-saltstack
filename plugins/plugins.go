@@ -18,7 +18,7 @@ type Plugin interface {
 
 type Action interface {
 	ReadParam(param interface{}) (interface{}, error)
-	CheckParam(param interface{}) error
+	// CheckParam(param interface{}) error
 	Do(param interface{}) (interface{}, error)
 }
 
@@ -107,9 +107,9 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 	}
 
 	logrus.Infof("check parameters = %v", actionParam)
-	if err = action.CheckParam(actionParam); err != nil {
-		return &pluginResponse, err
-	}
+	// if err = action.CheckParam(actionParam); err != nil {
+	// 	return &pluginResponse, err
+	// }
 
 	logrus.Infof("action do with parameters = %v", actionParam)
 	outputs, err := action.Do(actionParam)

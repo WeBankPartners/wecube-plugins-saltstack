@@ -52,6 +52,7 @@ type RunDatabaseScriptOutputs struct {
 
 type RunDatabaseScriptOutput struct {
 	CallBackParameter
+	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
@@ -68,34 +69,28 @@ func (action *RunDatabaseScriptAction) ReadParam(param interface{}) (interface{}
 	return inputs, nil
 }
 
-func (action *RunDatabaseScriptAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(RunDatabaseScriptInputs)
-	if !ok {
-		return fmt.Errorf("RunDatabaseScriptAction:input type=%T not right", input)
+func runDatabaseScriptCheckParam(input RunDatabaseScriptInput) error {
+	if input.Host == "" {
+		return errors.New("Host is empty")
+	}
+	if input.Guid == "" {
+		return errors.New("Guid is empty")
+	}
+	if input.Seed == "" {
+		return errors.New("Seed is empty")
+	}
+	if input.UserName == "" {
+		return errors.New("UserName is empty")
+	}
+	if input.Password == "" {
+		return errors.New("Password is empty")
+	}
+	if input.EndPoint == "" {
+		return errors.New("EndPoint is empty")
 	}
 
-	for _, input := range inputs.Inputs {
-		if input.Host == "" {
-			return errors.New("Host is empty")
-		}
-		if input.Guid == "" {
-			return errors.New("Guid is empty")
-		}
-		if input.Seed == "" {
-			return errors.New("Seed is empty")
-		}
-		if input.UserName == "" {
-			return errors.New("UserName is empty")
-		}
-		if input.Password == "" {
-			return errors.New("Password is empty")
-		}
-		if input.EndPoint == "" {
-			return errors.New("EndPoint is empty")
-		}
-		if input.Port == "" {
-			return errors.New("Port is empty")
-		}
+	if input.Port == "" {
+		input.Port = "3306"
 	}
 
 	return nil
@@ -135,37 +130,59 @@ func execSqlScript(hostName string, port string, userName string, password strin
 func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunDatabaseScriptInputs)
 	outputs := RunDatabaseScriptOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
+		output := RunDatabaseScriptOutput{
+			Guid: input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+
+		if err := runDatabaseScriptCheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
 		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
 		if err != nil {
 			logrus.Infof("RunScriptAction downloads3 file error=%v", err)
-			return nil, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		password, err := AesDecode(md5sum[0:16], input.Password)
 		if err != nil {
 			logrus.Errorf("AesDecode meet error(%v)", err)
-			return nil, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		result, err := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, fileName)
 		os.Remove(fileName)
 		if err != nil {
-			return nil, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
-
-		output := RunDatabaseScriptOutput{
-			Detail: result,
-			Guid:   input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Detail = result
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
 
 //----------------------add db user----------------------//
@@ -177,7 +194,7 @@ type AddDatabaseInputs struct {
 }
 
 type AddDatabaseInput struct {
-
+	CallBackParameter
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 	Guid     string `json:"guid,omitempty"`
@@ -200,6 +217,8 @@ type AddDatabaseOutputs struct {
 }
 
 type AddDatabaseOutput struct {
+	CallBackParameter
+	Result
 	DatabaseOwnerGuid     string `json:"databaseOwnerGuid,omitempty"`
 	DatabaseOwnerPassword string `json:"databaseOwnerPassword,omitempty"`
 }
@@ -213,42 +232,34 @@ func (action *AddDatabaseAction) ReadParam(param interface{}) (interface{}, erro
 	return inputs, nil
 }
 
-func (action *AddDatabaseAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(AddDatabaseInputs)
-	if !ok {
-		return fmt.Errorf("AddDatabaseUserAction:input type=%T not right", input)
+func addDatabaseCheckParam(input AddDatabaseInput) error {
+	if input.Host == "" {
+		return errors.New("Host is empty")
 	}
-
-	for _, input := range inputs.Inputs {
-		if input.Host == "" {
-			return errors.New("Host is empty")
-		}
-		if input.Guid == "" {
-			return errors.New("Guid is empty")
-		}
-		if input.Seed == "" {
-			return errors.New("Seed is empty")
-		}
-		if input.UserName == "" {
-			return errors.New("UserName is empty")
-		}
-		if input.Password == "" {
-			return errors.New("Password is empty")
-		}
-		if input.Port == "" {
-			return errors.New("Port is empty")
-		}
-		if input.DatabaseName == "" {
-			return errors.New("DatabaseName is empty")
-		}
-		if input.DatabaseOwnerGuid == "" {
-			return errors.New("DatabaseOwnerGuid is empty")
-		}
-		if input.DatabaseOwnerName == "" {
-			return errors.New("DatabaseOwnerName is empty")
-		}
+	if input.Guid == "" {
+		return errors.New("Guid is empty")
 	}
-
+	if input.Seed == "" {
+		return errors.New("Seed is empty")
+	}
+	if input.UserName == "" {
+		return errors.New("UserName is empty")
+	}
+	if input.Password == "" {
+		return errors.New("Password is empty")
+	}
+	if input.Port == "" {
+		return errors.New("Port is empty")
+	}
+	if input.DatabaseName == "" {
+		return errors.New("DatabaseName is empty")
+	}
+	if input.DatabaseOwnerGuid == "" {
+		return errors.New("DatabaseOwnerGuid is empty")
+	}
+	if input.DatabaseOwnerName == "" {
+		return errors.New("DatabaseOwnerName is empty")
+	}
 	return nil
 }
 
@@ -270,23 +281,35 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(AddDatabaseInputs)
 	outputs := AddDatabaseOutputs{}
+	var finalErr error
 
 	for _, input := range inputs.Inputs {
 		output := AddDatabaseOutput{
 			DatabaseOwnerGuid: input.DatabaseOwnerGuid,
 		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+
 		//get root password
 		md5sum := Md5Encode(input.Guid + input.Seed)
 		password, err := AesDecode(md5sum[0:16], input.Password)
 		if err != nil {
 			logrus.Errorf("AesDecode meet error(%v)", err)
-			return outputs, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		//create database
 		cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-			return outputs, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		//create user
@@ -296,14 +319,22 @@ func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
 		}
 		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-			return outputs, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		//grant permissions
 		permission := "ALL PRIVILEGES"
 		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-			return outputs, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 
 		//create new password
@@ -311,10 +342,14 @@ func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
 		output.DatabaseOwnerPassword, err = AesEncode(md5sum[0:16], dbOwnerPassword)
 		if err != nil {
 			logrus.Errorf("AesEncode meet error(%v)", err)
-			return outputs, err
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return outputs, nil
+	return outputs, finalErr
 }

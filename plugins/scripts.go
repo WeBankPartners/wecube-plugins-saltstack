@@ -59,6 +59,7 @@ type RunScriptOutputs struct {
 
 type RunScriptOutput struct {
 	CallBackParameter
+	Result
 	Target  string `json:"target"`
 	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
@@ -77,28 +78,21 @@ func (action *RunScriptAction) ReadParam(param interface{}) (interface{}, error)
 	return inputs, nil
 }
 
-func (action *RunScriptAction) CheckParam(input interface{}) error {
-	inputs, ok := input.(RunScriptInputs)
-	if !ok {
-		return fmt.Errorf("RunScriptAction:input type=%T not right", input)
+func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
+	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 {
+		return errors.New("Wrong EndPointType")
 	}
-
-	for _, input := range inputs.Inputs {
-		if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 {
-			return errors.New("Wrong EndPointType")
-		}
-		if input.EndPoint == "" {
-			return errors.New("Endpoint is empty")
-		}
-		// if input.AccessKey == "" {
-		// 	return errors.New("AccessKey is empty")
-		// }
-		// if input.SecretKey == "" {
-		// 	return errors.New("SecretKey is empty")
-		// }
-		if input.Target == "" {
-			return errors.New("Target is empty")
-		}
+	if input.EndPoint == "" {
+		return errors.New("Endpoint is empty")
+	}
+	// if input.AccessKey == "" {
+	// 	return errors.New("AccessKey is empty")
+	// }
+	// if input.SecretKey == "" {
+	// 	return errors.New("SecretKey is empty")
+	// }
+	if input.Target == "" {
+		return errors.New("Target is empty")
 	}
 
 	return nil
@@ -280,38 +274,54 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	return output, nil
 }
 
+func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.Target = input.Target
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.RetCode = 0
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.RetCode = 1
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	scriptPath := input.EndPoint
+	if input.EndPointType == END_POINT_TYPE_S3 {
+		scriptPath, err = downLoadScript(*input)
+		if err != nil {
+			return output, err
+		}
+	}
+
+	stdOut, err := runScript(scriptPath, *input)
+	if err != nil {
+		return output, err
+	}
+	output.Detail = stdOut
+
+	return output, err
+}
+
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
-	var err error
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
-
+	var finalErr error
 	for _, input := range inputs.Inputs {
-		output := RunScriptOutput{
-			Target: input.Target,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		scriptPath := input.EndPoint
-		if input.EndPointType == END_POINT_TYPE_S3 {
-			scriptPath, err = downLoadScript(input)
-			if err != nil {
-				output.RetCode = 1
-				outputs.Outputs = append(outputs.Outputs, output)
-				return outputs, err
-			}
-		}
-
-		stdOut, err := runScript(scriptPath, input)
+		output, err := action.runScript(&input)
 		if err != nil {
-			output.RetCode = 1
-			outputs.Outputs = append(outputs.Outputs, output)
-			return outputs, err
+			finalErr = err
 		}
-		output.Detail = stdOut
-		output.Guid = input.Guid
-		output.RetCode = 0
-
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	return &outputs, nil
+	return &outputs, finalErr
 }
