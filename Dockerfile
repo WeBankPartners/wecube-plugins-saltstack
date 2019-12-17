@@ -11,6 +11,7 @@ COPY scripts/salt/minions /srv/salt/minions
 COPY conf/s3conf /conf/s3conf
 COPY template  /conf/template
 
+COPY scripts/salt/rsautil.sh $APP_HOME/scripts/
 COPY scripts/salt/user_manage.sh /srv/salt/base/user_manage.sh
 COPY scripts/salt/formatAndMountDisk.py /srv/salt/base/formatAndMountDisk.py
 COPY scripts/salt/getUnformatedDisk.py /srv/salt/base/getUnformatedDisk.py
@@ -21,7 +22,8 @@ COPY scripts/salt/remove_master_unused_key.sh $APP_HOME/scripts/salt/remove_mast
 
 RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/salt/install_minion.sh \
-    && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh
+    && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh \
+    && chmod +x $APP_HOME/scripts/rsautil.sh
 
 COPY wecube-plugins-saltstack $APP_HOME/
 
