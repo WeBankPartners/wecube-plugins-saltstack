@@ -27,121 +27,121 @@
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
     <plugins>
-        <plugin name="file">
+        <plugin name="file" entity="business_app_instance">
             <interface action="copy" path="/saltstack/v1/file/copy">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">unpack</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">fileOwner</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package_url" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_path" required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.is_decompression" required="N">unpack</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="N">fileOwner</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="agent">
+        <plugin name="agent" entity="resource_instance">
             <interface action="install" path="/saltstack/v1/agent/install">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.user_password" required="Y">password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">host</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="variable">
+        <plugin name="variable" entity="business_app_instance">
             <interface action="copy" path="/saltstack/v1/variable/replace">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
+		            <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
-                    <parameter datatype="string" mappingType='context'>s3PkgPath</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package_url">s3PkgPath</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="script">
+        <plugin name="script" entity="resource_instance">
             <interface action="run" path="/saltstack/v1/script/run">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpointType</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">runAs</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_source_type" required="Y">endpointType</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_script" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.user_name" required="N">runAs</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.NONE" required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="user">
+        <plugin name="user" entity="business_app_instance">
             <interface action="add" path="/saltstack/v1/user/add">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">password</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">userGroup</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">userId</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">groupId</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">homeDir</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password" required="N">password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.group_name" required="N">userGroup</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.user_id" required="N">userId</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.group_id" required="N">groupId</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.home_path" required="N">homeDir</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
-                    <parameter datatype="string" mappingType='context'>password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">password</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="Y">userName</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
         </plugin>
-        <plugin name="database">
+        <plugin name="database" entity="business_app_instance">
             <interface action="runScript" path="/saltstack/v1/database/runScript">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">port</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_file_path" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">host</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password" required="Y">password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.login_port" required="N">port</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.code" required="N">databaseName</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
@@ -149,21 +149,21 @@
 
               <interface action="addDatabase" path="/saltstack/v1/database/addDatabase">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">host</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">password</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">port</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">databaseName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerGuid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">databaseOwnerPassword</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">host</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.user_name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.user_password" required="Y">password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.login_port" required="N">port</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.code" required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="N">databaseOwnerGuid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="N">databaseOwnerName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password" required="N">databaseOwnerPassword</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>databaseOwnerGuid</parameter>
-                    <parameter datatype="string" mappingType='context'>databaseOwnerPassword</parameter>
-		            <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">databaseOwnerGuid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">databaseOwnerPassword</parameter>
+		    <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
@@ -171,37 +171,37 @@
         <plugin name="apply-deployment">
             <interface action="new" path="/saltstack/v1/apply-deployment/new">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">startScript</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package_url" required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_deploy_file_path" required="Y">startScript</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
             <interface action="update" path="/saltstack/v1/apply-deployment/update">
                 <inputParameters>
-                    <parameter datatype="string" mappingType='entity' required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">target</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">userName</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">confFiles</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">destinationPath</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">variableList</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">stopScript</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">startScript</parameter>
-                    <parameter datatype="string" mappingType='entity' required="N">args</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_user>wecmdb:deploy_user.name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package_url" required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_stop_file_path" required="Y">stopScript</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_deploy_file_path" required="Y">startScript</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
-                    <parameter datatype="string" mappingType='context'>guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
