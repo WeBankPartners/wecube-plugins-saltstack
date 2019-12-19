@@ -19,7 +19,6 @@ type ApplyDeploymentPlugin struct {
 
 func (plugin *ApplyDeploymentPlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := ApplyDeploymentActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("ApplyDeployment plugin,action = %s not found", actionName)
 	}
@@ -43,6 +42,10 @@ type ApplyNewDeploymentInput struct {
 	StartScriptPath  string `json:"startScript,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
+	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed                 string `json:"seed,omitempty"`
+	AppPublicKey         string `json:"appPublicKey,omitempty"`
+	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -144,10 +147,14 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
+					Guid:                 input.Guid,
+					EndPoint:             input.EndPoint,
+					FilePath:             input.VariableFilePath,
+					VariableList:         input.VariableList,
+					EncryptVariblePrefix: input.EncryptVariblePrefix,
+					Seed:                 input.Seed,
+					AppPublicKey:         input.AppPublicKey,
+					SysPrivateKey:        input.SysPrivateKey,
 				},
 			},
 		}
@@ -255,6 +262,11 @@ type ApplyUpdateDeploymentInput struct {
 	ExecArg          string `json:"args,omitempty"`
 	StopScriptPath   string `json:"stopScript,omitempty"`
 	StartScriptPath  string `json:"startScript,omitempty"`
+
+	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed                 string `json:"seed,omitempty"`
+	AppPublicKey         string `json:"appPublicKey,omitempty"`
+	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -363,10 +375,14 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
+					Guid:                 input.Guid,
+					EndPoint:             input.EndPoint,
+					FilePath:             input.VariableFilePath,
+					VariableList:         input.VariableList,
+					EncryptVariblePrefix: input.EncryptVariblePrefix,
+					Seed:                 input.Seed,
+					AppPublicKey:         input.AppPublicKey,
+					SysPrivateKey:        input.SysPrivateKey,
 				},
 			},
 		}

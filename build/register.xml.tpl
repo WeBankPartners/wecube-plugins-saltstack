@@ -67,7 +67,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
@@ -181,6 +181,10 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_deploy_file_path" required="Y">startScript</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
@@ -200,6 +204,10 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_stop_file_path" required="Y">stopScript</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.absolute_deploy_file_path" required="Y">startScript</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
