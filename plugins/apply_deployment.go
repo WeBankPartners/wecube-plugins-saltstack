@@ -147,14 +147,14 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
+					Guid:                 input.Guid,
+					EndPoint:             input.EndPoint,
+					FilePath:             input.VariableFilePath,
+					VariableList:         input.VariableList,
 					EncryptVariblePrefix: input.EncryptVariblePrefix,
-					Seed:input.Seed,
-					AppPublicKey:input.AppPublicKey,
-					SysPrivateKey:input.SysPrivateKey,
+					Seed:                 input.Seed,
+					AppPublicKey:         input.AppPublicKey,
+					SysPrivateKey:        input.SysPrivateKey,
 				},
 			},
 		}
@@ -267,7 +267,6 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
-	
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -376,14 +375,14 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
-					EncryptVariblePrefix:input.EncryptVariblePrefix,
-					Seed:input.Seed,     
-					AppPublicKey:input.AppPublicKey,
-					SysPrivateKey:input.SysPrivateKey,
+					Guid:                 input.Guid,
+					EndPoint:             input.EndPoint,
+					FilePath:             input.VariableFilePath,
+					VariableList:         input.VariableList,
+					EncryptVariblePrefix: input.EncryptVariblePrefix,
+					Seed:                 input.Seed,
+					AppPublicKey:         input.AppPublicKey,
+					SysPrivateKey:        input.SysPrivateKey,
 				},
 			},
 		}

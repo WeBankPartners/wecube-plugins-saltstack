@@ -17,12 +17,12 @@ import (
 var VariableActions = make(map[string]Action)
 
 var (
-	SEPERATOR = string([]byte{0x01})
-	VARIABLE_KEY_SEPERATOR = SEPERATOR+"="+SEPERATOR
-	VARIABLE_VARIABLE_SEPERATOR=","+SEPERATOR
-	KEY_KEY_SEPERATOR=VARIABLE_VARIABLE_SEPERATOR
-	ONE_VARIABLE_SEPERATOR="&"+SEPERATOR
- )
+	SEPERATOR                   = string([]byte{0x01})
+	VARIABLE_KEY_SEPERATOR      = SEPERATOR + "=" + SEPERATOR
+	VARIABLE_VARIABLE_SEPERATOR = "," + SEPERATOR
+	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
+	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
+)
 
 func init() {
 	VariableActions["replace"] = new(VariableReplaceAction)
@@ -232,7 +232,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
 		return fmt.Errorf("file %s no variable need to replace", fileName)
 	}
 
-	keyMap, err := GetInputVariableMap(variablelist,seed)
+	keyMap, err := GetInputVariableMap(variablelist, seed)
 	if err != nil {
 		logrus.Errorf("GetInputVariableMap error: %s", err)
 		return err
@@ -258,22 +258,22 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	values := strings.Split(value, ONE_VARIABLE_SEPERATOR)
 
 	if len(keys) != len(values) {
-			return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format error", key, value)
+		return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format error", key, value)
 	}
 
 	if len(keys) == 1 {
-			return keys[0], values[0], nil
+		return keys[0], values[0], nil
 	}
 
 	//need to decode
 	inputMap := make(map[string]string)
 	for i, _ := range keys {
-			inputMap[keys[i]] = values[i]
+		inputMap[keys[i]] = values[i]
 	}
 
 	rtnKey := keys[0]
 	if _, ok := inputMap["guid"]; !ok {
-			return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format have no guid", key, value)
+		return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format have no guid", key, value)
 	}
 
 	md5sum := Md5Encode(inputMap["guid"] + seed)
@@ -285,22 +285,22 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
 	if len(kvs) != 2 {
-			return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
+		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
 	}
 
 	keys := strings.Split(kvs[0], VARIABLE_VARIABLE_SEPERATOR)
 	values := strings.Split(kvs[1], KEY_KEY_SEPERATOR)
 
 	if len(keys) != len(values) {
-			return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
+		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
 	}
 
 	for i, _ := range keys {
-			key, value, err := getRawKeyValue(keys[i], values[i], seed)
-			if err != nil {
-					return inputMap, err
-			}
-			inputMap[key] = value
+		key, value, err := getRawKeyValue(keys[i], values[i], seed)
+		if err != nil {
+			return inputMap, err
+		}
+		inputMap[key] = value
 	}
 	return inputMap, nil
 }
@@ -397,9 +397,7 @@ func isKeyNeedEncrypt(key string, prefix string) bool {
 	return strings.HasPrefix(key, prefix)
 }
 
-func encrpytSenstiveData(data, publicKey, privateKey string) (string, error) {
-	//get raw data
-	rawData, err := data
+func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) {
 	publicKeyFile, err := getTempFile()
 	if err != nil {
 		return "", err
@@ -508,7 +506,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
 					}
 					oldStr := "[" + key + "]"
-					variableValue, err := getVariableValue(key, keyMap[s[1]],  publicKey, privateKey, prefix)
+					variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
 					if err != nil {
 						return err
 					}
@@ -622,7 +620,6 @@ func CompressFile(dir string, filePath []string, pkgName string, pkgType string)
 }
 
 func LogReadLine(cmd *exec.Cmd, stdout io.ReadCloser) ([]string, error) {
-
 	linelist := []string{}
 	outputBuf := bufio.NewReader(stdout)
 	for {
