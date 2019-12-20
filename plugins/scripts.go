@@ -14,8 +14,8 @@ import (
 const (
 	SCRIPT_SAVE_PATH = "/srv/salt/base/"
 
-	END_POINT_TYPE_S3    = "S3"
-	END_POINT_TYPE_LOCAL = "LOCAL"
+	END_POINT_TYPE_S3         = "S3"
+	END_POINT_TYPE_LOCAL      = "LOCAL"
 	END_POINT_TYPE_USER_PARAM = "USER_PARAM"
 )
 
@@ -43,13 +43,13 @@ type RunScriptInputs struct {
 
 type RunScriptInput struct {
 	CallBackParameter
-	EndPointType string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
-	EndPoint     string `json:"endpoint,omitempty"`
+	EndPointType  string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
+	EndPoint      string `json:"endpoint,omitempty"`
 	ScriptContent string `json:"scriptContent,omitempty"`
-	Target       string `json:"target,omitempty"`
-	RunAs        string `json:"runAs,omitempty"`
-	ExecArg      string `json:"args,omitempty"`
-	Guid         string `json:"guid,omitempty"`
+	Target        string `json:"target,omitempty"`
+	RunAs         string `json:"runAs,omitempty"`
+	ExecArg       string `json:"args,omitempty"`
+	Guid          string `json:"guid,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 }
@@ -226,7 +226,6 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	var result string
 	var output string
 	var err error
-	var result string
 
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
@@ -234,7 +233,7 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		if err != nil {
 			return fmt.Sprintf("executeLocalScript meet error=%v", err), err
 		}
-		
+
 	case END_POINT_TYPE_S3:
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 		os.Remove(scriptPath)
@@ -273,11 +272,11 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	return output, nil
 }
 
-func writeScriptContentToTempFile(content string)(fileName string,err error){
+func writeScriptContentToTempFile(content string) (fileName string, err error) {
 	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
 	if err != nil {
 		logrus.Errorf("writeScriptContentToTempFile,create tempfile meet err=%v", err)
-		return 
+		return
 	}
 
 	defer func() {
@@ -288,16 +287,16 @@ func writeScriptContentToTempFile(content string)(fileName string,err error){
 
 	if _, err = tmpFile.Write([]byte(content)); err != nil {
 		logrus.Errorf("writeScriptContentToTempFile,write tempfile meet err=%v", err)
-		return 
+		return
 	}
 
 	if err = tmpFile.Close(); err != nil {
 		logrus.Errorf("writeScriptContentToTempFile,close tempfile meet err=%v", err)
-		return 
+		return
 	}
 
 	fileName = tmpFile.Name()
-	return 
+	return
 }
 
 func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
@@ -329,9 +328,9 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	}
 
 	if input.EndPointType == END_POINT_TYPE_USER_PARAM {
-		scriptPath,err = writeScriptContentToTempFile(input.ScriptContent)
+		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
-			return output,err
+			return output, err
 		}
 	}
 
