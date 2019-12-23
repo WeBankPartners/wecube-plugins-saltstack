@@ -254,31 +254,20 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
 }
 
 func getRawKeyValue(key, value, seed string) (string, string, error) {
-	keys := strings.Split(key, ONE_VARIABLE_SEPERATOR)
-	values := strings.Split(value, ONE_VARIABLE_SEPERATOR)
+        values := strings.Split(value, ONE_VARIABLE_SEPERATOR)
 
-	if len(keys) != len(values) {
-		return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format error", key, value)
-	}
+        if len(values) == 1 {
+                return key, values[0], nil
+        }
+        if len(values) != 2 {
+                return key,"",fmt.Errorf("getRawKeyValue key=%v,value=%v is not right formt",key,value)
+        }
 
-	if len(keys) == 1 {
-		return keys[0], values[0], nil
-	}
-
-	//need to decode
-	inputMap := make(map[string]string)
-	for i, _ := range keys {
-		inputMap[keys[i]] = values[i]
-	}
-
-	rtnKey := keys[0]
-	if _, ok := inputMap["guid"]; !ok {
-		return "", "", fmt.Errorf("getRawKeyValue: key=%v value=%v format have no guid", key, value)
-	}
-
-	md5sum := Md5Encode(inputMap["guid"] + seed)
-	data, err := AesDecode(md5sum[0:16], values[0])
-	return rtnKey, data, err
+        //need to decode
+        guid:=values[1]
+        md5sum := Md5Encode(guid + seed)
+        data, err := AesDecode(md5sum[0:16], values[0])
+        return key, data, err
 }
 
 func GetInputVariableMap(variable string, seed string) (map[string]string, error) {
