@@ -279,22 +279,22 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 	return err
 }
 
-func AddDatabaseAndUser(input *AddDatabaseInput)(string,error){
-	if err :=addDatabaseCheckParam(input);err != nil {
-		return "",err 
+func AddDatabaseAndUser(input *AddDatabaseInput) (string, error) {
+	if err := addDatabaseCheckParam(input); err != nil {
+		return "", err
 	}
 
 	//get root password
 	md5sum := Md5Encode(input.Guid + input.Seed)
 	password, err := AesDecode(md5sum[0:16], input.Password)
-	if err  != nil  {
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
 	//create database
 	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "",err
+		return "", err
 	}
 
 	//create user
@@ -304,20 +304,20 @@ func AddDatabaseAndUser(input *AddDatabaseInput)(string,error){
 	}
 	cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "",err
+		return "", err
 	}
 
 	//grant permission
 	permission := "ALL PRIVILEGES"
 	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "",err
+		return "", err
 	}
 
 	//create new password
 	md5sum = Md5Encode(input.DatabaseOwnerGuid + input.Seed)
-	password, err := AesEncode(md5sum[0:16], dbOwnerPassword)
-	return password, err
+	encryptPassword, err := AesEncode(md5sum[0:16], dbOwnerPassword)
+	return encryptPassword, err
 }
 
 func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
@@ -331,14 +331,15 @@ func (action *AddDatabaseAction) Do(input interface{}) (interface{}, error) {
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
-		
-		password,err:=AddDatabaseAndUser(&input)
-		if err  != nil {
+
+		password, err := AddDatabaseAndUser(&input)
+		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
 		}
-		outputs.Outputs = append(outputs.Outputs, output)	
+		output.DatabaseOwnerPassword = password
+		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
 	return outputs, finalErr
@@ -364,10 +365,10 @@ type AddDatabaseUserInput struct {
 	Port     string `json:"port,omitempty"`
 
 	//new database info
-	DatabaseUserGuid      string `json:"databaseUserGuid,omitempty"`
-	DatabaseName          string `json:"databaseName,omitempty"`
-	DatabaseUserName      string `json:"databaseUserName,omitempty"`
-	DatabaseUserPassword  string `json:"databaseUserPassword,omitempty"`
+	DatabaseUserGuid     string `json:"databaseUserGuid,omitempty"`
+	DatabaseName         string `json:"databaseName,omitempty"`
+	DatabaseUserName     string `json:"databaseUserName,omitempty"`
+	DatabaseUserPassword string `json:"databaseUserPassword,omitempty"`
 }
 
 type AddDatabaseUserOutputs struct {
@@ -389,8 +390,8 @@ func (action *AddDatabaseUserAction) ReadParam(param interface{}) (interface{}, 
 	return inputs, nil
 }
 
-func checkAddDatabaseUser(input *AddDatabaseUserInput)error {
-	if input.Guid == ""{
+func checkAddDatabaseUser(input *AddDatabaseUserInput) error {
+	if input.Guid == "" {
 		return fmt.Errorf("empty guid")
 	}
 	if input.Seed == "" {
@@ -405,22 +406,22 @@ func checkAddDatabaseUser(input *AddDatabaseUserInput)error {
 	if input.DatabaseUserName == "" {
 		return fmt.Errorf("empty databaseUserName")
 	}
-	if input.DatabaseUserGuid == ""{
+	if input.DatabaseUserGuid == "" {
 		return fmt.Errorf("empty databaseUserGuid")
 	}
-	return nil 
+	return nil
 }
 
-func createUserForExistedDatabase(input *AddDatabaseUserInput)(string,error){
-	if err:=checkAddDatabaseUser(input);err != nil {
-		return "",err
+func createUserForExistedDatabase(input *AddDatabaseUserInput) (string, error) {
+	if err := checkAddDatabaseUser(input); err != nil {
+		return "", err
 	}
-	
+
 	//get root password
 	md5sum := Md5Encode(input.Guid + input.Seed)
 	password, err := AesDecode(md5sum[0:16], input.Password)
-	if err  != nil  {
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
 	//create user
@@ -431,20 +432,20 @@ func createUserForExistedDatabase(input *AddDatabaseUserInput)(string,error){
 
 	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, userPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "",err
+		return "", err
 	}
 
 	//grant permission
 	permission := "ALL PRIVILEGES"
 	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "",err
+		return "", err
 	}
 
 	//create encrypt password
 	md5sum = Md5Encode(input.DatabaseUserGuid + input.Seed)
-	password, err := AesEncode(md5sum[0:16], userPassword)
-	return password, err
+	encryptPassword, err := AesEncode(md5sum[0:16], userPassword)
+	return encryptPassword, err
 }
 
 func (action *AddDatabaseUserAction) Do(input interface{}) (interface{}, error) {
@@ -459,14 +460,14 @@ func (action *AddDatabaseUserAction) Do(input interface{}) (interface{}, error) 
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
 
-		password,err := createUserForExistedDatabase(&input)
+		password, err := createUserForExistedDatabase(&input)
 		if err != nil {
 			finalErr = err
-			output.Result.Code =  RESULT_CODE_ERROR
+			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 		}
 		output.DatabaseUserPassword = password
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	return outputs,finalErr 
+	return outputs, finalErr
 }
