@@ -14,8 +14,9 @@ import (
 const (
 	SCRIPT_SAVE_PATH = "/srv/salt/base/"
 
-	END_POINT_TYPE_S3    = "S3"
-	END_POINT_TYPE_LOCAL = "LOCAL"
+	END_POINT_TYPE_S3         = "S3"
+	END_POINT_TYPE_LOCAL      = "LOCAL"
+	END_POINT_TYPE_USER_PARAM = "USER_PARAM"
 )
 
 var ScriptPluginActions = make(map[string]Action)
@@ -29,7 +30,6 @@ type ScriptPlugin struct {
 
 func (plugin *ScriptPlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := ScriptPluginActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("Script plugin,action = %s not found", actionName)
 	}
@@ -43,12 +43,13 @@ type RunScriptInputs struct {
 
 type RunScriptInput struct {
 	CallBackParameter
-	EndPointType string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
-	EndPoint     string `json:"endpoint,omitempty"`
-	Target       string `json:"target,omitempty"`
-	RunAs        string `json:"runAs,omitempty"`
-	ExecArg      string `json:"args,omitempty"`
-	Guid         string `json:"guid,omitempty"`
+	EndPointType  string `json:"endpointType,omitempty"` // "S3" or "LOCAL", Defalt: "LOCAL"
+	EndPoint      string `json:"endpoint,omitempty"`
+	ScriptContent string `json:"scriptContent,omitempty"`
+	Target        string `json:"target,omitempty"`
+	RunAs         string `json:"runAs,omitempty"`
+	ExecArg       string `json:"args,omitempty"`
+	Guid          string `json:"guid,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 }
@@ -225,24 +226,12 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	var result string
 	var output string
 	var err error
+
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
 		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg)
 		if err != nil {
 			return fmt.Sprintf("executeLocalScript meet error=%v", err), err
-		}
-		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
-		if err != nil {
-			logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
-			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
-		}
-		for k, v := range saltApiResult.Results[0] {
-			if k != input.Target {
-				err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
-				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
-			}
-			output = k + ":" + v
-			break
 		}
 
 	case END_POINT_TYPE_S3:
@@ -252,26 +241,62 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 			return fmt.Sprintf("executeS3Script meet error=%v", err), err
 		}
 
-		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+	case END_POINT_TYPE_USER_PARAM:
+		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
+		os.Remove(scriptPath)
 		if err != nil {
-			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
-			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+			return fmt.Sprintf("executeS3Script meet error=%v", err), err
 		}
 
-		for _, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("script run retCode=%v", v.RetCode)
-			}
-			output = v.Stdout + v.Stderr
-			break
-		}
 	default:
 		err = fmt.Errorf("no such EndPointType")
 		logrus.Error("runScript meet error=%v", err)
 		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
 
+	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+	if err != nil {
+		logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
+		return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
+	}
+
+	for k, v := range saltApiResult.Results[0] {
+		if k != input.Target {
+			err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
+			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
+		}
+		output = k + ":" + v
+		break
+	}
+
 	return output, nil
+}
+
+func writeScriptContentToTempFile(content string) (fileName string, err error) {
+	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
+	if err != nil {
+		logrus.Errorf("writeScriptContentToTempFile,create tempfile meet err=%v", err)
+		return
+	}
+
+	defer func() {
+		if err != nil {
+			defer os.Remove(tmpFile.Name())
+		}
+	}()
+
+	if _, err = tmpFile.Write([]byte(content)); err != nil {
+		logrus.Errorf("writeScriptContentToTempFile,write tempfile meet err=%v", err)
+		return
+	}
+
+	if err = tmpFile.Close(); err != nil {
+		logrus.Errorf("writeScriptContentToTempFile,close tempfile meet err=%v", err)
+		return
+	}
+
+	fileName = tmpFile.Name()
+	return
 }
 
 func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
@@ -297,6 +322,13 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	scriptPath := input.EndPoint
 	if input.EndPointType == END_POINT_TYPE_S3 {
 		scriptPath, err = downLoadScript(*input)
+		if err != nil {
+			return output, err
+		}
+	}
+
+	if input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
 			return output, err
 		}
