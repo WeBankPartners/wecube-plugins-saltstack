@@ -21,7 +21,6 @@ type FilePlugin struct {
 
 func (plugin *FilePlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := FileActions[actionName]
-
 	if !found {
 		return nil, fmt.Errorf("File plugin,action = %s not found", actionName)
 	}
@@ -225,6 +224,7 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 
 	if strings.HasSuffix(lowerFilepath, ".zip") {
 		request.Function = "archive.cmd_unzip"
+		request.Args = append(reqeust.Args, "-o")
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".rar") {
@@ -233,16 +233,19 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 		request.Args = append(request.Args, currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".tar") {
 		request.Function = "archive.tar"
+		request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, "xf")
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".tar.gz") || strings.HasSuffix(lowerFilepath, ".tgz") {
 		request.Function = "archive.tar"
+		request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, "zxf")
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".gz") {
 		request.Function = "archive.gunzip"
+		request.Args = append(request.Args,"-f")
 		request.Args = append(request.Args, input.DestinationPath)
 	} else {
 		return &request, fmt.Errorf("%s has invalid compressed format", lowerFilepath)

@@ -148,8 +148,7 @@
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
             </interface>
-
-              <interface action="addDatabase" path="/saltstack/v1/database/addDatabase">
+            <interface action="addDatabase" path="/saltstack/v1/database/addDatabase">
                 <inputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
                     <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
@@ -165,6 +164,26 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">databaseOwnerGuid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">databaseOwnerPassword</parameter>
+		            <parameter datatype="string" mappingType='context'>code</parameter>
+                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                </outputParameters>
+            </interface>
+             <interface action="addUser" path="/saltstack/v1/database/addUser">
+                <inputParameters>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
+                    <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">host</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.user_name" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.user_password" required="Y">password</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.login_port" required="N">port</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">databaseUserGuid</parameter>
+                    <parameter datatype="string" mappingType="entity" required="Y">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" required="Y">databaseUserName</parameter>
+                    <parameter datatype="string" mappingType="entity" required="N">databaseUserPassword</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">databaseUserGuid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">databaseUserPassword</parameter>
 		            <parameter datatype="string" mappingType='context'>code</parameter>
                     <parameter datatype="string" mappingType='context'>msg</parameter>
                 </outputParameters>
