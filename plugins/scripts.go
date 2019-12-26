@@ -80,10 +80,10 @@ func (action *RunScriptAction) ReadParam(param interface{}) (interface{}, error)
 }
 
 func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
-	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 {
+	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 && input.EndPointType != END_POINT_TYPE_USER_PARAM {
 		return errors.New("Wrong EndPointType")
 	}
-	if input.EndPoint == "" {
+	if input.EndPoint == "" && input.EndPointType == END_POINT_TYPE_S3 {
 		return errors.New("Endpoint is empty")
 	}
 	// if input.AccessKey == "" {
