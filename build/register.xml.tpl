@@ -14,6 +14,9 @@
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
     <systemParameters>
+    	<systemParameter name="ENDPOINT_TYPE_S3" defaultValue="S3" scopeType="plugin-package" />
+    	<systemParameter name="ENDPOINT_TYPE_LOCAL" defaultValue="LOCAL" scopeType="plugin-package" />
+    	<systemParameter name="ENDPOINT_TYPE_USER_PARAM" defaultValue="USER_PARAM" scopeType="plugin-package" />
     </systemParameters>
 
     <!-- 5.权限设定 -->
@@ -83,12 +86,12 @@
             <interface action="run" path="/saltstack/v1/script/run">
                 <inputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id" required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_source_type" required="Y">endpointType</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_script" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName='ENDPOINT_TYPE_USER_PARAM' required="Y">endpointType</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_script">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
                     <parameter datatype="string" mappingType="constant" required="N">scriptContent</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.user_name" required="N">runAs</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.NONE" required="N">args</parameter>
+                    <parameter datatype="string" mappingType="constant" required="N">args</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id">guid</parameter>
