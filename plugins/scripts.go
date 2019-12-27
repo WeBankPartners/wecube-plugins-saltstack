@@ -233,19 +233,37 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		if err != nil {
 			return fmt.Sprintf("executeLocalScript meet error=%v", err), err
 		}
-
-	case END_POINT_TYPE_S3:
+		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+		if err != nil {
+			logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
+		}
+		for k, v := range saltApiResult.Results[0] {
+			if k != input.Target {
+				err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
+				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
+			}
+			output = k + ":" + v
+			break
+		}
+	case END_POINT_TYPE_S3,END_POINT_TYPE_USER_PARAM:
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 		os.Remove(scriptPath)
 		if err != nil {
 			return fmt.Sprintf("executeS3Script meet error=%v", err), err
 		}
-
-	case END_POINT_TYPE_USER_PARAM:
-		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
-		os.Remove(scriptPath)
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			return fmt.Sprintf("executeS3Script meet error=%v", err), err
+			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
+			return fmt.Sprintf("parseSaltApiCmdScriptCallResult meet err=%v", err), err
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				return v.Stderr, fmt.Errorf("script run retCode=%v", v.RetCode)
+			}
+			output = v.Stdout + v.Stderr
+			break
 		}
 
 	default:
@@ -253,22 +271,7 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		logrus.Error("runScript meet error=%v", err)
 		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
-
-	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
-	if err != nil {
-		logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
-		return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
-	}
-
-	for k, v := range saltApiResult.Results[0] {
-		if k != input.Target {
-			err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
-			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
-		}
-		output = k + ":" + v
-		break
-	}
-
+	
 	return output, nil
 }
 

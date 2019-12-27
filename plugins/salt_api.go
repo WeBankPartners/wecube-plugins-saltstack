@@ -71,7 +71,7 @@ type SaltApiCmdScriptResults struct {
 
 type SaltApiCmdScriptResult struct {
 	Pid     int    `json:"pid,omitempty"`
-	RetCode int    `json:"retCode,omitempty"`
+	RetCode int    `json:"retcode,omitempty"`
 	Stderr  string `json:"stderr,omitempty"`
 	Stdout  string `json:"stdout,omitempty"`
 }
