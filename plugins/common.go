@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -18,6 +17,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -31,8 +32,8 @@ type CallBackParameter struct {
 }
 
 type Result struct {
-	Code    string `json:"code"`
-	Message string `json:"msg"`
+	Code    string `json:"errorCode"`
+	Message string `json:"errorMessage"`
 }
 
 func Md5Encode(rawData string) string {
