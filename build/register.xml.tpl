@@ -39,8 +39,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -54,8 +54,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -74,8 +74,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package_url">s3PkgPath</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -92,8 +92,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -113,8 +113,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">password</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
             <interface action="remove" path="/saltstack/v1/user/remove">
@@ -125,8 +125,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -144,8 +144,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
             <interface action="addDatabase" path="/saltstack/v1/database/addDatabase">
@@ -164,8 +164,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">databaseOwnerGuid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">databaseOwnerPassword</parameter>
-		            <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+		            <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
              <interface action="addUser" path="/saltstack/v1/database/addUser">
@@ -184,8 +184,8 @@
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">databaseUserGuid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">databaseUserPassword</parameter>
-		            <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+		            <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -208,8 +208,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
             <interface action="update" path="/saltstack/v1/apply-deployment/update">
@@ -231,8 +231,8 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
-                    <parameter datatype="string" mappingType='context'>code</parameter>
-                    <parameter datatype="string" mappingType='context'>msg</parameter>
+                    <parameter datatype="string" mappingType='context'>errorCode</parameter>
+                    <parameter datatype="string" mappingType='context'>errorMessage</parameter>
                 </outputParameters>
             </interface>
         </plugin>
