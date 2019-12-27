@@ -252,7 +252,6 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		if err != nil {
 			return fmt.Sprintf("executeS3Script meet error=%v", err), err
 		}
-
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
 			logrus.Errorf("parseSaltApiCmdScriptCallResult meet err=%v,rawStr=%s", err, result)
@@ -272,22 +271,7 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 		logrus.Error("runScript meet error=%v", err)
 		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
-
-	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
-	if err != nil {
-		logrus.Errorf("parseSaltApiCmdRunCallResult meet err=%v,rawStr=%s", err, result)
-		return fmt.Sprintf("parseSaltApiCmdRunCallResult meet err=%v", err), err
-	}
-
-	for k, v := range saltApiResult.Results[0] {
-		if k != input.Target {
-			err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
-			return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
-		}
-		output = k + ":" + v
-		break
-	}
-
+	
 	return output, nil
 }
 
