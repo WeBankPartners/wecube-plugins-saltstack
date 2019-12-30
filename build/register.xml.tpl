@@ -87,7 +87,7 @@
                 <inputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.id" required="Y">guid</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName='ENDPOINT_TYPE_USER_PARAM' required="Y">endpointType</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_script">endpoint</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.resource_set>wecmdb:resource_set.init_script" required="N">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
                     <parameter datatype="string" mappingType="constant" required="N">scriptContent</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:resource_instance.user_name" required="N">runAs</parameter>
