@@ -14,9 +14,9 @@
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
     <systemParameters>
-    	<systemParameter name="ENDPOINT_TYPE_S3" defaultValue="S3" scopeType="plugin-package" />
-    	<systemParameter name="ENDPOINT_TYPE_LOCAL" defaultValue="LOCAL" scopeType="plugin-package" />
-    	<systemParameter name="ENDPOINT_TYPE_USER_PARAM" defaultValue="USER_PARAM" scopeType="plugin-package" />
+    	<systemParameter name="ENDPOINT_TYPE_S3" defaultValue="S3" scopeType="saltstack" />
+    	<systemParameter name="ENDPOINT_TYPE_LOCAL" defaultValue="LOCAL" scopeType="saltstack" />
+    	<systemParameter name="ENDPOINT_TYPE_USER_PARAM" defaultValue="USER_PARAM" scopeType="saltstack" />
     </systemParameters>
 
     <!-- 5.权限设定 -->
