@@ -23,8 +23,8 @@ import (
 
 const (
 	CHARGE_TYPE_PREPAID = "PREPAID"
-	RESULT_CODE_SUCCESS = "ok"
-	RESULT_CODE_ERROR   = "error"
+	RESULT_CODE_SUCCESS = "0"
+	RESULT_CODE_ERROR   = "1"
 )
 
 type CallBackParameter struct {
