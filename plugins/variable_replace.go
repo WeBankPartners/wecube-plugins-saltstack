@@ -330,10 +330,15 @@ func GetFileVariableString(filepath string, filename string) ([]string, error) {
 			continue
 		}
 
-		flysnowRegexp := regexp.MustCompile(`[@*]\w+|[!*]\w+|[&*]\w+`)
+		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
 		params := flysnowRegexp.FindAllString(string(a), -1)
 		if len(params) > 0 {
 			for _, param := range params {
+				if false == strings.HasSuffix(param, "]") {
+					continue
+				}
+				param = param[0 : len(param)-1]
+
 				if strings.Contains(param, "@") {
 					s := strings.Split(param, "@")
 					if s[1] == "" {
@@ -485,10 +490,15 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 			return err
 		}
 		newLine := string(line)
-		flysnowRegexp := regexp.MustCompile(`[@*]\w+|[!*]\w+|[&*]\w+`)
+		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
 		keys := flysnowRegexp.FindAllString(string(line), -1)
 		if len(keys) > 0 {
 			for _, key := range keys {
+				if false == strings.HasSuffix(key, "]") {
+					continue
+				}
+				key = key[0 : len(key)-1]
+
 				if strings.Contains(key, "@") {
 					s := strings.Split(key, "@")
 					if s[1] == "" {
