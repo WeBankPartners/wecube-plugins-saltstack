@@ -206,8 +206,8 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
                     <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
-                    <parameter datatype="string" mappingType='entity' required="Y">sysPrivateKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">appPublicKey</parameter>
+                    <parameter datatype="string" mappingType='entity' required="N">sysPrivateKey</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
