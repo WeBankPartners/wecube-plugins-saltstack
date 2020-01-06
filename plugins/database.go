@@ -400,9 +400,6 @@ func checkAddDatabaseUser(input *AddDatabaseUserInput) error {
 	if input.Password == "" {
 		return fmt.Errorf("empty password")
 	}
-	if input.DatabaseName == "" {
-		return fmt.Errorf("empty databaseName")
-	}
 	if input.DatabaseUserName == "" {
 		return fmt.Errorf("empty databaseUserName")
 	}
@@ -436,10 +433,12 @@ func createUserForExistedDatabase(input *AddDatabaseUserInput) (string, error) {
 	}
 
 	//grant permission
-	permission := "ALL PRIVILEGES"
-	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
-	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "", err
+	if input.DatabaseName != "" {
+		permission := "ALL PRIVILEGES"
+		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			return "", err
+		}
 	}
 
 	//create encrypt password
