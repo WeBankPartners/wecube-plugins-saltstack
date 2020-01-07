@@ -205,6 +205,14 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 		}
 
 	}
+	err = os.RemoveAll(fileName)
+	if err != nil {
+		return output, err
+	}
+	err = os.RemoveAll(newDir)
+	if err != nil {
+		return output, err
+	}
 
 	return output, err
 }
