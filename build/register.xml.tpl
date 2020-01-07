@@ -180,7 +180,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.user_password" required="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.login_port" required="N">port</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">databaseUserGuid</parameter>
-                    <parameter datatype="string" mappingType="entity" required="Y">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" required="N">databaseName</parameter>
                     <parameter datatype="string" mappingType="entity" required="Y">databaseUserName</parameter>
                     <parameter datatype="string" mappingType="entity" required="N">databaseUserPassword</parameter>
                 </inputParameters>
