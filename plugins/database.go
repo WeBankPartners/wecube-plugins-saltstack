@@ -37,6 +37,7 @@ type RunDatabaseScriptInputs struct {
 type RunDatabaseScriptInput struct {
 	CallBackParameter
 	EndPoint string `json:"endpoint,omitempty"`
+	SqlFiles string `json:"sql_files,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
@@ -165,21 +166,38 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 		return output, err
 	}
 
+	files := []string{}
 	// whether the fileName is *.sql or other
 	if !strings.HasSuffix(fileName, ".sql") {
+		if input.SqlFiles == "" {
+			err = errors.New("SqlFiles is empty")
+			return output, err
+		}
+
 		// if the fileName is unpack package, unpack
-		input := FileCopyInput{
+		fileCopyInput := FileCopyInput{
 			Target:          fileName,
 			DestinationPath: newDir,
 		}
 		actionFileCopy := &FileCopyAction{}
-		unpackRequest, er := actionFileCopy.deriveUnpackRequest(&input)
+		unpackRequest, er := actionFileCopy.deriveUnpackRequest(&fileCopyInput)
 		if er != nil {
 			err = er
 			return output, err
 		}
 		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest); err != nil {
 			return output, err
+		}
+
+		// split SqlFiles to *.sql
+		sqlFiles := strings.Split(input.SqlFiles, ",")
+		for _, file := range sqlFiles {
+			sqlFile := newDir + "/" + strings.TrimSpace(file)
+			if fileExist(sqlFile) {
+				err = fmt.Errorf("file [%v] does not exist", sqlFile)
+				return output, err
+			}
+			files = append(files, sqlFile)
 		}
 	} else {
 		// move the *.sql to newDir directly
@@ -190,21 +208,23 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 			err = er
 			return output, err
 		}
+
+		sqlFile := newDir + "/" + Info[len(Info)-1]
+		if fileExist(sqlFile) {
+			err = fmt.Errorf("file [%v] does not exist", sqlFile)
+			return output, err
+		}
+		files = append(files, sqlFile)
 	}
 
-	// list all *.sql in newDir and run sql scripts foreach
-	files, err := listFile(newDir)
-	if err != nil {
-		return output, err
-	}
-
+	// run sql scripts foreach
 	for _, file := range files {
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
 		if err != nil {
 			return output, err
 		}
-
 	}
+
 	err = os.RemoveAll(fileName)
 	if err != nil {
 		return output, err

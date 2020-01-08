@@ -232,6 +232,15 @@ func readStringFromFile(fileName string) (string, error) {
 	return string(f), nil
 }
 
+func fileExist(file string) bool {
+	info, err := os.Stat(file)
+	if os.IsNotExist(err) {
+		// path/to/whatever does not exist
+		return false
+	}
+	return !info.IsDir()
+}
+
 func listFile(myDir string) ([]string, error) {
 	output := []string{}
 	files, err := ioutil.ReadDir(myDir)
