@@ -233,14 +233,14 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 		request.Args = append(request.Args, currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".tar") {
 		request.Function = "archive.tar"
-		request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, "xf")
+		// request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".tar.gz") || strings.HasSuffix(lowerFilepath, ".tgz") {
 		request.Function = "archive.tar"
-		request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, "zxf")
+		// request.Args = append(request.Args, "--overwrite")
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else if strings.HasSuffix(lowerFilepath, ".gz") {
