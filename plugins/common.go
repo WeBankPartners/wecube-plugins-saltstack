@@ -231,3 +231,32 @@ func readStringFromFile(fileName string) (string, error) {
 	}
 	return string(f), nil
 }
+
+func fileExist(file string) bool {
+	info, err := os.Stat(file)
+	if os.IsNotExist(err) {
+		// path/to/whatever does not exist
+		return false
+	}
+	return !info.IsDir()
+}
+
+func listFile(myDir string) ([]string, error) {
+	output := []string{}
+	files, err := ioutil.ReadDir(myDir)
+	if err != nil {
+		return output, err
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			childOutput, err := listFile(myDir + "/" + file.Name())
+			if err != nil {
+				return output, err
+			}
+			output = append(output, childOutput...)
+		} else {
+			output = append(output, myDir+"/"+file.Name())
+		}
+	}
+	return output, err
+}
