@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -36,6 +37,7 @@ type RunDatabaseScriptInputs struct {
 type RunDatabaseScriptInput struct {
 	CallBackParameter
 	EndPoint string `json:"endpoint,omitempty"`
+	SqlFiles string `json:"sql_files,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 	Guid         string `json:"guid,omitempty"`
@@ -128,60 +130,126 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	return string(out), nil
 }
 
+func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScriptInput) (output RunDatabaseScriptOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+	err = runDatabaseScriptCheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
+	fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	if err != nil {
+		return output, err
+	}
+
+	md5sum := Md5Encode(input.Guid + input.Seed)
+	password, err := AesDecode(md5sum[0:16], input.Password)
+	if err != nil {
+		return output, err
+	}
+
+	// new dir to place all *.sql
+	Info := strings.Split(fileName, "/")
+	newDir := strings.Join(Info[0:len(Info)-2], "/") + "/sql"
+	err = ensureDirExist(newDir)
+	if err != nil {
+		return output, err
+	}
+
+	files := []string{}
+	// whether the fileName is *.sql or other
+	if !strings.HasSuffix(fileName, ".sql") {
+		if input.SqlFiles == "" {
+			err = errors.New("SqlFiles is empty")
+			return output, err
+		}
+
+		// if the fileName is unpack package, unpack
+		fileCopyInput := FileCopyInput{
+			Target:          fileName,
+			DestinationPath: newDir,
+		}
+		actionFileCopy := &FileCopyAction{}
+		unpackRequest, er := actionFileCopy.deriveUnpackRequest(&fileCopyInput)
+		if er != nil {
+			err = er
+			return output, err
+		}
+		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest); err != nil {
+			return output, err
+		}
+
+		// split SqlFiles to *.sql
+		sqlFiles := strings.Split(input.SqlFiles, ",")
+		for _, file := range sqlFiles {
+			sqlFile := newDir + "/" + strings.TrimSpace(file)
+			if fileExist(sqlFile) {
+				err = fmt.Errorf("file [%v] does not exist", sqlFile)
+				return output, err
+			}
+			files = append(files, sqlFile)
+		}
+	} else {
+		// move the *.sql to newDir directly
+		command := exec.Command("mv", fileName, newDir)
+		out, er := command.CombinedOutput()
+		logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
+		if er != nil {
+			err = er
+			return output, err
+		}
+
+		sqlFile := newDir + "/" + Info[len(Info)-1]
+		if fileExist(sqlFile) {
+			err = fmt.Errorf("file [%v] does not exist", sqlFile)
+			return output, err
+		}
+		files = append(files, sqlFile)
+	}
+
+	// run sql scripts foreach
+	for _, file := range files {
+		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
+		if err != nil {
+			return output, err
+		}
+	}
+
+	err = os.RemoveAll(fileName)
+	if err != nil {
+		return output, err
+	}
+	err = os.RemoveAll(newDir)
+	if err != nil {
+		return output, err
+	}
+
+	return output, err
+}
+
 func (action *RunDatabaseScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunDatabaseScriptInputs)
 	outputs := RunDatabaseScriptOutputs{}
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output := RunDatabaseScriptOutput{
-			Guid: input.Guid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		output.Result.Code = RESULT_CODE_SUCCESS
-
-		if err := runDatabaseScriptCheckParam(input); err != nil {
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
-			finalErr = err
-			outputs.Outputs = append(outputs.Outputs, output)
-			continue
-		}
-
-		// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		fileName, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+		output, err := action.runDatabaseScript(&input)
 		if err != nil {
-			logrus.Infof("RunScriptAction downloads3 file error=%v", err)
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
 			finalErr = err
-			outputs.Outputs = append(outputs.Outputs, output)
-			continue
 		}
-
-		md5sum := Md5Encode(input.Guid + input.Seed)
-		password, err := AesDecode(md5sum[0:16], input.Password)
-		if err != nil {
-			logrus.Errorf("AesDecode meet error(%v)", err)
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
-			finalErr = err
-			outputs.Outputs = append(outputs.Outputs, output)
-			continue
-		}
-
-		result, err := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, fileName)
-		os.Remove(fileName)
-		if err != nil {
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
-			finalErr = err
-			outputs.Outputs = append(outputs.Outputs, output)
-			continue
-		}
-		output.Detail = result
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
+	logrus.Infof("all scripts = %v have been run", inputs)
 
 	return &outputs, finalErr
 }
