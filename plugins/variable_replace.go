@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 //VariableActions .
@@ -472,13 +473,25 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 		return err
 	}
 	defer bf.Close()
+
+	// get file info
+	fileInfo, err := bf.Stat()
+	if err != nil {
+		return err
+	}
+
+	// get file mode
+	fileMode := fileInfo.Mode()
+
 	newfilePath := filepath + ".bak"
-	f, err := os.OpenFile(newfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	// f, err := os.OpenFile(newfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	f, err := os.OpenFile(newfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		logrus.Errorf("open file error: %s", err)
 		return err
 	}
 	defer f.Close()
+
 	br := bufio.NewReader(bf)
 	for {
 		line, _, err := br.ReadLine()
