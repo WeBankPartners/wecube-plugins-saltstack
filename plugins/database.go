@@ -176,8 +176,8 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 
 		// if the fileName is unpack package, unpack
 		fileCopyInput := FileCopyInput{
-			Target:          fileName,
-			DestinationPath: newDir,
+			Target:          newDir,
+			DestinationPath: fileName,
 		}
 		actionFileCopy := &FileCopyAction{}
 		unpackRequest, er := actionFileCopy.deriveUnpackRequest(&fileCopyInput)
