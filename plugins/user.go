@@ -3,6 +3,8 @@ package plugins
 import (
 	"errors"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -158,9 +160,9 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			continue
 		}
 
-		md5sum := Md5Encode(input.Guid + input.Seed)
-		encryptPassword, err := AesEncode(md5sum[0:16], password)
+		encryptPassword, err := AesEnPassword(input.Guid, input.Seed, password, DEFALT_CIPHER)
 		if err != nil {
+			logrus.Errorf("AesEnPassword meet error(%v)", err)
 			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()

@@ -25,7 +25,13 @@ const (
 	CHARGE_TYPE_PREPAID = "PREPAID"
 	RESULT_CODE_SUCCESS = "0"
 	RESULT_CODE_ERROR   = "1"
+	PASSWORD_LEN        = 12
+	DEFALT_CIPHER       = "CIPHER_A"
 )
+
+var CIPHER_MAP = map[string]string{
+	"CIPHER_A": "{cipher_a}",
+}
 
 type CallBackParameter struct {
 	Parameter string `json:"callbackParameter,omitempty"`
@@ -185,8 +191,6 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	return result, nil
 }
 
-const PASSWORD_LEN = 12
-
 func createRandomPassword() string {
 	digitals := "0123456789"
 	letters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -204,6 +208,40 @@ func createRandomPassword() string {
 
 	return string(result)
 }
+
+func AesEnPassword(guid, seed, password, cipher string) (string, error) {
+	if cipher == "" {
+		cipher = CIPHER_MAP[DEFALT_CIPHER]
+	}
+	md5sum := Md5Encode(guid + seed)
+	enPassword, err := AesEncode(md5sum[0:16], password)
+	if err != nil {
+		return "", err
+	}
+	return cipher + enPassword, nil
+}
+
+func AesDePassword(guid, seed, password string) (string, error) {
+	var cipher string
+	for _, _cipher := range CIPHER_MAP {
+		if strings.HasSuffix(password, _cipher) {
+			cipher = _cipher
+			break
+		}
+	}
+	if cipher == "" {
+		return password, nil
+	}
+	password = password[len(cipher)-1:]
+
+	md5sum := Md5Encode(guid + seed)
+	dePassword, err := AesDecode(md5sum[0:16], password)
+	if err != nil {
+		return "", err
+	}
+	return dePassword, nil
+}
+
 func getTempFile() (string, error) {
 	file, err := ioutil.TempFile("/tmp/", "qcloud_key")
 	if err != nil {

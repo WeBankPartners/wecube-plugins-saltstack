@@ -152,9 +152,9 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 		return output, err
 	}
 
-	md5sum := Md5Encode(input.Guid + input.Seed)
-	password, err := AesDecode(md5sum[0:16], input.Password)
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
+		logrus.Errorf("AesDecode meet error(%v)", err)
 		return output, err
 	}
 
@@ -353,9 +353,9 @@ func AddDatabaseAndUser(input *AddDatabaseInput) (string, error) {
 	}
 
 	//get root password
-	md5sum := Md5Encode(input.Guid + input.Seed)
-	password, err := AesDecode(md5sum[0:16], input.Password)
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
+		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return "", err
 	}
 
@@ -383,8 +383,11 @@ func AddDatabaseAndUser(input *AddDatabaseInput) (string, error) {
 	}
 
 	//create new password
-	md5sum = Md5Encode(input.DatabaseOwnerGuid + input.Seed)
-	encryptPassword, err := AesEncode(md5sum[0:16], dbOwnerPassword)
+	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
+	if err != nil {
+		logrus.Errorf("AesEnPassword meet error(%v)", err)
+		return "", err
+	}
 	return encryptPassword, err
 }
 
@@ -483,9 +486,9 @@ func createUserForExistedDatabase(input *AddDatabaseUserInput) (string, error) {
 	}
 
 	//get root password
-	md5sum := Md5Encode(input.Guid + input.Seed)
-	password, err := AesDecode(md5sum[0:16], input.Password)
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
+		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return "", err
 	}
 
@@ -510,8 +513,11 @@ func createUserForExistedDatabase(input *AddDatabaseUserInput) (string, error) {
 	}
 
 	//create encrypt password
-	md5sum = Md5Encode(input.DatabaseUserGuid + input.Seed)
-	encryptPassword, err := AesEncode(md5sum[0:16], userPassword)
+	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, userPassword, DEFALT_CIPHER)
+	if err != nil {
+		logrus.Errorf("AesEnPassword meet error(%v)", err)
+		return "", err
+	}
 	return encryptPassword, err
 }
 
