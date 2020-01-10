@@ -93,11 +93,13 @@ func (action *VariableReplaceAction) ReadParam(param interface{}) (interface{}, 
 }
 
 func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) error {
-	if input.EndPoint == "" || input.FilePath == "" || input.VariableList == "" {
-		return fmt.Errorf("VariableReplaceAction endpoint, file_path, variable_list could not be empty")
+	if input.EndPoint == "" {
+		return fmt.Errorf("VariableReplaceAction endpoint could not be empty")
 	}
-	if !strings.Contains(input.VariableList, "=") {
-		return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
+	if input.VariableList != "" {
+		if !strings.Contains(input.VariableList, "=") {
+			return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
+		}
 	}
 
 	return nil
@@ -163,11 +165,13 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	}
 	os.RemoveAll(compressedFileFullPath)
 
-	for _, filePath := range strings.Split(input.FilePath, "|") {
-		confFilePath := decompressDirName + "/" + filePath
-		if err = ReplaceFileVar(confFilePath, input); err != nil {
-			os.RemoveAll(decompressDirName)
-			return output, err
+	if input.FilePath != "" && input.VariableList != "" {
+		for _, filePath := range strings.Split(input.FilePath, "|") {
+			confFilePath := decompressDirName + "/" + filePath
+			if err = ReplaceFileVar(confFilePath, input); err != nil {
+				os.RemoveAll(decompressDirName)
+				return output, err
+			}
 		}
 	}
 
