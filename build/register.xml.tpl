@@ -66,9 +66,9 @@
             <interface action="copy" path="/saltstack/v1/variable/replace">
                 <inputParameters>
 		            <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id" required="Y">guid</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="Y">confFiles</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="N">confFiles</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="N">variableList</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">encryptVariblePrefix</parameter>
                     <parameter datatype="string" mappingType='system_variable' mappingSystemVariableName="encrypt_seed" required="Y">seed</parameter>
                     <parameter datatype="string" mappingType='entity' required="Y">appPublicKey</parameter>
