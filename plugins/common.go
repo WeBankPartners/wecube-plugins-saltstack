@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"time"
@@ -297,4 +298,47 @@ func listFile(myDir string) ([]string, error) {
 		}
 	}
 	return output, err
+}
+
+func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error {
+	name := ""
+	args := []string{}
+	lowerFilepath := strings.ToLower(filePath)
+	unpackToDirPath := ""
+	if desDirPath == "" {
+		unpackToDirPath = filePath[0:strings.LastIndex(filePath, "/")]
+	} else {
+		unpackToDirPath = desDirPath
+	}
+
+	if strings.HasSuffix(lowerFilepath, ".zip") {
+		name = "unzip"
+		if overwrite {
+			args = append(args, "-o")
+		}
+		args = append(args, filePath, "-d", unpackToDirPath)
+	} else if strings.HasSuffix(lowerFilepath, ".rar") {
+		name = "unrar"
+		if desDirPath == "" {
+			args = append(args, "e", filePath)
+		} else {
+			args = append(args, "x", filePath, unpackToDirPath)
+		}
+	} else if strings.HasSuffix(lowerFilepath, ".tar") {
+		name = "tar"
+		args = append(args, "xf", filePath, "-C", unpackToDirPath)
+	} else if strings.HasSuffix(lowerFilepath, ".tar.gz") || strings.HasSuffix(lowerFilepath, ".tgz") {
+		name = "tar"
+		args = append(args, "zxf", filePath, "-C", unpackToDirPath)
+	} else {
+		return fmt.Errorf("%s has invalid compressed format", lowerFilepath)
+	}
+
+	command := exec.Command(name, args...)
+	out, err := command.CombinedOutput()
+	logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
+	if err != nil {
+		return err
+	}
+	return nil
 }
