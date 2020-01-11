@@ -174,18 +174,10 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 			return output, err
 		}
 
-		// if the fileName is unpack package, unpack
-		fileCopyInput := FileCopyInput{
-			Target:          newDir,
-			DestinationPath: fileName,
-		}
-		actionFileCopy := &FileCopyAction{}
-		unpackRequest, er := actionFileCopy.deriveUnpackRequest(&fileCopyInput)
+		// unpack file
+		er := deriveUnpackfile(fileName, newDir, true)
 		if er != nil {
 			err = er
-			return output, err
-		}
-		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest); err != nil {
 			return output, err
 		}
 
@@ -203,7 +195,7 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 		// move the *.sql to newDir directly
 		command := exec.Command("mv", fileName, newDir)
 		out, er := command.CombinedOutput()
-		logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
+		logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), er)
 		if er != nil {
 			err = er
 			return output, err
@@ -383,7 +375,7 @@ func AddDatabaseAndUser(input *AddDatabaseInput) (string, error) {
 	}
 
 	//create new password
-	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
+	encryptPassword, err := AesEnPassword(input.DatabaseOwnerGuid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
 	if err != nil {
 		logrus.Errorf("AesEnPassword meet error(%v)", err)
 		return "", err
