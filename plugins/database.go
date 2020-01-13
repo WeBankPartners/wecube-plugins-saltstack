@@ -185,7 +185,7 @@ func (action *RunDatabaseScriptAction) runDatabaseScript(input *RunDatabaseScrip
 		sqlFiles := strings.Split(input.SqlFiles, ",")
 		for _, file := range sqlFiles {
 			sqlFile := newDir + "/" + strings.TrimSpace(file)
-			if fileExist(sqlFile) {
+			if !fileExist(sqlFile) {
 				err = fmt.Errorf("file [%v] does not exist", sqlFile)
 				return output, err
 			}
