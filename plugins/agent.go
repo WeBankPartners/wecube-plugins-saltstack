@@ -121,12 +121,12 @@ func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output
 		return output, err
 	}
 
-	md5sum := Md5Encode(input.Guid + input.Seed)
-	password, err := AesDecode(md5sum[0:16], input.Password)
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDecode meet error(%v)", err)
+		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return output, err
 	}
+
 	installMinionArgs := []string{
 		input.Host,
 		password,
