@@ -165,6 +165,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	request.TargetType = "ipcidr"
 	request.Target = target
 	request.Function = "cmd.run"
+	request.FullReturn = true
 
 	logrus.Infof("executeLocalScript fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
 
