@@ -14,8 +14,8 @@ const (
 var UserPluginActions = make(map[string]Action)
 
 func init() {
-	UserPluginActions["add"] = new(AddUserAction)
-	UserPluginActions["remove"] = new(RemoveUserAction)
+	UserPluginActions["addUser"] = new(AddUserAction)
+	UserPluginActions["deleteUser"] = new(DeleteUserAction)
 }
 
 type UserPlugin struct {
@@ -179,63 +179,71 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
-type RemoveUserInputs struct {
-	Inputs []RemoveUserInput `json:"inputs,omitempty"`
+type DeleteUserInputs struct {
+	Inputs []DeleteUserInput `json:"inputs,omitempty"`
 }
 
-type RemoveUserInput struct {
+type DeleteUserInput struct {
 	CallBackParameter
 	Guid     string `json:"guid,omitempty"`
 	Target   string `json:"target,omitempty"`
 	UserName string `json:"userName,omitempty"`
 }
 
-type RemoveUserOutputs struct {
-	Outputs []RemoveUserOutput `json:"outputs,omitempty"`
+type DeleteUserOutputs struct {
+	Outputs []DeleteUserOutput `json:"outputs,omitempty"`
 }
 
-type RemoveUserOutput struct {
+type DeleteUserOutput struct {
 	CallBackParameter
 	Result
 	Detail string `json:"detail,omitempty"`
 	Guid   string `json:"guid,omitempty"`
 }
 
-type RemoveUserAction struct {
+type DeleteUserAction struct {
 }
 
-func (action *RemoveUserAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs RemoveUserInputs
+func (action *DeleteUserAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs DeleteUserInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
 	return inputs, nil
 }
 
-func removeUserCheckParam(input RemoveUserInput) error {
+func deleteUserCheckParam(input DeleteUserInput) error {
 	if input.Target == "" {
-		return errors.New("RemoveUserAction target is empty")
+		return errors.New("DeleteUserAction target is empty")
 	}
 
 	if input.UserName == "" {
-		return errors.New("RemoveUserAction userName is empty")
+		return errors.New("DeleteUserAction userName is empty")
 	}
 
 	return nil
 }
 
-func (action *RemoveUserAction) Do(input interface{}) (interface{}, error) {
-	inputs, _ := input.(RemoveUserInputs)
-	outputs := RemoveUserOutputs{}
+func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(DeleteUserInputs)
+	outputs := DeleteUserOutputs{}
 	runAs := ""
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output := RemoveUserOutput{
+		output := DeleteUserOutput{
 			Guid: input.Guid,
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
+
+		if err := deleteUserCheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
 
 		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)

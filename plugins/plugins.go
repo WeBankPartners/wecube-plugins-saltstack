@@ -44,13 +44,15 @@ func getPluginByName(name string) (Plugin, error) {
 }
 
 func init() {
-	registerPlugin("file", new(FilePlugin))
+	registerPlugin("host-file", new(FilePlugin))
 	registerPlugin("salt-api", new(SaltApiPlugin))
 	registerPlugin("agent", new(AgentPlugin))
-	registerPlugin("variable", new(VariablePlugin))
-	registerPlugin("script", new(ScriptPlugin))
-	registerPlugin("user", new(UserPlugin))
-	registerPlugin("database", new(DatabasePlugin))
+	registerPlugin("package-variable", new(VariablePlugin))
+	registerPlugin("host-script", new(ScriptPlugin))
+	registerPlugin("host-user", new(UserPlugin))
+	registerPlugin("mysql-database", new(MysqlDatabasePlugin))
+	registerPlugin("mysql-script", new(MysqlScriptPlugin))
+	registerPlugin("mysql-user", new(MysqlUserPlugin))
 	registerPlugin("released-package", new(ReleasedPackagePlugin))
 	registerPlugin("text-processor", new(TextProcessorPlugin))
 	registerPlugin("log", new(LogPlugin))
