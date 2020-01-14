@@ -139,6 +139,7 @@ type SaltApiRequest struct {
 	Target     string   `json:"tgt,omitempty"`
 	Function   string   `json:"fun,omitempty"`
 	Args       []string `json:"arg,omitempty"`
+	FullReturn bool     `json:"full_return,omitempty"`
 }
 
 type callSaltApiResults struct {
