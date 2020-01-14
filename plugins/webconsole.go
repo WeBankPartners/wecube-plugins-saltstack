@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
-	gossh "golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"net"
@@ -20,6 +18,10 @@ import (
 	"text/template"
 	"time"
 	"unicode/utf8"
+
+	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -651,9 +653,9 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 	}
 
 	for _, input := range inputs.Inputs {
-		md5sum := Md5Encode(input.Guid + input.Seed)
-		password, err := AesDecode(md5sum[0:16], input.Password)
+		password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 		if err != nil {
+			logrus.Errorf("AesDePassword meet error(%v)", err)
 			return outputs, err
 		}
 

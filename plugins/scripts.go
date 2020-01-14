@@ -246,7 +246,7 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 			output = k + ":" + v
 			break
 		}
-	case END_POINT_TYPE_S3,END_POINT_TYPE_USER_PARAM:
+	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg)
 		os.Remove(scriptPath)
 		if err != nil {
@@ -268,10 +268,10 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 
 	default:
 		err = fmt.Errorf("no such EndPointType")
-		logrus.Error("runScript meet error=%v", err)
+		logrus.Errorf("runScript meet error=%v", err)
 		return fmt.Sprintf("runScript meet error=%v", err), err
 	}
-	
+
 	return output, nil
 }
 

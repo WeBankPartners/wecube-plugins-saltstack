@@ -48,7 +48,7 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	//check dir exist
 	_, err = os.Stat(path)
 	if err == nil {
-		logrus.Info("path %s already exist. ", path)
+		logrus.Infof("path %v already exist. ", path)
 		return path, nil
 	}
 
