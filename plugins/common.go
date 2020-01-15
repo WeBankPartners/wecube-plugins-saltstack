@@ -190,6 +190,16 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 	if len(apiResult.Results) == 0 || len(apiResult.Results[0]) == 0 {
 		return "", fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v", request)
 	}
+	for _, result := range apiResult.Results {
+		for k, v := range result {
+			switch v.(type) {
+			case bool:
+				if v.(bool) == false {
+					return "", fmt.Errorf("salt api: can not connect to target[%v]", k)
+				}
+			}
+		}
+	}
 
 	return result, nil
 }
