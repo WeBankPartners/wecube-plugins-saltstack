@@ -139,6 +139,7 @@ type SaltApiRequest struct {
 	Target     string   `json:"tgt,omitempty"`
 	Function   string   `json:"fun,omitempty"`
 	Args       []string `json:"arg,omitempty"`
+	FullReturn bool     `json:"full_return,omitempty"`
 }
 
 type callSaltApiResults struct {
@@ -184,9 +185,20 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 		logrus.Infof("callSaltApi unmarshal result meet error=%v ", err)
 		return "", err
 	}
+	logrus.Infof("apiResult: %++v", apiResult)
 
 	if len(apiResult.Results) == 0 || len(apiResult.Results[0]) == 0 {
 		return "", fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v", request)
+	}
+	for _, result := range apiResult.Results {
+		for k, v := range result {
+			switch v.(type) {
+			case bool:
+				if v.(bool) == false {
+					return "", fmt.Errorf("salt api: can not connect to target[%v]", k)
+				}
+			}
+		}
 	}
 
 	return result, nil
