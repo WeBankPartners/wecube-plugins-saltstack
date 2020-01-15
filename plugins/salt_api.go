@@ -91,12 +91,19 @@ func parseSaltApiCmdScriptCallResult(jsonStr string) (*SaltApiCmdScriptResults, 
 }
 
 type SaltApiCmdRunResults struct {
-	Results []map[string]string `json:"return,omitempty"`
+	Results []map[string]SaltApiCmdRunResult `json:"return,omitempty"`
+}
+
+type SaltApiCmdRunResult struct {
+	Jid       string `json:"jid,omitempty"`
+	RetCode   int    `json:"retcode,omitempty"`
+	RetDetail string `json:"ret,omitempty"`
 }
 
 func parseSaltApiCmdRunCallResult(jsonStr string) (*SaltApiCmdRunResults, error) {
 	result := SaltApiCmdRunResults{}
 
+	logrus.Infof("parseSaltApiCmdRunCallResult jsonStr: %++v", jsonStr)
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 		return &result, err
 	}
