@@ -169,7 +169,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 
 	logrus.Infof("executeLocalScript fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
 
-	cmdRun := "chmod +x " + fileName + ";" + fileName
+	cmdRun := "/bin/bash " + fileName
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
@@ -184,6 +184,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	if err != nil {
 		return "", err
 	}
+	logrus.Infof("executeLocalScript result: %++v", result)
 
 	return result, nil
 }
@@ -244,7 +245,11 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 				err = fmt.Errorf("script run ip[%s] is not target[%s]", k, input.Target)
 				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
 			}
-			output = k + ":" + v
+			if v.RetCode != 0 {
+				err = fmt.Errorf("script run ip[%s] meet error = %v", k, v.RetDetail)
+				return k + ": " + v.RetDetail, err
+			}
+			output = k + ": " + v.RetDetail
 			break
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
