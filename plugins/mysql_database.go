@@ -11,7 +11,7 @@ import (
 var MysqlDatabasePluginActions = make(map[string]Action)
 
 func init() {
-	MysqlDatabasePluginActions["addDatabase"] = new(AddMysqlDatabaseAction)
+	MysqlDatabasePluginActions["add"] = new(AddMysqlDatabaseAction)
 }
 
 type MysqlDatabasePlugin struct {

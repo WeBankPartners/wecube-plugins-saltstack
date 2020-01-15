@@ -14,8 +14,8 @@ const (
 var UserPluginActions = make(map[string]Action)
 
 func init() {
-	UserPluginActions["addUser"] = new(AddUserAction)
-	UserPluginActions["deleteUser"] = new(DeleteUserAction)
+	UserPluginActions["add"] = new(AddUserAction)
+	UserPluginActions["delete"] = new(DeleteUserAction)
 }
 
 type UserPlugin struct {

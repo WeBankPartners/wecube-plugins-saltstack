@@ -9,7 +9,7 @@ import (
 var MysqlDatabaseUserPluginActions = make(map[string]Action)
 
 func init() {
-	MysqlDatabaseUserPluginActions["addUser"] = new(AddMysqlDatabaseUserAction)
+	MysqlDatabaseUserPluginActions["add"] = new(AddMysqlDatabaseUserAction)
 }
 
 type MysqlUserPlugin struct {
