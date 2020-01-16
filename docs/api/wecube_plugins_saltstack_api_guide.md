@@ -70,7 +70,7 @@ detail|string|详细信息
 {
     "inputs":[{
         "guid":"0012_0000000067",
-        "host":"10.250.1.6",
+        "host":"127.0.0.1",
         "seed":"sample@123456",
         "password": "3399474758b7b0565600dikw29b92c02"
     }]
@@ -86,7 +86,7 @@ detail|string|详细信息
         "outputs": [
             {
                 "guid": "0012_0000000067",
-                "detail": "10.250.1.6:\n----------\n          ID: salt_repo\n    Function: file.recurse\n        Name: /etc/yum.repos.d\n      Result: True\n     Comment: Recursively updated /etc/yum.repos.d\n     Started: 14:39:07.162408\n    Duration: 318.305 ms\n     Changes:   \n              ----------\n              /etc/yum.repos.d/salt-repo.repo:\n                  ----------\n                  diff:\n                      New file\n                  mode:\n                      0644\n----------\n          ID: salt_minion_purge\n    Function: pkg.purged\n      Result: True\n     Comment: All specified packages are already absent\n     Started: 14:39:10.798416\n    Duration: 893.87 ms\n     Changes:   \n----------\n          ID: salt_minion_install\n    Function: pkg.installed\n      Result: True\n     Comment: The following packages were installed/updated: salt-minion\n     Started: 14:39:11.709269\n    Duration: 27070.787 ms\n     Changes:   \n              ----------\n              gpg-pubkey.(none):\n                  ----------\n                  new:\n                      352c64e5-52ae6884,de57bfbe-53a9be98,f4a80eb5-53a7ff4b\n                  old:\n                      352c64e5-52ae6884,f4a80eb5-53a7ff4b\n              libsodium:\n                  ----------\n                  new:\n                      1.0.18-1.el7\n                  old:\n              libtomcrypt:\n                  ----------\n                  new:\n                      1.17-26.el7\n                  old:\n              libtommath:\n                  ----------\n                  new:\n                      0.42.0-6.el7\n                  old:\n              openpgm:\n                  ----------\n                  new:\n                      5.2.122-2.el7\n                  old:\n              python-tornado:\n                  ----------\n                  new:\n                      4.2.1-5.el7\n                  old:\n              python-zmq:\n                  ----------\n                  new:\n                      15.3.0-3.el7\n                  old:\n              python2-crypto:\n                  ----------\n                  new:\n                      2.6.1-16.el7\n                  old:\n              python2-futures:\n                  ----------\n                  new:\n                      3.1.1-5.el7\n                  old:\n              python2-msgpack:\n                  ----------\n                  new:\n                      0.5.6-5.el7\n                  old:\n              python2-psutil:\n                  ----------\n                  new:\n                      2.2.1-5.el7\n                  old:\n              salt:\n                  ----------\n                  new:\n                      2019.2.0-1.el7\n                  old:\n              salt-minion:\n                  ----------\n                  new:\n                      2019.2.0-1.el7\n                  old:\n              zeromq:\n                  ----------\n                  new:\n                      4.1.4-7.el7\n                  old:\n----------\n          ID: salt_minion_conf\n    Function: file.managed\n        Name: /etc/salt/minion\n      Result: True\n     Comment: File /etc/salt/minion updated\n     Started: 14:39:38.791480\n    Duration: 88.582 ms\n     Changes:   \n              ----------\n              diff:\n                  --- \n                  +++ \n                  @@ -13,7 +13,8 @@\n                   \n                   # Set the location of the salt master server. If the master server cannot be\n                   # resolved, then the minion will fail to start.\n                  -#master: salt\n                  +master: \n                  +  - 10.0.0.8\n                   \n                   # Set http proxy information for the minion when doing requests\n                   #proxy_host:\n                  @@ -76,7 +77,7 @@\n                   # retry_dns_count: 3\n                   \n                   # Set the port used by the master reply and authentication server.\n                  -#master_port: 4506\n                  +master_port: 4506\n                   \n                   # The user to run salt.\n                   #user: root\n                  @@ -110,6 +111,7 @@\n                   # same machine but with different ids, this can be useful for salt compute\n                   # clusters.\n                   #id:\n                  +id: 10.250.1.6\n                   \n                   # Cache the minion id to a file when the minion's id is not statically defined\n                   # in the minion config. Defaults to \"True\". This setting prevents potential\n                  @@ -243,7 +245,7 @@\n                   # authorization from it. master_tries will still cycle through all\n                   # the masters in a given try, so it is appropriate if you expect\n                   # occasional downtime from the master(s).\n                  -#master_tries: 1\n                  +master_tries: -1\n                   \n                   # If authentication fails due to SaltReqTimeoutError during a ping_interval,\n                   # cause sub minion process to restart.\n                  @@ -858,12 +860,12 @@\n                   \n                   # Overall state of TCP Keepalives, enable (1 or True), disable (0 or False)\n                   # or leave to the OS defaults (-1), on Linux, typically disabled. Default True, enabled.\n                  -#tcp_keepalive: True\n                  +tcp_keepalive: True\n                   \n                   # How long before the first keepalive should be sent in seconds. Default 300\n                   # to send the first keepalive after 5 minutes, OS default (-1) is typically 7200 seconds\n                   # on Linux see /proc/sys/net/ipv4/tcp_keepalive_time.\n                  -#tcp_keepalive_idle: 300\n                  +tcp_keepalive_idle: 60\n                   \n                   # How many lost probes are needed to consider the connection lost. Default -1\n                   # to use OS defaults, typically 9 on Linux, see /proc/sys/net/ipv4/tcp_keepalive_probes.\n----------\n          ID: salt_minion_service\n    Function: service.running\n        Name: salt-minion\n      Result: True\n     Comment: Service salt-minion has been enabled, and is running\n     Started: 14:39:40.306011\n    Duration: 810.671 ms\n     Changes:   \n              ----------\n              salt-minion:\n                  True\n\nSummary for 10.250.1.6\n------------\nSucceeded: 5 (changed=4)\nFailed:    0\n------------\nTotal states run:     5\nTotal run time:  29.182 s\n"
+                "detail": "127.0.0.1:\n----------\n          ID: salt_repo\n    Function: file.recurse\n        Name: /etc/yum.repos.d\n      Result: True\n     Comment: Recursively updated /etc/yum.repos.d\n     Started: 14:39:07.162408\n    Duration: 318.305 ms\n     Changes:   \n              ----------\n              /etc/yum.repos.d/salt-repo.repo:\n                  ----------\n                  diff:\n                      New file\n                  mode:\n                      0644\n----------\n          ID: salt_minion_purge\n    Function: pkg.purged\n      Result: True\n     Comment: All specified packages are already absent\n     Started: 14:39:10.798416\n    Duration: 893.87 ms\n     Changes:   \n----------\n          ID: salt_minion_install\n    Function: pkg.installed\n      Result: True\n     Comment: The following packages were installed/updated: salt-minion\n     Started: 14:39:11.709269\n    Duration: 27070.787 ms\n     Changes:   \n              ----------\n              gpg-pubkey.(none):\n                  ----------\n                  new:\n                      352c64e5-52ae6884,de57bfbe-53a9be98,f4a80eb5-53a7ff4b\n                  old:\n                      352c64e5-52ae6884,f4a80eb5-53a7ff4b\n              libsodium:\n                  ----------\n                  new:\n                      1.0.18-1.el7\n                  old:\n              libtomcrypt:\n                  ----------\n                  new:\n                      1.17-26.el7\n                  old:\n              libtommath:\n                  ----------\n                  new:\n                      0.42.0-6.el7\n                  old:\n              openpgm:\n                  ----------\n                  new:\n                      5.2.122-2.el7\n                  old:\n              python-tornado:\n                  ----------\n                  new:\n                      4.2.1-5.el7\n                  old:\n              python-zmq:\n                  ----------\n                  new:\n                      15.3.0-3.el7\n                  old:\n              python2-crypto:\n                  ----------\n                  new:\n                      2.6.1-16.el7\n                  old:\n              python2-futures:\n                  ----------\n                  new:\n                      3.1.1-5.el7\n                  old:\n              python2-msgpack:\n                  ----------\n                  new:\n                      0.5.6-5.el7\n                  old:\n              python2-psutil:\n                  ----------\n                  new:\n                      2.2.1-5.el7\n                  old:\n              salt:\n                  ----------\n                  new:\n                      2019.2.0-1.el7\n                  old:\n              salt-minion:\n                  ----------\n                  new:\n                      2019.2.0-1.el7\n                  old:\n              zeromq:\n                  ----------\n                  new:\n                      4.1.4-7.el7\n                  old:\n----------\n          ID: salt_minion_conf\n    Function: file.managed\n        Name: /etc/salt/minion\n      Result: True\n     Comment: File /etc/salt/minion updated\n     Started: 14:39:38.791480\n    Duration: 88.582 ms\n     Changes:   \n              ----------\n              diff:\n                  --- \n                  +++ \n                  @@ -13,7 +13,8 @@\n                   \n                   # Set the location of the salt master server. If the master server cannot be\n                   # resolved, then the minion will fail to start.\n                  -#master: salt\n                  +master: \n                  +  - 127.0.0.1\n                   \n                   # Set http proxy information for the minion when doing requests\n                   #proxy_host:\n                  @@ -76,7 +77,7 @@\n                   # retry_dns_count: 3\n                   \n                   # Set the port used by the master reply and authentication server.\n                  -#master_port: 4506\n                  +master_port: 4506\n                   \n                   # The user to run salt.\n                   #user: root\n                  @@ -110,6 +111,7 @@\n                   # same machine but with different ids, this can be useful for salt compute\n                   # clusters.\n                   #id:\n                  +id: 127.0.0.1\n                   \n                   # Cache the minion id to a file when the minion's id is not statically defined\n                   # in the minion config. Defaults to \"True\". This setting prevents potential\n                  @@ -243,7 +245,7 @@\n                   # authorization from it. master_tries will still cycle through all\n                   # the masters in a given try, so it is appropriate if you expect\n                   # occasional downtime from the master(s).\n                  -#master_tries: 1\n                  +master_tries: -1\n                   \n                   # If authentication fails due to SaltReqTimeoutError during a ping_interval,\n                   # cause sub minion process to restart.\n                  @@ -858,12 +860,12 @@\n                   \n                   # Overall state of TCP Keepalives, enable (1 or True), disable (0 or False)\n                   # or leave to the OS defaults (-1), on Linux, typically disabled. Default True, enabled.\n                  -#tcp_keepalive: True\n                  +tcp_keepalive: True\n                   \n                   # How long before the first keepalive should be sent in seconds. Default 300\n                   # to send the first keepalive after 5 minutes, OS default (-1) is typically 7200 seconds\n                   # on Linux see /proc/sys/net/ipv4/tcp_keepalive_time.\n                  -#tcp_keepalive_idle: 300\n                  +tcp_keepalive_idle: 60\n                   \n                   # How many lost probes are needed to consider the connection lost. Default -1\n                   # to use OS defaults, typically 9 on Linux, see /proc/sys/net/ipv4/tcp_keepalive_probes.\n----------\n          ID: salt_minion_service\n    Function: service.running\n        Name: salt-minion\n      Result: True\n     Comment: Service salt-minion has been enabled, and is running\n     Started: 14:39:40.306011\n    Duration: 810.671 ms\n     Changes:   \n              ----------\n              salt-minion:\n                  True\n\nSummary for 127.0.0.1\n------------\nSucceeded: 5 (changed=4)\nFailed:    0\n------------\nTotal states run:     5\nTotal run time:  29.182 s\n"
             }
         ]
     }
@@ -118,8 +118,8 @@ detail|string|详细信息
 {
   "inputs":[{
         "guid":"10002_000000001",
-        "endpoint":"http://10.250.15.22:9000/brankbao/unpack-demo.tar",
-        "target":"10.250.1.6",
+        "endpoint":"http://127.0.0.1:9000/brankbao/unpack-demo.tar",
+        "target":"127.0.0.1",
         "destinationPath":"/data/app/scripts/unpack-demo.tar"
   }]
 }
@@ -134,7 +134,7 @@ detail|string|详细信息
         "outputs": [
             {
                 "guid": "10002_000000001",
-                "detail": "{\"return\": [{\"10.250.1.6\": \"bae0cbb98dd0f6d346ada2157922f799\"}]}"
+                "detail": "{\"return\": [{\"127.0.0.1\": \"bae0cbb98dd0f6d346ada2157922f799\"}]}"
             }
         ]
     }
@@ -166,7 +166,7 @@ s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
 {
     "inputs": [{
         "guid":"10003_000000001",
-        "endpoint": "http://10.250.15.22:9000/brankbao/wecube-demo_v2.0.zip",
+        "endpoint": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0.zip",
         "confFiles": "beego-demo/conf/app.conf",
         "variableList":"env=prod"
     }]
@@ -182,7 +182,7 @@ s3PkgPath|string|变量替换后的应用包在对象存储中的绝对路径
         "outputs": [
             {
                 "guid": "10003_000000001",
-                "s3PkgPath": "http://10.250.15.22:9000/brankbao/wecube-demo_v2.0-201909231548.zip"
+                "s3PkgPath": "http://127.0.0.1:9000/brankbao/wecube-demo_v2.0-201909231548.zip"
             }
         ]
     }
@@ -221,7 +221,7 @@ retCode|string|返回码
         "guid":"10004_000000001",
         "endpointType":"LOCAL",
         "endpoint":"/data/app/scripts/test.sh",
-        "target":"10.250.1.6",
+        "target":"127.0.0.1",
         "runAs":"app",
         "args":""
     }]
@@ -236,9 +236,9 @@ retCode|string|返回码
     "results": {
         "outputs": [
             {
-                "target": "10.250.1.6",
+                "target": "127.0.0.1",
                 "retCode": 0,
-                "detail": "10.250.1.6:",
+                "detail": "127.0.0.1:",
                 "guid": "10004_000000001"
             }
         ]
@@ -277,7 +277,7 @@ detail|string|详细信息
 {
   "inputs":[{
         "guid":"10005_000000001",
-        "target":"10.250.1.6",
+        "target":"127.0.0.1",
         "userName":"app",
         "password":"Apps@2018!",
         "userGroup":"apps"
@@ -294,7 +294,7 @@ detail|string|详细信息
         "outputs": [
             {
                 "guid": "10005_000000001",
-                "detail": "{\"return\": [{\"10.250.1.6\": {\"pid\": 13765, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}"
+                "detail": "{\"return\": [{\"127.0.0.1\": {\"pid\": 13765, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}"
             }
         ]
     }
@@ -323,7 +323,7 @@ detail|string|详细信息
 {
   "inputs":[{
         "guid":"10005_000000001",
-        "target":"10.250.1.6",
+        "target":"127.0.0.1",
         "userName":"app"
     }]
 }
@@ -337,7 +337,7 @@ detail|string|详细信息
     "results": {
         "outputs": [
             {
-                "detail": "{\"return\": [{\"10.250.1.6\": {\"pid\": 13965, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}",
+                "detail": "{\"return\": [{\"127.0.0.1\": {\"pid\": 13965, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}",
                 "guid": "10005_000000001"
             }
         ]
@@ -374,13 +374,13 @@ detail|string|详细信息
 {
     "inputs":[{
         "guid":"10006_000000001",
-        "host":"10.0.3.3",
+        "host":"127.0.0.1",
         "port":"3306",
         "userName":"mariadb",
         "password":"3dfdecb7281a498e362c03987fdd0dd9",
         "seed":"abc@12345",
         "databaseName":"we-cmdb",
-        "endpoint":"http://10.0.3.5:9000/scripts/createDB.sql"
+        "endpoint":"http://127.0.0.1:9000/scripts/createDB.sql"
     }]
 }
 ```
@@ -394,7 +394,7 @@ detail|string|详细信息
         "outputs": [
             {
                 "guid": "10006_000000001",
-                "detail": "10.0.3.3:"
+                "detail": "127.0.0.1:"
             }
         ]
     }
@@ -424,7 +424,7 @@ unformatedDisks|array|未挂载数据盘清单
 {
     "inputs":[{
 		"guid":"10007_000000001",
-		"target":"10.250.1.6"
+		"target":"127.0.0.1"
     }]
 }
 ```
@@ -471,7 +471,7 @@ detail|string|详细信息
 {
     "inputs":[{
 		"guid":"10008_000000001",
-		"target":"10.250.1.6",
+		"target":"127.0.0.1",
 		"diskName":"/dev/vdb",
 		"fileSystemType":"ext4",
 		"mountDir":"/data1"
@@ -532,11 +532,11 @@ runScriptDetail|string|启动脚本详细信息
         {
             "guid": "0015_0000000079",
             "userName": "app",
-            "endpoint": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
-            "target": "10.250.1.3",
+            "endpoint": "http://127.0.0.1:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
+            "target": "127.0.0.1",
             "destinationPath": "/data/app/",
             "confFiles": "edp-core-app_v2.6/conf/app.conf|/edp-core-app_v2.6/controllers/test/test.conf",
-            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=10.250.1.3",
+            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=127.0.0.1",
             "startScript": "/data/app/edp-core-app_v2.6/wecube-demo.sh"
         }
     ]
@@ -552,12 +552,12 @@ runScriptDetail|string|启动脚本详细信息
         "outputs": [
             {
                 "guid": "0015_0000000079",
-                "userDetail": "{\"return\": [{\"10.250.1.3\": {\"pid\": 19231, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}",
-                "fileDetail": "{\"return\": [{\"10.250.1.3\": \"909d22a818257c502557b7abe9ec636d\"}]}",
-                "s3PkgPath": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121000.tgz",
-                "target": "10.250.1.3",
+                "userDetail": "{\"return\": [{\"127.0.0.1\": {\"pid\": 19231, \"retcode\": 0, \"stderr\": \"\", \"stdout\": \"\"}}]}",
+                "fileDetail": "{\"return\": [{\"127.0.0.1\": \"909d22a818257c502557b7abe9ec636d\"}]}",
+                "s3PkgPath": "http://127.0.0.1:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121000.tgz",
+                "target": "127.0.0.1",
                 "retCode": 0,
-                "runScriptDetail": "10.250.1.3:sudo: no tty present and no askpass program specified"
+                "runScriptDetail": "127.0.0.1:sudo: no tty present and no askpass program specified"
             }
         ]
     }
@@ -600,11 +600,11 @@ runStopScriptDetail|string|执行停止脚本详细信息
         {
             "guid": "0015_0000000079",
             "userName": "app",
-            "endpoint": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
-            "target": "10.250.1.3",
+            "endpoint": "http://127.0.0.1:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6.tgz",
+            "target": "127.0.0.1",
             "destinationPath": "/data/app/",
             "confFiles": "edp-core-app_v2.6/conf/app.conf|/edp-core-app_v2.6/controllers/test/test.conf",
-            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=10.250.1.3",
+            "variableList": "env=GZ3-SUBSYSTEM,appname=demo-app,diskaa=50,versionbb=STGi,httpport=2019,vip=127.0.0.1",
             "startScript": "/data/app/edp-core-app_v2.6/wecube-demo.sh",
             "stopScript": "/data/app/edp-core-app_v2.6/stop.sh"
         }
@@ -621,12 +621,12 @@ runStopScriptDetail|string|执行停止脚本详细信息
         "outputs": [
             {
                 "guid": "0015_0000000079",
-                "fileDetail": "{\"return\": [{\"10.250.1.3\": \"2e1538f77758e9e026fdcaa9ed4ad388\"}]}",
-                "s3PkgPath": "http://10.0.0.17:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121517.tgz",
-                "target": "10.250.1.3",
+                "fileDetail": "{\"return\": [{\"127.0.0.1\": \"2e1538f77758e9e026fdcaa9ed4ad388\"}]}",
+                "s3PkgPath": "http://127.0.0.1:9000/wecube-artifact/775c3b239d8a76b1914377deb346a8a1_edp-core-app_v2.6-201910121517.tgz",
+                "target": "127.0.0.1",
                 "retCode": 0,
-                "runStartScriptDetail": "10.250.1.3:sudo: no tty present and no askpass program specified",
-                "runStopScriptDetail": "10.250.1.3:"
+                "runStartScriptDetail": "127.0.0.1:sudo: no tty present and no askpass program specified",
+                "runStopScriptDetail": "127.0.0.1:"
             }
         ]
     }
