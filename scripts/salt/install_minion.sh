@@ -21,20 +21,3 @@ salt-ssh '*' -i state.sls minions.install
 exit $?
 
 
-# for ha
-hosts=$1
-hostsArray=(${hosts//,/ })
-
-for host in ${hostsArray[@]} 
-do
-  echo "$host:">> ${targetFile}
-  echo "  host: $host" >> ${targetFile}
-  echo "  user: root" >> ${targetFile}
-  echo "  passwd: Ab888888" >> ${targetFile}
-  echo "  sudo: True" >> ${targetFile}
-  echo "  timeout: 10" >> ${targetFile}
-done
-
-salt-ssh '*' -i state.sls minions.install
-
-
