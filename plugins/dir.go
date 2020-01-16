@@ -110,7 +110,7 @@ func ensureDirExist(dir string) error {
 		}
 	}
 	if !f.IsDir() {
-		//已存在，但是不是文件夹
+		// exited dir
 		return fmt.Errorf("path %s is exist,but not dir", dir)
 	}
 
