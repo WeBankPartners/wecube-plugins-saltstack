@@ -14,7 +14,7 @@ done
 
 exit 0 
 
-mastersArray=("127.0.0.1" "127.0.0.1")
+mastersArray=("127.0.0.1")
 
 targetFile=/etc/salt/master_roster
 rm -rf ${targetFile}
