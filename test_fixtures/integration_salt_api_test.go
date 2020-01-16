@@ -18,7 +18,7 @@ func install_package_tree() {
 	{
 		"inputs":[{
 			"guid":"` + guid_1 + `",
-			"service_url":"https://10.107.111.125:8082",
+			"service_url":"https://127.0.0.1:8082",
 			"token":"aa534397e9cb94d147f5953e94f2baa7d03d2a28",
 			"client":"local",
 			"tgt":"*",
@@ -36,7 +36,7 @@ func getFileMD5Sum() {
 	{
 		"inputs":[{
 			"guid":"` + guid_1 + `",
-			"service_url":"https://10.107.111.125:8082",
+			"service_url":"https://127.0.0.1:8082",
 			"token":"aa534397e9cb94d147f5953e94f2baa7d03d2a28",
 			"client":"local",
 			"tgt":"*",
@@ -54,7 +54,7 @@ func checkFileMD5Sum() {
 	{
 		"inputs":[{
 			"guid":"` + guid_1 + `",
-			"service_url":"https://10.107.111.125:8082",
+			"service_url":"https://127.0.0.1:8082",
 			"token":"aa534397e9cb94d147f5953e94f2baa7d03d2a28",
 			"client":"local",
 			"tgt":"*",
@@ -72,7 +72,7 @@ func checkFileMeta() {
 	{
 		"inputs":[{
 			"guid":"` + guid_1 + `",
-			"service_url":"https://10.107.111.125:8082",
+			"service_url":"https://127.0.0.1:8082",
 			"token":"aa534397e9cb94d147f5953e94f2baa7d03d2a28",
 			"client":"local",
 			"tgt":"*",
@@ -92,12 +92,12 @@ func downloadFileFromUrl() {
 	{
 		"inputs":[{
 			"guid":"` + guid_1 + `",
-			"service_url":"https://10.107.111.125:8082",
+			"service_url":"https://127.0.0.1:8082",
 			"token":"aa534397e9cb94d147f5953e94f2baa7d03d2a28",
 			"client":"local",
 			"tgt":"*",
 			"fun":"cp.get_url",
-			"arg":["http://10.107.117.154:9090/demo.txt","/home/app/pkgs/demo.txt"]
+			"arg":["http://127.0.0.1:9090/demo.txt","/home/app/pkgs/demo.txt"]
 		}]
 	}
 	`
