@@ -10,6 +10,7 @@ var MysqlDatabaseUserPluginActions = make(map[string]Action)
 
 func init() {
 	MysqlDatabaseUserPluginActions["add"] = new(AddMysqlDatabaseUserAction)
+	MysqlDatabaseUserPluginActions["delete"] = new(DeleteMysqlDatabaseUserAction)
 }
 
 type MysqlUserPlugin struct {
@@ -150,5 +151,115 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 		output.DatabaseUserPassword = password
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
+	return outputs, finalErr
+}
+
+type DeleteMysqlDatabaseUserAction struct {
+}
+
+type DeleteMysqlDatabaseUserInputs struct {
+	Inputs []DeleteMysqlDatabaseUserInput `json:"inputs,omitempty"`
+}
+
+type DeleteMysqlDatabaseUserInput struct {
+	CallBackParameter
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Host     string `json:"host,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	Password string `json:"password,omitempty"`
+	Port     string `json:"port,omitempty"`
+
+	//database info
+	DatabaseName     string `json:"databaseName,omitempty"`
+	DatabaseUserName string `json:"databaseUserName,omitempty"`
+}
+
+type DeleteMysqlDatabaseUserOutputs struct {
+	Outputs []DeleteMysqlDatabaseUserOutput `json:"outputs,omitempty"`
+}
+
+type DeleteMysqlDatabaseUserOutput struct {
+	CallBackParameter
+	Result
+	Guid string `json:"guid,omitempty"`
+}
+
+func (action *DeleteMysqlDatabaseUserAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs DeleteMysqlDatabaseUserInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUserCheckParam(input *DeleteMysqlDatabaseUserInput) error {
+	if input.Guid == "" {
+		return fmt.Errorf("empty guid")
+	}
+	if input.Seed == "" {
+		return fmt.Errorf("empty seed")
+	}
+	if input.Password == "" {
+		return fmt.Errorf("empty password")
+	}
+	if input.DatabaseUserName == "" {
+		return fmt.Errorf("empty databaseUserName")
+	}
+	return nil
+}
+
+func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *DeleteMysqlDatabaseUserInput) (output DeleteMysqlDatabaseUserOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = action.deleteMysqlDatabaseUserCheckParam(input); err != nil {
+		return output, err
+	}
+
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
+	if err != nil {
+		return output, err
+	}
+
+	if input.DatabaseName != "" {
+		// revoke permissions
+		permission := "ALL PRIVILEGES"
+		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, input.DatabaseUserName)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			return output, err
+		}
+	}
+
+	// delete user
+	cmd := fmt.Sprintf("DROP USER %s", input.DatabaseUserName)
+	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		return output, err
+	}
+
+	return output, err
+}
+
+func (action *DeleteMysqlDatabaseUserAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(DeleteMysqlDatabaseUserInputs)
+	outputs := DeleteMysqlDatabaseUserOutputs{}
+	var finalErr error
+
+	for _, input := range inputs.Inputs {
+		output, err := action.deleteMysqlDatabaseUser(&input)
+		if err != nil {
+			finalErr = err
+		}
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+
 	return outputs, finalErr
 }

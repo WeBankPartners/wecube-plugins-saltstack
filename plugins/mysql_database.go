@@ -89,9 +89,9 @@ func addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
 	if input.Password == "" {
 		return errors.New("Password is empty")
 	}
-	if input.Port == "" {
-		return errors.New("Port is empty")
-	}
+	// if input.Port == "" {
+	// 	return errors.New("Port is empty")
+	// }
 	if input.DatabaseName == "" {
 		return errors.New("DatabaseName is empty")
 	}
@@ -129,6 +129,10 @@ func AddMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (string, error) {
 	if err != nil {
 		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return "", err
+	}
+
+	if input.Port == "" {
+		input.Port = "3306"
 	}
 
 	//create database
@@ -206,7 +210,6 @@ type DeleteMysqlDatabaseInput struct {
 
 	// database info
 	DatabaseName      string `json:"databaseName,omitempty"`
-	DatabaseOwnerGuid string `json:"databaseOwnerGuid,omitempty"`
 	DatabaseOwnerName string `json:"databaseOwnerName,omitempty"`
 }
 
@@ -245,15 +248,12 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input Del
 	if input.Password == "" {
 		return errors.New("Password is empty")
 	}
-	if input.Port == "" {
-		return errors.New("Port is empty")
-	}
+	// if input.Port == "" {
+	// 	return errors.New("Port is empty")
+	// }
 	if input.DatabaseName == "" {
 		return errors.New("DatabaseName is empty")
 	}
-	// if input.DatabaseOwnerGuid == "" {
-	// 	return errors.New("DatabaseOwnerGuid is empty")
-	// }
 	// if input.DatabaseOwnerName == "" {
 	// 	return errors.New("DatabaseOwnerName is empty")
 	// }
@@ -283,12 +283,11 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		return output, er
 	}
 
-	if input.DatabaseOwnerName != "" {
-		if input.DatabaseOwnerGuid == "" {
-			err = errors.New("DatabaseOwnerGuid is empty")
-			return output, err
-		}
+	if input.Port == "" {
+		input.Port = "3306"
+	}
 
+	if input.DatabaseOwnerName != "" {
 		// revoke permission
 		permission := "ALL PRIVILEGES"
 		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
