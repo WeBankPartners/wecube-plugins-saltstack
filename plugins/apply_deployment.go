@@ -3,6 +3,7 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -12,6 +13,7 @@ var ApplyDeploymentActions = make(map[string]Action)
 func init() {
 	ApplyDeploymentActions["new"] = new(ApplyNewDeploymentAction)
 	ApplyDeploymentActions["update"] = new(ApplyUpdateDeploymentAction)
+	ApplyDeploymentActions["delete"] = new(ApplyDeleteDeploymentAction)
 }
 
 type ApplyDeploymentPlugin struct {
@@ -85,18 +87,12 @@ func (action *ApplyNewDeploymentAction) CheckParam(input ApplyNewDeploymentInput
 	if input.Target == "" {
 		return errors.New("Target is empty")
 	}
-	// if input.VariableFilePath == "" {
-	// 	return errors.New("VariableFilePath is empty")
-	// }
 	if input.StartScriptPath == "" {
 		return errors.New("StartScriptPath is empty")
 	}
 	if input.DestinationPath == "" {
 		return errors.New("DestinationPath is empty")
 	}
-	// if input.VariableList == "" {
-	// 	return errors.New("VariableList is empty")
-	// }
 
 	return nil
 }
@@ -517,4 +513,119 @@ func runApplyScript(input interface{}) (interface{}, error) {
 	}
 
 	return runScriptOutputs, nil
+}
+
+type ApplyDeleteDeploymentAction struct {
+}
+
+type ApplyDeleteDeploymentInputs struct {
+	Inputs []ApplyDeleteDeploymentInput `json:"inputs,omitempty"`
+}
+
+type ApplyDeleteDeploymentInput struct {
+	CallBackParameter
+	Guid            string `json:"guid,omitempty"`
+	UserName        string `json:"userName,omitempty"`
+	Target          string `json:"target,omitempty"`
+	StopScriptPath  string `json:"stopScript,omitempty"`
+	DestinationPath string `json:"destinationPath,omitempty"`
+}
+
+type ApplyDeleteDeploymentOutputs struct {
+	Outputs []ApplyDeleteDeploymentOutput `json:"outputs,omitempty"`
+}
+
+type ApplyDeleteDeploymentOutput struct {
+	CallBackParameter
+	Result
+	Guid string `json:"guid,omitempty"`
+}
+
+func (action *ApplyDeleteDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs ApplyDeleteDeploymentInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *ApplyDeleteDeploymentAction) deleteDeploymentCheckParam(input ApplyDeleteDeploymentInput) error {
+	if input.Guid == "" {
+		errors.New("Guid is empty")
+	}
+	if input.UserName == "" {
+		errors.New("UserName is empty")
+	}
+	if input.Target == "" {
+		errors.New("Target is empty")
+	}
+	if input.StopScriptPath == "" {
+		errors.New("StopScriptPath is empty")
+	}
+	if input.DestinationPath == "" {
+		errors.New("DestinationPath is empty")
+	}
+
+	return nil
+}
+
+func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDeleteDeploymentInput) (output ApplyDeleteDeploymentOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = action.deleteDeploymentCheckParam(*input); err != nil {
+		return output, err
+	}
+
+	// stop apply script
+	runStopScriptRequest := RunScriptInputs{
+		Inputs: []RunScriptInput{
+			RunScriptInput{
+				EndPointType: "LOCAL",
+				EndPoint:     input.StopScriptPath,
+				Target:       input.Target,
+				RunAs:        input.UserName,
+				Guid:         input.Guid,
+			},
+		},
+	}
+
+	logrus.Infof("ApplyDeleteAction runApplyScript: input=%++v", runStopScriptRequest)
+	runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
+	if err != nil {
+		logrus.Errorf("ApplyDeleteAction runApplyScript meet error=%v", err)
+		return output, err
+	}
+	logrus.Infof("ApplyDeleteAction: runStopScriptOutputs=%++v", runStopScriptOutputs.(*RunScriptOutputs))
+
+	// rm package-dir
+	os.RemoveAll(input.DestinationPath)
+
+	return output, err
+}
+
+func (action *ApplyDeleteDeploymentAction) Do(input interface{}) (interface{}, error) {
+	inputs := input.(ApplyDeleteDeploymentInputs)
+	outputs := ApplyDeleteDeploymentOutputs{}
+	var finalErr error
+
+	for _, input := range inputs.Inputs {
+		output, err := action.applyDeleteDeployment(&input)
+		if err != nil {
+			finalErr = err
+		}
+		logrus.Infof("ApplyDeleteAction: output=%++v", output)
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+
+	logrus.Infof("All applictions = %v have been deleted", inputs)
+	return &outputs, finalErr
 }
