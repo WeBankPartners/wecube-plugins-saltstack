@@ -187,7 +187,6 @@ type DeleteMysqlDatabaseUserInput struct {
 	Port     string `json:"port,omitempty"`
 
 	//database info
-	DatabaseName     string `json:"databaseName,omitempty"`
 	DatabaseUserName string `json:"databaseUserName,omitempty"`
 }
 
