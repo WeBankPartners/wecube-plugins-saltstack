@@ -133,15 +133,10 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
 	}
+	logrus.Infof("dbIsExist=%v", dbIsExist)
 	if dbIsExist == true {
 		logrus.Errorf("db[%v] is existed", input.DatabaseName)
 		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
-		return output, err
-	}
-
-	// create database
-	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
-	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 		return output, err
 	}
 
@@ -151,10 +146,16 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
 	}
-
 	if isExist == true {
 		logrus.Errorf("user[%v] is existed", input.DatabaseOwnerName)
 		err = fmt.Errorf("user[%v] is existed", input.DatabaseOwnerName)
+		return output, err
+	}
+
+	// create database
+	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
+	logrus.Infof("cmd=%v", cmd)
+	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 		return output, err
 	}
 
@@ -221,7 +222,6 @@ type DeleteMysqlDatabaseInput struct {
 
 	// database info
 	DatabaseName string `json:"databaseName,omitempty"`
-	// DatabaseOwnerName string `json:"databaseOwnerName,omitempty"`
 }
 
 type DeleteMysqlDatabaseOutputs struct {
@@ -291,6 +291,19 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 
 	if input.Port == "" {
 		input.Port = "3306"
+	}
+
+	// check database database whether is existed.
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	if err != nil {
+		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
+		return output, err
+	}
+	logrus.Infof("dbIsExist=%v", dbIsExist)
+	if dbIsExist == true {
+		logrus.Errorf("db[%v] is existed", input.DatabaseName)
+		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
+		return output, err
 	}
 
 	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
