@@ -1,9 +1,11 @@
 package plugins
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -89,17 +91,14 @@ func addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
 	if input.Password == "" {
 		return errors.New("Password is empty")
 	}
-	// if input.Port == "" {
-	// 	return errors.New("Port is empty")
-	// }
 	if input.DatabaseName == "" {
 		return errors.New("DatabaseName is empty")
 	}
-	if input.DatabaseOwnerGuid == "" {
-		return errors.New("DatabaseOwnerGuid is empty")
-	}
 	if input.DatabaseOwnerName == "" {
 		return errors.New("DatabaseOwnerName is empty")
+	}
+	if input.DatabaseOwnerGuid == "" {
+		return errors.New("DatabaseOwnerGuid is empty")
 	}
 	return nil
 }
@@ -209,8 +208,8 @@ type DeleteMysqlDatabaseInput struct {
 	Port     string `json:"port,omitempty"`
 
 	// database info
-	DatabaseName      string `json:"databaseName,omitempty"`
-	DatabaseOwnerName string `json:"databaseOwnerName,omitempty"`
+	DatabaseName string `json:"databaseName,omitempty"`
+	// DatabaseOwnerName string `json:"databaseOwnerName,omitempty"`
 }
 
 type DeleteMysqlDatabaseOutputs struct {
@@ -248,15 +247,10 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input Del
 	if input.Password == "" {
 		return errors.New("Password is empty")
 	}
-	// if input.Port == "" {
-	// 	return errors.New("Port is empty")
-	// }
 	if input.DatabaseName == "" {
 		return errors.New("DatabaseName is empty")
 	}
-	// if input.DatabaseOwnerName == "" {
-	// 	return errors.New("DatabaseOwnerName is empty")
-	// }
+
 	return nil
 }
 
@@ -287,16 +281,16 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		input.Port = "3306"
 	}
 
-	if input.DatabaseOwnerName != "" {
+	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	if err != nil {
+		logrus.Infof("get user by db[%v] meet err=%v", input.DatabaseName, err)
+		return output, err
+	}
+
+	for _, user := range users {
 		// revoke permission
 		permission := "ALL PRIVILEGES"
-		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
-		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-			return output, err
-		}
-
-		// delete user
-		cmd = fmt.Sprintf("DROP USER %s", input.DatabaseOwnerName)
+		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, user)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 			return output, err
 		}
@@ -325,4 +319,54 @@ func (action *DeleteMysqlDatabaseAction) Do(input interface{}) (interface{}, err
 	}
 
 	return outputs, finalErr
+}
+
+func initDB(host, port, loginUser, loginPwd, dbName string) (*sql.DB, error) {
+	path := strings.Join([]string{loginUser, ":", loginPwd, "@tcp(", host, ":", port, ")/", dbName, "?charset=utf8"}, "")
+	logrus.Infof("Init mysql db path=[%v]", path)
+
+	DB, err := sql.Open("mysql", path)
+	if err != nil {
+		logrus.Infof("opening mysql db[%v] meet err=%v", dbName, err)
+		return nil, err
+	}
+	DB.SetConnMaxLifetime(100)
+	DB.SetMaxIdleConns(10)
+
+	if err := DB.Ping(); err != nil {
+		logrus.Infof("opening mysql db[%v] failed, err=%v", dbName, err)
+		return nil, err
+	}
+
+	logrus.Infof("connected mysql db[%v] successfully", dbName)
+	return DB, nil
+}
+
+func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, error) {
+	users := []string{}
+
+	// initDB param dbName = "mysql", not getUserByDB.dbName
+	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	if err != nil {
+		logrus.Infof("getting user by db[%v] failed, err=%v ", dbName, err)
+		return users, err
+	}
+
+	querySql := fmt.Sprintf("select User from db where db.Db='%s'", dbName)
+	rows, err := DB.Query(querySql)
+	if err != nil {
+		logrus.Infof("db.query meet err=%v", err)
+		return users, err
+	}
+
+	for rows.Next() {
+		var user string
+		err := rows.Scan(&user)
+		if err != nil {
+			logrus.Infof("rows.Scan meet err=%v", err)
+			return users, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }
