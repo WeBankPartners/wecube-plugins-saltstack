@@ -10,11 +10,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var DB *sql.DB
+
 func initDB(host, port, loginUser, loginPwd, dbName string) (*sql.DB, error) {
+	var err error
 	path := strings.Join([]string{loginUser, ":", loginPwd, "@tcp(", host, ":", port, ")/", dbName, "?charset=utf8"}, "")
 	logrus.Infof("Init mysql db path=[%v]", path)
 
-	DB, err := sql.Open("mysql", path)
+	DB, err = sql.Open("mysql", path)
 	if err != nil {
 		logrus.Errorf("opening mysql db[%v] meet err=%v", dbName, err)
 		return nil, err
@@ -33,13 +36,15 @@ func initDB(host, port, loginUser, loginPwd, dbName string) (*sql.DB, error) {
 
 func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, error) {
 	users := []string{}
+	var err error
 
 	// initDB param dbName = "mysql", not getUserByDB.dbName
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	DB, err = initDB(host, port, loginUser, loginPwd, "mysql")
 	if err != nil {
 		logrus.Errorf("getting user by db[%v] failed, err=%v ", dbName, err)
 		return users, err
 	}
+	defer DB.Close()
 
 	querySql := fmt.Sprintf("select User from db where db.Db='%s'", dbName)
 	rows, err := DB.Query(querySql)
@@ -62,12 +67,14 @@ func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, e
 
 func getAllDBByUser(host, port, loginUser, loginPwd, userName string) ([]string, error) {
 	dbs := []string{}
+	var err error
 	// initDB param dbName = "mysql".
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	DB, err = initDB(host, port, loginUser, loginPwd, "mysql")
 	if err != nil {
 		logrus.Errorf("init myhsql db failed, err=%v ", err)
 		return dbs, err
 	}
+	defer DB.Close()
 
 	querySql := fmt.Sprintf("select Db from db where db.User='%s'", userName)
 	rows, err := DB.Query(querySql)
@@ -88,12 +95,14 @@ func getAllDBByUser(host, port, loginUser, loginPwd, userName string) ([]string,
 }
 
 func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName string) (bool, error) {
+	var err error
 	// initDB param dbName = "mysql", not getUserByDB.dbName
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	DB, err = initDB(host, port, loginUser, loginPwd, "mysql")
 	if err != nil {
 		logrus.Errorf("init myhsql db failed, err=%v ", err)
 		return false, err
 	}
+	defer DB.Close()
 
 	querySql := fmt.Sprintf("SELECT 1 FROM mysql.db WHERE Db = '%s'", dbName)
 	rows, err := DB.Query(querySql)
@@ -106,12 +115,14 @@ func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName string) (bool, er
 }
 
 func checkUserExistOrNot(host, port, loginUser, loginPwd, userName string) (bool, error) {
+	var err error
 	// initDB param dbName = "mysql".
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	DB, err = initDB(host, port, loginUser, loginPwd, "mysql")
 	if err != nil {
 		logrus.Errorf("init myhsql db failed, err=%v ", err)
 		return false, err
 	}
+	defer DB.Close()
 
 	querySql := fmt.Sprintf("SELECT 1 FROM mysql.user WHERE user = '%s'", userName)
 	rows, err := DB.Query(querySql)
