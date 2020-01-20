@@ -89,16 +89,39 @@ func checkAddMysqlDatabaseUser(input *AddMysqlDatabaseUserInput) error {
 	return nil
 }
 
-func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (string, error) {
-	if err := checkAddMysqlDatabaseUser(input); err != nil {
-		return "", err
+func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddMysqlDatabaseUserOutput, err error) {
+	defer func() {
+		output.DatabaseUserGuid = input.DatabaseUserGuid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = checkAddMysqlDatabaseUser(input); err != nil {
+		return output, err
+	}
+
+	// check database user whether is existed.
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseUserName)
+	if err != nil {
+		logrus.Errorf("checking user exist or not meet error=%v", err)
+		return output, err
+	}
+	if isExist == true {
+		logrus.Errorf("database user[%v] exsit", input.DatabaseUserName)
+		err = fmt.Errorf("database user[%v] exsit", input.DatabaseUserName)
+		return output, err
 	}
 
 	//get root password
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		logrus.Errorf("AesDePassword meet error(%v)", err)
-		return "", err
+		return output, err
 	}
 
 	//create user
@@ -109,7 +132,7 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (string, err
 
 	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, userPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "", err
+		return output, err
 	}
 
 	//grant permission
@@ -117,7 +140,7 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (string, err
 		permission := "ALL PRIVILEGES"
 		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-			return "", err
+			return output, err
 		}
 	}
 
@@ -125,9 +148,28 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (string, err
 	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, userPassword, DEFALT_CIPHER)
 	if err != nil {
 		logrus.Errorf("AesEnPassword meet error(%v)", err)
-		return "", err
+		return output, err
 	}
-	return encryptPassword, err
+	output.DatabaseUserPassword = encryptPassword
+	return output, err
+}
+
+func checkUserExistOrNot(host, port, loginUser, loginPwd, userName string) (bool, error) {
+	// initDB param dbName = "mysql".
+	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	if err != nil {
+		logrus.Errorf("init myhsql db failed, err=%v ", err)
+		return false, err
+	}
+
+	querySql := fmt.Sprintf("SELECT 1 FROM mysql.user WHERE user = '%s'", userName)
+	rows, err := DB.Query(querySql)
+	if err != nil {
+		logrus.Errorf("db.query meet err=%v", err)
+		return false, err
+	}
+
+	return rows.Next(), nil
 }
 
 func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, error) {
@@ -136,19 +178,11 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output := AddMysqlDatabaseUserOutput{
-			DatabaseUserGuid: input.DatabaseUserGuid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		output.Result.Code = RESULT_CODE_SUCCESS
-
-		password, err := createUserForExistedDatabase(&input)
+		output, err := createUserForExistedDatabase(&input)
 		if err != nil {
 			finalErr = err
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
 		}
-		output.DatabaseUserPassword = password
+
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 	return outputs, finalErr
@@ -230,10 +264,16 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 		return output, err
 	}
 
-	if input.DatabaseName != "" {
+	dbs, err := getAllDBByUser(input.Host, input.Port, input.UserName, input.Password, input.DatabaseUserName)
+	if err != nil {
+		logrus.Errorf("getting dbs by user[%v] meet error=%v", input.DatabaseUserName, err)
+		return output, err
+	}
+
+	for _, db := range dbs {
 		// revoke permissions
 		permission := "ALL PRIVILEGES"
-		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, input.DatabaseUserName)
+		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, db, input.DatabaseUserName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 			return output, err
 		}
@@ -262,4 +302,31 @@ func (action *DeleteMysqlDatabaseUserAction) Do(input interface{}) (interface{},
 	}
 
 	return outputs, finalErr
+}
+
+func getAllDBByUser(host, port, loginUser, loginPwd, userName string) ([]string, error) {
+	dbs := []string{}
+	// initDB param dbName = "mysql".
+	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	if err != nil {
+		logrus.Errorf("init myhsql db failed, err=%v ", err)
+		return dbs, err
+	}
+
+	querySql := fmt.Sprintf("select Db from db where db.User='%s'", userName)
+	rows, err := DB.Query(querySql)
+	if err != nil {
+		logrus.Infof("db.query meet err=%v", err)
+		return dbs, err
+	}
+	for rows.Next() {
+		var db string
+		err := rows.Scan(&db)
+		if err != nil {
+			logrus.Infof("rows.Scan meet err=%v", err)
+			return dbs, err
+		}
+		dbs = append(dbs, db)
+	}
+	return dbs, nil
 }
