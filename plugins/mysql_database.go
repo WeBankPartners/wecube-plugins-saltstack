@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 )
 
@@ -118,52 +119,91 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 	return err
 }
 
-func AddMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (string, error) {
+func AddMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (output AddMysqlDatabaseOutput, err error) {
+	defer func() {
+		output.DatabaseOwnerGuid = input.DatabaseOwnerGuid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
 	if err := addMysqlDatabaseCheckParam(input); err != nil {
-		return "", err
+		return output, err
 	}
 
 	//get root password
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		logrus.Errorf("AesDePassword meet error(%v)", err)
-		return "", err
+		return output, err
 	}
 
 	if input.Port == "" {
 		input.Port = "3306"
 	}
 
-	//create database
-	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
-	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "", err
+	// check database database whether is existed.
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	if err != nil {
+		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
+		return output, err
+	}
+	if dbIsExist == true {
+		logrus.Errorf("db[%v] is existed", input.DatabaseName)
+		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
+		return output, err
 	}
 
-	//create user
+	// create database
+	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
+	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		return output, err
+	}
+
+	// check database user whether is existed.
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseOwnerName)
+	if err != nil {
+		logrus.Errorf("checking user exist or not meet error=%v", err)
+		return output, err
+	}
+
+	if isExist == true {
+		logrus.Errorf("user[%v] is existed", input.DatabaseOwnerName)
+		err = fmt.Errorf("user[%v] is existed", input.DatabaseOwnerName)
+		return output, err
+	}
+
 	dbOwnerPassword := input.DatabaseOwnerPassword
 	if dbOwnerPassword == "" {
 		dbOwnerPassword = createRandomPassword()
 	}
+
+	// create user
 	cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "", err
+		return output, err
 	}
 
-	//grant permission
-	permission := "ALL PRIVILEGES"
-	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
-	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		return "", err
-	}
-
-	//create new password
+	// encrypt password
 	encryptPassword, err := AesEnPassword(input.DatabaseOwnerGuid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
 	if err != nil {
 		logrus.Errorf("AesEnPassword meet error(%v)", err)
-		return "", err
+		return output, err
 	}
-	return encryptPassword, err
+	output.DatabaseOwnerPassword = encryptPassword
+
+	// grant permission
+	permission := "ALL PRIVILEGES"
+	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
+	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		return output, err
+	}
+
+	return output, err
 }
 
 func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error) {
@@ -172,19 +212,10 @@ func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error)
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output := AddMysqlDatabaseOutput{
-			DatabaseOwnerGuid: input.DatabaseOwnerGuid,
-		}
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		output.Result.Code = RESULT_CODE_SUCCESS
-
-		password, err := AddMysqlDatabaseAndUser(&input)
+		output, err := AddMysqlDatabaseAndUser(&input)
 		if err != nil {
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
 			finalErr = err
 		}
-		output.DatabaseOwnerPassword = password
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
@@ -283,7 +314,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 
 	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
 	if err != nil {
-		logrus.Infof("get user by db[%v] meet err=%v", input.DatabaseName, err)
+		logrus.Errorf("get user by db[%v] meet err=%v", input.DatabaseName, err)
 		return output, err
 	}
 
@@ -327,14 +358,14 @@ func initDB(host, port, loginUser, loginPwd, dbName string) (*sql.DB, error) {
 
 	DB, err := sql.Open("mysql", path)
 	if err != nil {
-		logrus.Infof("opening mysql db[%v] meet err=%v", dbName, err)
+		logrus.Errorf("opening mysql db[%v] meet err=%v", dbName, err)
 		return nil, err
 	}
 	DB.SetConnMaxLifetime(100)
 	DB.SetMaxIdleConns(10)
 
 	if err := DB.Ping(); err != nil {
-		logrus.Infof("opening mysql db[%v] failed, err=%v", dbName, err)
+		logrus.Errorf("opening mysql db[%v] failed, err=%v", dbName, err)
 		return nil, err
 	}
 
@@ -348,14 +379,14 @@ func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, e
 	// initDB param dbName = "mysql", not getUserByDB.dbName
 	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
 	if err != nil {
-		logrus.Infof("getting user by db[%v] failed, err=%v ", dbName, err)
+		logrus.Errorf("getting user by db[%v] failed, err=%v ", dbName, err)
 		return users, err
 	}
 
 	querySql := fmt.Sprintf("select User from db where db.Db='%s'", dbName)
 	rows, err := DB.Query(querySql)
 	if err != nil {
-		logrus.Infof("db.query meet err=%v", err)
+		logrus.Errorf("db.query meet err=%v", err)
 		return users, err
 	}
 
@@ -363,10 +394,28 @@ func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, e
 		var user string
 		err := rows.Scan(&user)
 		if err != nil {
-			logrus.Infof("rows.Scan meet err=%v", err)
+			logrus.Errorf("rows.Scan meet err=%v", err)
 			return users, err
 		}
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName string) (bool, error) {
+	// initDB param dbName = "mysql", not getUserByDB.dbName
+	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
+	if err != nil {
+		logrus.Errorf("init myhsql db failed, err=%v ", err)
+		return false, err
+	}
+
+	querySql := fmt.Sprintf("SELECT 1 FROM mysql.db WHERE Db = '%s'", dbName)
+	rows, err := DB.Query(querySql)
+	if err != nil {
+		logrus.Errorf("db.query meet err=%v", err)
+		return false, err
+	}
+
+	return rows.Next(), nil
 }
