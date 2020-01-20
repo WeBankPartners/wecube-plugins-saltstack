@@ -133,7 +133,6 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
 	}
-	logrus.Infof("dbIsExist=%v", dbIsExist)
 	if dbIsExist == true {
 		logrus.Errorf("db[%v] is existed", input.DatabaseName)
 		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
@@ -154,7 +153,6 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 
 	// create database
 	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
-	logrus.Infof("cmd=%v", cmd)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 		return output, err
 	}
@@ -299,7 +297,6 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
 	}
-	logrus.Infof("dbIsExist=%v", dbIsExist)
 	if dbIsExist == true {
 		logrus.Errorf("db[%v] is existed", input.DatabaseName)
 		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
