@@ -1,13 +1,9 @@
 package plugins
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
-	"os/exec"
-	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 )
 
@@ -76,7 +72,7 @@ func (action *AddMysqlDatabaseAction) ReadParam(param interface{}) (interface{},
 	return inputs, nil
 }
 
-func addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
+func (action *AddMysqlDatabaseAction) addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
 	if input.Host == "" {
 		return errors.New("Host is empty")
 	}
@@ -104,22 +100,7 @@ func addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
 	return nil
 }
 
-func runDatabaseCommand(host string, port string, loginUser string, loginPwd string, cmd string) error {
-	argv := []string{
-		"-h" + host,
-		"-u" + loginUser,
-		"-p" + loginPwd,
-		"-P" + port,
-		"-e",
-		cmd,
-	}
-	command := exec.Command("/usr/bin/mysql", argv...)
-	out, err := command.CombinedOutput()
-	fmt.Printf("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
-	return err
-}
-
-func AddMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (output AddMysqlDatabaseOutput, err error) {
+func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (output AddMysqlDatabaseOutput, err error) {
 	defer func() {
 		output.DatabaseOwnerGuid = input.DatabaseOwnerGuid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
@@ -131,7 +112,7 @@ func AddMysqlDatabaseAndUser(input *AddMysqlDatabaseInput) (output AddMysqlDatab
 		}
 	}()
 
-	if err := addMysqlDatabaseCheckParam(input); err != nil {
+	if err := action.addMysqlDatabaseCheckParam(input); err != nil {
 		return output, err
 	}
 
@@ -212,7 +193,7 @@ func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error)
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output, err := AddMysqlDatabaseAndUser(&input)
+		output, err := action.addMysqlDatabaseAndUser(&input)
 		if err != nil {
 			finalErr = err
 		}
@@ -350,72 +331,4 @@ func (action *DeleteMysqlDatabaseAction) Do(input interface{}) (interface{}, err
 	}
 
 	return outputs, finalErr
-}
-
-func initDB(host, port, loginUser, loginPwd, dbName string) (*sql.DB, error) {
-	path := strings.Join([]string{loginUser, ":", loginPwd, "@tcp(", host, ":", port, ")/", dbName, "?charset=utf8"}, "")
-	logrus.Infof("Init mysql db path=[%v]", path)
-
-	DB, err := sql.Open("mysql", path)
-	if err != nil {
-		logrus.Errorf("opening mysql db[%v] meet err=%v", dbName, err)
-		return nil, err
-	}
-	DB.SetConnMaxLifetime(100)
-	DB.SetMaxIdleConns(10)
-
-	if err := DB.Ping(); err != nil {
-		logrus.Errorf("opening mysql db[%v] failed, err=%v", dbName, err)
-		return nil, err
-	}
-
-	logrus.Infof("connected mysql db[%v] successfully", dbName)
-	return DB, nil
-}
-
-func getAllUserByDB(host, port, loginUser, loginPwd, dbName string) ([]string, error) {
-	users := []string{}
-
-	// initDB param dbName = "mysql", not getUserByDB.dbName
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
-	if err != nil {
-		logrus.Errorf("getting user by db[%v] failed, err=%v ", dbName, err)
-		return users, err
-	}
-
-	querySql := fmt.Sprintf("select User from db where db.Db='%s'", dbName)
-	rows, err := DB.Query(querySql)
-	if err != nil {
-		logrus.Errorf("db.query meet err=%v", err)
-		return users, err
-	}
-
-	for rows.Next() {
-		var user string
-		err := rows.Scan(&user)
-		if err != nil {
-			logrus.Errorf("rows.Scan meet err=%v", err)
-			return users, err
-		}
-		users = append(users, user)
-	}
-	return users, nil
-}
-
-func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName string) (bool, error) {
-	// initDB param dbName = "mysql", not getUserByDB.dbName
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
-	if err != nil {
-		logrus.Errorf("init myhsql db failed, err=%v ", err)
-		return false, err
-	}
-
-	querySql := fmt.Sprintf("SELECT 1 FROM mysql.db WHERE Db = '%s'", dbName)
-	rows, err := DB.Query(querySql)
-	if err != nil {
-		logrus.Errorf("db.query meet err=%v", err)
-		return false, err
-	}
-
-	return rows.Next(), nil
 }

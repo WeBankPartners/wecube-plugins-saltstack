@@ -70,7 +70,7 @@ func (action *AddMysqlDatabaseUserAction) ReadParam(param interface{}) (interfac
 	return inputs, nil
 }
 
-func checkAddMysqlDatabaseUser(input *AddMysqlDatabaseUserInput) error {
+func (action *AddMysqlDatabaseUserAction) checkAddMysqlDatabaseUser(input *AddMysqlDatabaseUserInput) error {
 	if input.Guid == "" {
 		return fmt.Errorf("empty guid")
 	}
@@ -89,7 +89,7 @@ func checkAddMysqlDatabaseUser(input *AddMysqlDatabaseUserInput) error {
 	return nil
 }
 
-func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddMysqlDatabaseUserOutput, err error) {
+func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddMysqlDatabaseUserOutput, err error) {
 	defer func() {
 		output.DatabaseUserGuid = input.DatabaseUserGuid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
@@ -101,7 +101,7 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddM
 		}
 	}()
 
-	if err = checkAddMysqlDatabaseUser(input); err != nil {
+	if err = action.checkAddMysqlDatabaseUser(input); err != nil {
 		return output, err
 	}
 
@@ -135,7 +135,7 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddM
 		return output, err
 	}
 
-	//grant permission
+	// grant permission
 	if input.DatabaseName != "" {
 		permission := "ALL PRIVILEGES"
 		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
@@ -144,7 +144,7 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddM
 		}
 	}
 
-	//create encrypt password
+	// create encrypt password
 	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, userPassword, DEFALT_CIPHER)
 	if err != nil {
 		logrus.Errorf("AesEnPassword meet error(%v)", err)
@@ -154,31 +154,13 @@ func createUserForExistedDatabase(input *AddMysqlDatabaseUserInput) (output AddM
 	return output, err
 }
 
-func checkUserExistOrNot(host, port, loginUser, loginPwd, userName string) (bool, error) {
-	// initDB param dbName = "mysql".
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
-	if err != nil {
-		logrus.Errorf("init myhsql db failed, err=%v ", err)
-		return false, err
-	}
-
-	querySql := fmt.Sprintf("SELECT 1 FROM mysql.user WHERE user = '%s'", userName)
-	rows, err := DB.Query(querySql)
-	if err != nil {
-		logrus.Errorf("db.query meet err=%v", err)
-		return false, err
-	}
-
-	return rows.Next(), nil
-}
-
 func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(AddMysqlDatabaseUserInputs)
 	outputs := AddMysqlDatabaseUserOutputs{}
 	var finalErr error
 
 	for _, input := range inputs.Inputs {
-		output, err := createUserForExistedDatabase(&input)
+		output, err := action.createUserForExistedDatabase(&input)
 		if err != nil {
 			finalErr = err
 		}
@@ -302,31 +284,4 @@ func (action *DeleteMysqlDatabaseUserAction) Do(input interface{}) (interface{},
 	}
 
 	return outputs, finalErr
-}
-
-func getAllDBByUser(host, port, loginUser, loginPwd, userName string) ([]string, error) {
-	dbs := []string{}
-	// initDB param dbName = "mysql".
-	DB, err := initDB(host, port, loginUser, loginPwd, "mysql")
-	if err != nil {
-		logrus.Errorf("init myhsql db failed, err=%v ", err)
-		return dbs, err
-	}
-
-	querySql := fmt.Sprintf("select Db from db where db.User='%s'", userName)
-	rows, err := DB.Query(querySql)
-	if err != nil {
-		logrus.Infof("db.query meet err=%v", err)
-		return dbs, err
-	}
-	for rows.Next() {
-		var db string
-		err := rows.Scan(&db)
-		if err != nil {
-			logrus.Infof("rows.Scan meet err=%v", err)
-			return dbs, err
-		}
-		dbs = append(dbs, db)
-	}
-	return dbs, nil
 }
