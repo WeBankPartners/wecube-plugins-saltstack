@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# < 1 ]]; then
-  echo "please input the hosts (ip) seperated by comma for installing salt-minion"
+  echo "please input the hosts (ip) seperated by comma for uninstalling salt-minion"
   exit
 fi
 
@@ -16,6 +16,6 @@ echo "  passwd: $2" >> ${targetFile}
 echo "  sudo: True" >> ${targetFile}
 echo "  timeout: 10" >> ${targetFile}
 
-salt-ssh '*' -i state.sls minions.install
+salt-ssh '*' -i state.sls minions.uninstall
 
 exit $?
