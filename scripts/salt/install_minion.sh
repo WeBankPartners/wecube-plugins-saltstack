@@ -19,5 +19,3 @@ echo "  timeout: 10" >> ${targetFile}
 salt-ssh '*' -i state.sls minions.install
 
 exit $?
-
-

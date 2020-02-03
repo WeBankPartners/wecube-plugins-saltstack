@@ -201,7 +201,7 @@ func (action *AgentUninstallAction) agentUninstallCheckParam(input AgentUninstal
 }
 
 func (action *AgentUninstallAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs AgentInstallInputs
+	var inputs AgentUninstallInputs
 	err := UnmarshalJson(param, &inputs)
 	if err != nil {
 		return nil, err
@@ -263,6 +263,6 @@ func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
 		outputs.Outputs = append(outputs.Outputs, agentUninstallOutput)
 	}
 
-	logrus.Infof("all agents = %v have been installed", agents)
+	logrus.Infof("all agents = %v have been uninstalled", agents)
 	return &outputs, finalErr
 }
