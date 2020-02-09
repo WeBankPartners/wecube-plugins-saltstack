@@ -155,34 +155,44 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 }
 
 //GetVariable .
-func GetVariable(fullpath, filepath string) ([]ConfigKeyInfo, error) {
-	fullPath := fullpath + "/" + filepath
-	_, err := os.Stat(fullPath)
+func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
+	_, err := PathExists(filepath)
 	if err != nil {
-		logrus.Errorf("path %s not exist. ", fullPath)
+		logrus.Errorf("file %s not exits", filepath)
 		return nil, err
 	}
 
-	bf, err := os.Open(fullPath)
+	f, err := os.Open(filepath)
 	if err != nil {
-		return nil, fmt.Errorf("open file %s fail: %s", fullPath, err)
+		logrus.Errorf("open file %s error=%v", filepath, err)
+		return nil, err
 	}
-	defer bf.Close()
+	defer f.Close()
 
 	variableList := []ConfigKeyInfo{}
-	br := bufio.NewReader(bf)
+	br := bufio.NewReader(f)
 	lineNumber := 1
 	for {
 		line, _, err := br.ReadLine()
 		if err == io.EOF {
 			break
 		}
-		flysnowRegexp := regexp.MustCompile(`[@*]\w+|[!*]\w+|[&*]\w+`)
+		if len(line) == 0 {
+			continue
+		}
+
+		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
 		params := flysnowRegexp.FindAllString(string(line), -1)
 		if len(params) > 0 {
 			var configKey ConfigKeyInfo
 			n := strconv.Itoa(lineNumber)
+
 			for _, param := range params {
+				if false == strings.HasSuffix(param, "]") {
+					continue
+				}
+				param = param[0 : len(param)-1]
+
 				if strings.Contains(param, "@") {
 					s := strings.Split(param, "@")
 					if s[1] == "" {
