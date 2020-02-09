@@ -105,8 +105,15 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 		return output, err
 	}
 
+	//get root password
+	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
+	if err != nil {
+		logrus.Errorf("AesDePassword meet error(%v)", err)
+		return output, err
+	}
+
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseUserName)
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName)
 	if err != nil {
 		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
@@ -114,13 +121,6 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	if isExist == true {
 		logrus.Errorf("database user[%v] exsit", input.DatabaseUserName)
 		err = fmt.Errorf("database user[%v] exsit", input.DatabaseUserName)
-		return output, err
-	}
-
-	//get root password
-	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
-	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return output, err
 	}
 
