@@ -258,7 +258,7 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 		os.RemoveAll(comporessedFileFullPath)
 	}
 	logrus.Info("full path = >", fullPath)
-	keys, err := GetVariable(fullPath, input.FilePath)
+	keys, err := GetVariable(fullPath + input.FilePath)
 	if err != nil {
 		return output, err
 	}
