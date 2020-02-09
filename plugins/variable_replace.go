@@ -228,13 +228,18 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
 		return fmt.Errorf("Invalid endpoint %s", filepath)
 	}
 	fileName := filepath[index+1:]
-	fileVarList, err := GetFileVariableString(filepath, fileName)
+	fileVarMap, err := GetVariable(filepath)
 	if err != nil {
 		return err
 	}
 
-	if len(fileVarList) == 0 {
+	if len(fileVarMap) == 0 {
 		return fmt.Errorf("file %s no variable need to replace", fileName)
+	}
+
+	fileVarList := []string{}
+	for _, v := range fileVarMap {
+		fileVarList = append(fileVarList, v.Key)
 	}
 
 	keyMap, err := GetInputVariableMap(variablelist, seed)
@@ -307,78 +312,6 @@ func CheckVariableIsAllReady(input map[string]string, variablelist []string) (er
 	}
 
 	return nil
-}
-
-func GetFileVariableString(filepath string, filename string) ([]string, error) {
-	_, err := PathExists(filepath)
-	if err != nil {
-		logrus.Errorf("file %s not exits", filepath)
-		return []string{}, err
-	}
-
-	f, err := os.Open(filepath)
-	if err != nil {
-		logrus.Errorf("open file %s error", filepath)
-		return []string{}, err
-	}
-	defer f.Close()
-
-	br := bufio.NewReader(f)
-
-	variablemap := make(map[string]string)
-	for {
-		a, _, c := br.ReadLine()
-		if c == io.EOF {
-			break
-		}
-		if len(a) == 0 {
-			continue
-		}
-
-		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
-		params := flysnowRegexp.FindAllString(string(a), -1)
-		if len(params) > 0 {
-			for _, param := range params {
-				if false == strings.HasSuffix(param, "]") {
-					continue
-				}
-				param = param[0 : len(param)-1]
-
-				if strings.Contains(param, "@") {
-					s := strings.Split(param, "@")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-					}
-					variablemap[s[1]] = s[1]
-				}
-				if strings.Contains(param, "!") {
-					s := strings.Split(param, "!")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-					}
-					variablemap[s[1]] = s[1]
-				}
-				if strings.Contains(param, "&") {
-					s := strings.Split(param, "&")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-					}
-					variablemap[s[1]] = s[1]
-				}
-			}
-		}
-	}
-	variableList := []string{}
-	if len(variablemap) == 0 {
-		logrus.Errorf("file %s don't hava variable need to replace", filepath)
-
-		return []string{}, fmt.Errorf("file %s don't hava variable need to replace", filepath)
-	}
-	for _, v := range variablemap {
-		variableList = append(variableList, v)
-	}
-
-	return variableList, nil
 }
 
 func PathExists(path string) (bool, error) {

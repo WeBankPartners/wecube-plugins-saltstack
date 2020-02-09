@@ -155,22 +155,22 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 }
 
 //GetVariable .
-func GetVariable(fullpath, filepath string) ([]ConfigKeyInfo, error) {
-	fullPath := fullpath + "/" + filepath
-	_, err := os.Stat(fullPath)
+func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
+	_, err := PathExists(filepath)
 	if err != nil {
-		logrus.Errorf("path %s not exist. ", fullPath)
+		logrus.Errorf("file %s not exits", filepath)
 		return nil, err
 	}
 
-	bf, err := os.Open(fullPath)
+	f, err := os.Open(filepath)
 	if err != nil {
-		return nil, fmt.Errorf("open file %s fail: %s", fullPath, err)
+		logrus.Errorf("open file %s error=%v", filepath, err)
+		return nil, err
 	}
-	defer bf.Close()
+	defer f.Close()
 
 	variableList := []ConfigKeyInfo{}
-	br := bufio.NewReader(bf)
+	br := bufio.NewReader(f)
 	lineNumber := 1
 	for {
 		line, _, err := br.ReadLine()
