@@ -177,12 +177,22 @@ func GetVariable(fullpath, filepath string) ([]ConfigKeyInfo, error) {
 		if err == io.EOF {
 			break
 		}
-		flysnowRegexp := regexp.MustCompile(`[@*]\w+|[!*]\w+|[&*]\w+`)
+		if len(line) == 0 {
+			continue
+		}
+
+		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
 		params := flysnowRegexp.FindAllString(string(line), -1)
 		if len(params) > 0 {
 			var configKey ConfigKeyInfo
 			n := strconv.Itoa(lineNumber)
+
 			for _, param := range params {
+				if false == strings.HasSuffix(param, "]") {
+					continue
+				}
+				param = param[0 : len(param)-1]
+
 				if strings.Contains(param, "@") {
 					s := strings.Split(param, "@")
 					if s[1] == "" {
