@@ -128,7 +128,7 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	}
 
 	// check database database whether is existed.
-	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName)
 	if err != nil {
 		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
@@ -140,7 +140,7 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	}
 
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseOwnerName)
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseOwnerName)
 	if err != nil {
 		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
@@ -292,7 +292,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 	}
 
 	// check database database whether is existed.
-	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName)
 	if err != nil {
 		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
@@ -303,7 +303,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		return output, err
 	}
 
-	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, input.Password, input.DatabaseName)
+	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName)
 	if err != nil {
 		logrus.Errorf("get user by db[%v] meet err=%v", input.DatabaseName, err)
 		return output, err
