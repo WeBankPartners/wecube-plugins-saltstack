@@ -167,7 +167,13 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	if input.FilePath != "" && input.VariableList != "" {
 		for _, filePath := range strings.Split(input.FilePath, "|") {
-			confFilePath := decompressDirName + "/" + filePath
+			confFilePath := ""
+			if filePath[0] == '/' {
+				confFilePath = decompressDirName + filePath
+			} else {
+				confFilePath = decompressDirName + "/" + filePath
+			}
+
 			if err = ReplaceFileVar(confFilePath, input); err != nil {
 				os.RemoveAll(decompressDirName)
 				return output, err

@@ -245,7 +245,7 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 		return output, err
 	}
 
-	dbs, err := getAllDBByUser(input.Host, input.Port, input.UserName, input.Password, input.DatabaseUserName)
+	dbs, err := getAllDBByUser(input.Host, input.Port, input.UserName, password, input.DatabaseUserName)
 	if err != nil {
 		logrus.Errorf("getting dbs by user[%v] meet error=%v", input.DatabaseUserName, err)
 		return output, err
