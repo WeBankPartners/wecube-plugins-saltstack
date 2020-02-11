@@ -168,11 +168,18 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if input.FilePath != "" && input.VariableList != "" {
 		for _, filePath := range strings.Split(input.FilePath, "|") {
 			confFilePath := ""
+
+			if decompressDirName[len(decompressDirName)-1] == '/' {
+				decompressDirName = decompressDirName[:len(decompressDirName)-1]
+			}
+
 			if filePath[0] == '/' {
 				confFilePath = decompressDirName + filePath
 			} else {
 				confFilePath = decompressDirName + "/" + filePath
 			}
+
+			logrus.Infof("confFilePath=%v", confFilePath)
 
 			if err = ReplaceFileVar(confFilePath, input); err != nil {
 				os.RemoveAll(decompressDirName)
