@@ -289,7 +289,24 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	//need to decode
 	guid := values[1]
 	md5sum := Md5Encode(guid + seed)
-	data, err := AesDecode(md5sum[0:16], values[0])
+
+	// judge whether has cipher and remove it
+	var cipher string
+	enCode := values[0]
+	for _, _cipher := range CIPHER_MAP {
+		if strings.HasPrefix(values[0], _cipher) {
+			cipher = _cipher
+			break
+		}
+	}
+	if cipher != "" {
+		enCode = enCode[len(cipher):]
+	}
+
+	data, err := AesDecode(md5sum[0:16], enCode)
+	if err != nil {
+		logrus.Errorf("AesDecode meet error=%v", err)
+	}
 	return key, data, err
 }
 
@@ -297,6 +314,7 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
 	if len(kvs) != 2 {
+		logrus.Errorf("varialbeList(%v) format error", variable)
 		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
 	}
 
@@ -304,14 +322,18 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 	values := strings.Split(kvs[1], KEY_KEY_SEPERATOR)
 
 	if len(keys) != len(values) {
+		logrus.Errorf("varialbeList(%v) format error", variable)
 		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
 	}
 
 	for i, _ := range keys {
+		logrus.Infof("keys[%v]=%v, values[%v]=%v, seed=%v", i, keys[i], i, values[i], seed)
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
+			logrus.Errorf("getRawKeyValue meet error=%v", err)
 			return inputMap, err
 		}
+		logrus.Infof("key=%v, value=%v", key, value)
 		inputMap[key] = value
 	}
 	return inputMap, nil
