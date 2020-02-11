@@ -219,7 +219,8 @@ type DeleteMysqlDatabaseInput struct {
 	Port     string `json:"port,omitempty"`
 
 	// database info
-	DatabaseName string `json:"databaseName,omitempty"`
+	DatabaseName      string `json:"databaseName,omitempty"`
+	DatabaseOwnerGuid string `json:"databaseOwnerGuid,omitempty"`
 }
 
 type DeleteMysqlDatabaseOutputs struct {
@@ -229,7 +230,7 @@ type DeleteMysqlDatabaseOutputs struct {
 type DeleteMysqlDatabaseOutput struct {
 	CallBackParameter
 	Result
-	Guid string `json:"guid,omitempty"`
+	DatabaseOwnerGuid string `json:"databaseOwnerGuid,omitempty"`
 }
 
 func (action *DeleteMysqlDatabaseAction) ReadParam(param interface{}) (interface{}, error) {
@@ -260,13 +261,16 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input Del
 	if input.DatabaseName == "" {
 		return errors.New("DatabaseName is empty")
 	}
+	if input.DatabaseOwnerGuid == "" {
+		return errors.New("DatabaseOwnerGuid is empty")
+	}
 
 	return nil
 }
 
 func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlDatabaseInput) (output DeleteMysqlDatabaseOutput, err error) {
 	defer func() {
-		output.Guid = input.Guid
+		output.DatabaseOwnerGuid = input.DatabaseOwnerGuid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
