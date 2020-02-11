@@ -258,7 +258,16 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 		os.RemoveAll(comporessedFileFullPath)
 	}
 	logrus.Info("full path = >", fullPath)
-	keys, err := GetVariable(fullPath + input.FilePath)
+
+	if fullPath[len(fullPath)-1] == '/' {
+		fullPath = fullPath[:len(fullPath)-1]
+	}
+	if input.FilePath[0] == '/' {
+		input.FilePath = input.FilePath[1:]
+	}
+
+	logrus.Infof("ConfigFile=%v", fullPath+"/"+input.FilePath)
+	keys, err := GetVariable(fullPath + "/" + input.FilePath)
 	if err != nil {
 		return output, err
 	}
