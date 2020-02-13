@@ -3,7 +3,6 @@ package plugins
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -605,9 +604,30 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 	logrus.Infof("ApplyDeleteAction: runStopScriptOutputs=%++v", runStopScriptOutputs.(*RunScriptOutputs))
 
 	// rm package-dir
-	os.RemoveAll(input.DestinationPath)
+	err = deleteDirecory(input.Target, input.DestinationPath)
+	if err != nil {
+		logrus.Errorf("ApplyDeleteAction remove target[%v] dir[%v] meet error=%v", input.Target, input.DestinationPath, err)
+	}
 
 	return output, err
+}
+
+func deleteDirecory(target, destinationPath string) error {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = target
+	request.Function = "cmd.run"
+
+	cmdRun := "rm -rf " + destinationPath
+	request.Args = append(request.Args, cmdRun)
+
+	_, err := CallSaltApi("https://127.0.0.1:8080", request)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (action *ApplyDeleteDeploymentAction) Do(input interface{}) (interface{}, error) {
