@@ -293,8 +293,6 @@ func (action *ApplyUpdateDeploymentAction) ReadParam(param interface{}) (interfa
 }
 
 func (action *ApplyUpdateDeploymentAction) CheckParam(input ApplyUpdateDeploymentInput) error {
-	return fmt.Errorf("ApplyUpdateInputs:input type=%T not right", input)
-
 	if input.EndPoint == "" {
 		return errors.New("EndPoint is empty")
 	}
