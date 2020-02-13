@@ -473,7 +473,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.unit>wecmdb:unit.deploy_path" required="Y">destinationPath</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.stop_script" required="Y">stopScript</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.start_script" required="Y">startScript</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_script" required="Y">deployScript</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.NONE" required="N">args</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX" required="Y">encryptVariblePrefix</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" required="Y">seed</parameter>
