@@ -305,7 +305,7 @@ func (action *ApplyUpdateDeploymentAction) CheckParam(input ApplyUpdateDeploymen
 	// 	return errors.New("VariableFilePath is empty")
 	// }
 	if input.DeployScriptPath == "" {
-		return errors.New("StartScriptPath is empty")
+		return errors.New("DeployScriptPath is empty")
 	}
 	if input.DestinationPath == "" {
 		return errors.New("DestinationPath is empty")
