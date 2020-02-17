@@ -24,6 +24,7 @@ COPY scripts/salt/remove_master_unused_key.sh $APP_HOME/scripts/salt/remove_mast
 RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/salt/install_minion.sh \
     && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh \
+    && chmod +x $APP_HOME/scripts/salt/uninstall_minion.sh \
     && chmod +x $APP_HOME/scripts/rsautil.sh
 
 COPY wecube-plugins-saltstack $APP_HOME/
