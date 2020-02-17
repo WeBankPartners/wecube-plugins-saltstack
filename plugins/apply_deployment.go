@@ -256,7 +256,7 @@ type ApplyUpdateDeploymentInput struct {
 	VariableList     string `json:"variableList,omitempty"`
 	ExecArg          string `json:"args,omitempty"`
 	StopScriptPath   string `json:"stopScript,omitempty"`
-	DeployScriptPath string `json:"deployScript,omitempty"`
+	StartScriptPath  string `json:"startScript,omitempty"`
 
 	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
 	Seed                 string `json:"seed,omitempty"`
@@ -271,13 +271,13 @@ type ApplyUpdateDeploymentOutputs struct {
 type ApplyUpdateDeploymentOutput struct {
 	CallBackParameter
 	Result
-	Guid                  string `json:"guid,omitempty"`
-	FileDetail            string `json:"fileDetail,omitempty"`
-	NewS3PkgPath          string `json:"s3PkgPath,omitempty"`
-	Target                string `json:"target,omitempty"`
-	RetCode               int    `json:"retCode,omitempty"`
-	RunDeployScriptDetail string `json:"runDeployScriptDetail,omitempty"`
-	RunStopScriptDetail   string `json:"runStopScriptDetail,omitempty"`
+	Guid                 string `json:"guid,omitempty"`
+	FileDetail           string `json:"fileDetail,omitempty"`
+	NewS3PkgPath         string `json:"s3PkgPath,omitempty"`
+	Target               string `json:"target,omitempty"`
+	RetCode              int    `json:"retCode,omitempty"`
+	RunStartScriptDetail string `json:"runStartScriptDetail,omitempty"`
+	RunStopScriptDetail  string `json:"runStopScriptDetail,omitempty"`
 }
 
 type ApplyUpdateDeploymentAction struct {
@@ -304,8 +304,8 @@ func (action *ApplyUpdateDeploymentAction) CheckParam(input ApplyUpdateDeploymen
 	// if input.VariableFilePath == "" {
 	// 	return errors.New("VariableFilePath is empty")
 	// }
-	if input.DeployScriptPath == "" {
-		return errors.New("DeployScriptPath is empty")
+	if input.StartScriptPath == "" {
+		return errors.New("StartScriptPath is empty")
 	}
 	if input.DestinationPath == "" {
 		return errors.New("DestinationPath is empty")
@@ -423,7 +423,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		Inputs: []RunScriptInput{
 			RunScriptInput{
 				EndPointType: "LOCAL",
-				EndPoint:     input.DeployScriptPath,
+				EndPoint:     input.StartScriptPath,
 				Target:       input.Target,
 				RunAs:        input.UserName,
 				Guid:         input.Guid,
@@ -441,7 +441,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		return output, err
 	}
 	logrus.Infof("ApplyUpdateAction: runStartScriptOutputs=%++v", runStartScriptOutputs.(*RunScriptOutputs))
-	output.RunDeployScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+	output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
 	return output, err
 }
