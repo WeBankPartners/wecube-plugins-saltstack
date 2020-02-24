@@ -201,7 +201,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	//upload to s3
 	newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
-	fmt.Printf("NewS3EndpointName=%s\n", newS3Endpoint)
+	logrus.Infof("NewS3EndpointName=%s\n", newS3Endpoint)
 
 	if _, err = uploadS3File(newS3Endpoint, "access_key", "secret_key"); err != nil {
 		logrus.Errorf("uploadS3File meet error=%v", err)
@@ -327,13 +327,11 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 	}
 
 	for i, _ := range keys {
-		logrus.Infof("keys[%v]=%v, values[%v]=%v, seed=%v", i, keys[i], i, values[i], seed)
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
 			logrus.Errorf("getRawKeyValue meet error=%v", err)
 			return inputMap, err
 		}
-		logrus.Infof("key=%v, value=%v", key, value)
 		inputMap[key] = value
 	}
 	return inputMap, nil

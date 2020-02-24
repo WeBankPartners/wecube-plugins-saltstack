@@ -302,23 +302,20 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		return output, err
 	}
 	if dbIsExist == true {
-		logrus.Errorf("db[%v] is existed", input.DatabaseName)
-		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
-		return output, err
-	}
-
-	users, err := getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName)
-	if err != nil {
-		logrus.Errorf("get user by db[%v] meet err=%v", input.DatabaseName, err)
-		return output, err
-	}
-
-	for _, user := range users {
-		// revoke permission
-		permission := "ALL PRIVILEGES"
-		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, user)
-		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		var users []string
+		users, err = getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName)
+		if err != nil {
+			logrus.Errorf("get user by db[%v] meet err=%v", input.DatabaseName, err)
 			return output, err
+		}
+
+		for _, user := range users {
+			// revoke permission
+			permission := "ALL PRIVILEGES"
+			cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, user)
+			if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+				return output, err
+			}
 		}
 	}
 
