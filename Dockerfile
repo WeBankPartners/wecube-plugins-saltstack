@@ -18,11 +18,13 @@ COPY scripts/salt/getUnformatedDisk.py /srv/salt/base/getUnformatedDisk.py
 
 COPY build/start.sh /start.sh
 COPY scripts/salt/install_minion.sh $APP_HOME/scripts/salt/install_minion.sh
+COPY scripts/salt/uninstall_minion.sh $APP_HOME/scripts/salt/uninstall_minion.sh
 COPY scripts/salt/remove_master_unused_key.sh $APP_HOME/scripts/salt/remove_master_unused_key.sh
 
 RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/salt/install_minion.sh \
     && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh \
+    && chmod +x $APP_HOME/scripts/salt/uninstall_minion.sh \
     && chmod +x $APP_HOME/scripts/rsautil.sh
 
 COPY wecube-plugins-saltstack $APP_HOME/

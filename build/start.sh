@@ -5,7 +5,7 @@
 TEMPLATE_DIR="/conf/template/"
 function replaceFiles()
 {
-    dest_paths=($APP_HOME"/scripts/salt/install_minion.sh" $APP_HOME"/scripts/salt/remove_master_unused_key.sh" "/srv/salt/minions/conf/minion" "/srv/salt/minions/yum.repos.d/salt-repo.repo")
+    dest_paths=($APP_HOME"/scripts/salt/install_minion.sh" $APP_HOME"/scripts/salt/uninstall_minion.sh" $APP_HOME"/scripts/salt/remove_master_unused_key.sh" "/srv/salt/minions/conf/minion" "/srv/salt/minions/yum.repos.d/salt-repo.repo")
 
     for file in ${dest_paths[@]};
     do
