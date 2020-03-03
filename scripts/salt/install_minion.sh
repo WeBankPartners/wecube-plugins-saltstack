@@ -5,13 +5,19 @@ if [[ $# < 1 ]]; then
   exit
 fi
 
+minion_port_default={{minion_port}}
+if [ $4 ]
+then
+minion_port_default=$4
+fi
+
 targetFile=/etc/salt/roster
 rm -rf ${targetFile}
 
 echo "$1:">> ${targetFile}
-echo "  port: {{minion_port}} ">> ${targetFile}
+echo "  port: ${minion_port_default} ">> ${targetFile}
 echo "  host: $1" >> ${targetFile}
-echo "  user: root" >> ${targetFile}
+echo "  user: $3" >> ${targetFile}
 echo "  passwd: $2" >> ${targetFile}
 echo "  sudo: True" >> ${targetFile}
 echo "  timeout: 10" >> ${targetFile}

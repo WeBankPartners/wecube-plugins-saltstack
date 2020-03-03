@@ -37,6 +37,8 @@ type AgentInstallInput struct {
 	Seed     string `json:"seed,omitempty"`
 	Password string `json:"password,omitempty"`
 	Host     string `json:"host,omitempty"`
+	Port     string `json:"port,omitempty"`
+	User     string `json:"user,omitempty"`
 }
 
 type AgentInstallOutputs struct {
@@ -127,10 +129,17 @@ func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output
 		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return output, err
 	}
+	if input.User == "" {
+		input.User = "root"
+	}
 
 	installMinionArgs := []string{
 		input.Host,
 		password,
+		input.User,
+	}
+	if input.Port != "" {
+		installMinionArgs = append(installMinionArgs, input.Port)
 	}
 	out, er := runBashScript("./scripts/salt/install_minion.sh", installMinionArgs)
 	if er != nil {
