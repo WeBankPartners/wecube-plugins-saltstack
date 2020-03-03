@@ -287,27 +287,34 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	}
 
 	//need to decode
-	guid := values[1]
-	md5sum := Md5Encode(guid + seed)
-
-	// judge whether has cipher and remove it
-	var cipher string
-	enCode := values[0]
-	for _, _cipher := range CIPHER_MAP {
-		if strings.HasPrefix(values[0], _cipher) {
-			cipher = _cipher
-			break
-		}
-	}
-	if cipher != "" {
-		enCode = enCode[len(cipher):]
-	}
-
-	data, err := AesDecode(md5sum[0:16], enCode)
+	afterDecode,err := AesDePassword(values[1], seed, values[0])
 	if err != nil {
-		logrus.Errorf("AesDecode meet error=%v", err)
+		logrus.Errorf("AesDePassword meet error=%v", err)
 	}
-	return key, data, err
+	return key,afterDecode,err
+
+	// pass code
+	//guid := values[1]
+	//md5sum := Md5Encode(guid + seed)
+	//
+	//// judge whether has cipher and remove it
+	//var cipher string
+	//enCode := values[0]
+	//for _, _cipher := range CIPHER_MAP {
+	//	if strings.HasPrefix(values[0], _cipher) {
+	//		cipher = _cipher
+	//		break
+	//	}
+	//}
+	//if cipher != "" {
+	//	enCode = enCode[len(cipher):]
+	//}
+	//
+	//data, err := AesDecode(md5sum[0:16], enCode)
+	//if err != nil {
+	//	logrus.Errorf("AesDecode meet error=%v", err)
+	//}
+	//return key, data, err
 }
 
 func GetInputVariableMap(variable string, seed string) (map[string]string, error) {
