@@ -47,6 +47,7 @@ type ApplyNewDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+	Password             string `json:"password,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -63,6 +64,7 @@ type ApplyNewDeploymentOutput struct {
 	Target          string `json:"target,omitempty"`
 	RetCode         int    `json:"retCode,omitempty"`
 	RunScriptDetail string `json:"runScriptDetail,omitempty"`
+	Password        string `json:"password,omitempty"`
 }
 
 type ApplyNewDeploymentAction struct {
@@ -122,6 +124,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 				Guid:     input.Guid,
 				Target:   input.Target,
 				UserName: input.UserName,
+				Password: input.Password,
 			},
 		},
 	}
@@ -134,6 +137,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 	}
 	logrus.Infof("ApplyNewDeploymentAction: userAddOutputs=%++v", userAddOutputs.(*AddUserOutputs))
 	output.UserDetail = userAddOutputs.(*AddUserOutputs).Outputs[0].Detail
+	output.Password = userAddOutputs.(*AddUserOutputs).Outputs[0].Password
 	logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 	// replace apply variable
