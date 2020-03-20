@@ -449,6 +449,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.resource_instance>wecmdb:resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url" required="Y">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user" required="Y">userName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password" required="N">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.unit>wecmdb:unit.deploy_path" required="Y">destinationPath</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_package>wecmdb:deploy_package.diff_conf_file" required="Y">confFiles</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.variable_values" required="Y">variableList</parameter>
@@ -461,6 +462,7 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.id">guid</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:business_app_instance.deploy_user_password">password</parameter>
                     <parameter datatype="string" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" mappingType="context">errorMessage</parameter>
                 </outputParameters>
