@@ -618,9 +618,9 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.host_resource_instance>wecmdb:host_resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.deploy_user" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.deploy_user_password" required="N" sensitiveData="Y">password</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.subsys>wecmdb:subsys.system>wecmdb:system.system_design>wecmdb:system_design.code" required="N">userGroup</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.subsys>wecmdb:subsys.app_system>wecmdb:app_system.system_design>wecmdb:system_design.code" required="N">userGroup</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.subsys>wecmdb:subsys.subsys_design>wecmdb:subsys_design.subsys_design_id" required="N">userId</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.subsys>wecmdb:subsys.system>wecmdb:system.system_design>wecmdb:system_design.system_design_id" required="N">groupId</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.subsys>wecmdb:subsys.app_system>wecmdb:app_system.system_design>wecmdb:system_design.system_design_id" required="N">groupId</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.deploy_path" required="N">homeDir</parameter>
                 </inputParameters>
                 <outputParameters>
