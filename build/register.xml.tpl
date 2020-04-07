@@ -22,9 +22,9 @@
         <systemParameter name="ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!"/>
         <systemParameter name="SYSTEM_PRIVATE_KEY" scopeType="global" defaultValue=""/>
         <systemParameter name="SALTSTACK_SERVER_URL" scopeType="global" defaultValue="http://127.0.0.1:20002"/>
-	<systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
+	    <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
         <systemParameter name="SALTSTACK_AGENT_PORT" scopeType="global" defaultValue="9000"/>
-        <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="WB888888"/>
+        <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="PA888888"/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
@@ -387,7 +387,7 @@
         </plugin>
 
 
-        
+
          <!--最佳实践 -->
         <plugin name="agent" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="host">
             <interface action="install" path="/saltstack/v1/agent/install" filterRule="{state_code eq 'created'}{fixed_date eq ''}">
@@ -514,7 +514,7 @@
                 <inputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid" required="Y">guid</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL" required="Y">endpointType</parameter>
-                    <parameter datatype="string" mappingType="constant" required="Y">endpoint</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_INSTALL_SCRIPT" required="Y">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.NONE" required="N">scriptContent</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.NONE" required="N">runAs</parameter>
@@ -566,8 +566,8 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid" required="Y">guid</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_S3_PATH" required="Y">endpoint</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.intranet_ip>wecmdb:ip_address.code" required="Y">target</parameter>
-                    <parameter datatype="string" mappingType="constant" required="Y">destinationPath</parameter>
-                    <parameter datatype="string" mappingType="constant" required="N">unpack</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_UPLOAD_PATH" required="Y">destinationPath</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_UNPACK" required="N">unpack</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.NONE" required="N">fileOwner</parameter>
                 </inputParameters>
                 <outputParameters>
@@ -654,7 +654,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="N">databaseName</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid">guid</parameter>
@@ -672,7 +672,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="N">databaseName</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid">guid</parameter>
@@ -690,7 +690,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="N">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="N">databaseName</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid">guid</parameter>
@@ -708,7 +708,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.user_name" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="Y">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="Y">databaseName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid" required="Y">databaseOwnerGuid</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user" required="Y">databaseOwnerName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user_password" required="N" sensitiveData="Y">databaseOwnerPassword</parameter>
@@ -728,7 +728,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.user_name" required="Y">userName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="Y">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="Y">databaseName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid" required="Y">databaseOwnerGuid</parameter>
                 </inputParameters>
                 <outputParameters>
@@ -748,7 +748,7 @@
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.user_password" required="Y" sensitiveData="Y">password</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.login_port" required="N">port</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid" required="Y">databaseUserGuid</parameter>
-                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.code" required="Y">databaseName</parameter>
+                    <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.unit>wecmdb:unit.code" required="Y">databaseName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user" required="Y">databaseUserName</parameter>
                     <parameter datatype="string" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_user_password" required="N" sensitiveData="Y">databaseUserPassword</parameter>
                 </inputParameters>
