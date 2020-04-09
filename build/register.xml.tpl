@@ -3,7 +3,6 @@
     <!-- 1.依赖分析 - 描述运行本插件包需要的其他插件包 -->
     <packageDependencies>
         <packageDependency name="wecmdb" version="v1.4.0"/>
-        <packageDependency name="qcloud" version="v1.8.0"/>
     </packageDependencies>
 
     <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
