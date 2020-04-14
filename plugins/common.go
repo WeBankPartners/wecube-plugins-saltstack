@@ -30,6 +30,11 @@ const (
 	DEFALT_CIPHER       = "CIPHER_A"
 )
 
+var (
+	DefaultS3Key = "access_key"
+	DefaultS3Password = "secret_key"
+)
+
 var CIPHER_MAP = map[string]string{
 	"CIPHER_A": "{cipher_a}",
 }
@@ -353,4 +358,16 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error 
 		return err
 	}
 	return nil
+}
+
+func InitS3Param()  {
+	tmpKey := os.Getenv("DEFAULT_S3_KEY")
+	if tmpKey != "" {
+		DefaultS3Key = tmpKey
+	}
+	tmpPwd := os.Getenv("DEFAULT_S3_PASSWORD")
+	if tmpPwd != "" {
+		DefaultS3Password = tmpPwd
+	}
+	logrus.Infof("s3  --> key: %s  password: %s \n", DefaultS3Key, DefaultS3Password)
 }

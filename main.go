@@ -21,6 +21,7 @@ func init() {
 }
 
 func main() {
+	plugins.InitS3Param()
 	logrus.Infof("Start WeCube-Plungins Deploy Service at port %v ... ", PLUGIN_SERVICE_PORT)
 
 	if err := http.ListenAndServe(":"+PLUGIN_SERVICE_PORT, nil); err != nil {
