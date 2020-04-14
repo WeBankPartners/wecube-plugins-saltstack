@@ -152,7 +152,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
 	if err != nil {
 		logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
 		return output, err
@@ -203,7 +203,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
 	logrus.Infof("NewS3EndpointName=%s\n", newS3Endpoint)
 
-	if _, err = uploadS3File(newS3Endpoint, "access_key", "secret_key"); err != nil {
+	if _, err = uploadS3File(newS3Endpoint, DefaultS3Key, DefaultS3Password); err != nil {
 		logrus.Errorf("uploadS3File meet error=%v", err)
 		return output, err
 	}
