@@ -134,7 +134,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		return output, err
 	}
 
-	fileName, er := downloadS3File(input.EndPoint, "access_key", "secret_key")
+	fileName, er := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
 	if er != nil {
 		logrus.Errorf("CopyFile downloads3 file error=%v", er)
 		err = fmt.Errorf("CopyFile downloads3 file error=%v", er)
