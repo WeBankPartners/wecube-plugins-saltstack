@@ -33,6 +33,7 @@ const (
 var (
 	DefaultS3Key = "access_key"
 	DefaultS3Password = "secret_key"
+	DefaultSpecialReplaceList []string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -360,7 +361,7 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error 
 	return nil
 }
 
-func InitS3Param()  {
+func InitEnvParam()  {
 	tmpKey := os.Getenv("DEFAULT_S3_KEY")
 	if tmpKey != "" {
 		DefaultS3Key = tmpKey
@@ -370,4 +371,12 @@ func InitS3Param()  {
 		DefaultS3Password = tmpPwd
 	}
 	logrus.Infof("s3  --> key: %s  password: %s \n", DefaultS3Key, DefaultS3Password)
+	tmpSpecialReplace := os.Getenv("SALTSTACK_DEFAULT_SPECIAL_REPLACE")
+	if tmpSpecialReplace != "" {
+		logrus.Infof("variable replace  --> special flag: %s  \n", tmpSpecialReplace)
+		DefaultSpecialReplaceList = strings.Split(tmpSpecialReplace, ",")
+	}else{
+		DefaultSpecialReplaceList = []string{"@","#","!","&"}
+		logrus.Infof("variable replace without param,use default @,#,!,&  \n")
+	}
 }

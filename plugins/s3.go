@@ -193,33 +193,48 @@ func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
 				}
 				param = param[0 : len(param)-1]
 
-				if strings.Contains(param, "@") {
-					s := strings.Split(param, "@")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+				for _,specialFlag := range DefaultSpecialReplaceList {
+					if specialFlag == "" {
+						continue
 					}
-					configKey.Line = n
-					configKey.Key = s[1]
-					variableList = append(variableList, configKey)
-				}
-				if strings.Contains(param, "!") {
-					s := strings.Split(param, "!")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+					if strings.Contains(param, specialFlag) {
+						s := strings.Split(param, specialFlag)
+						if s[1] == "" {
+							return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+						}
+						configKey.Line = n
+						configKey.Key = s[1]
+						variableList = append(variableList, configKey)
 					}
-					configKey.Line = n
-					configKey.Key = s[1]
-					variableList = append(variableList, configKey)
 				}
-				if strings.Contains(param, "&") {
-					s := strings.Split(param, "&")
-					if s[1] == "" {
-						return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-					}
-					configKey.Line = n
-					configKey.Key = s[1]
-					variableList = append(variableList, configKey)
-				}
+
+				//if strings.Contains(param, "@") {
+				//	s := strings.Split(param, "@")
+				//	if s[1] == "" {
+				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+				//	}
+				//	configKey.Line = n
+				//	configKey.Key = s[1]
+				//	variableList = append(variableList, configKey)
+				//}
+				//if strings.Contains(param, "!") {
+				//	s := strings.Split(param, "!")
+				//	if s[1] == "" {
+				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+				//	}
+				//	configKey.Line = n
+				//	configKey.Key = s[1]
+				//	variableList = append(variableList, configKey)
+				//}
+				//if strings.Contains(param, "&") {
+				//	s := strings.Split(param, "&")
+				//	if s[1] == "" {
+				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+				//	}
+				//	configKey.Line = n
+				//	configKey.Key = s[1]
+				//	variableList = append(variableList, configKey)
+				//}
 			}
 		}
 		lineNumber++

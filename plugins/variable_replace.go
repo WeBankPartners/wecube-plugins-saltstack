@@ -489,42 +489,60 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				}
 				key = key[0 : len(key)-1]
 
-				if strings.Contains(key, "@") {
-					s := strings.Split(key, "@")
-					if s[1] == "" {
-						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+				for _,specialFlag := range DefaultSpecialReplaceList {
+					if specialFlag == "" {
+						continue
 					}
-					oldStr := "[" + key + "]"
-					variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-					if err != nil {
-						return err
+					if strings.Contains(key, specialFlag) {
+						s := strings.Split(key, specialFlag)
+						if s[1] == "" {
+							return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+						}
+						oldStr := "[" + key + "]"
+						variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
+						if err != nil {
+							return err
+						}
+						newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 					}
-					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 				}
-				if strings.Contains(key, "!") {
-					s := strings.Split(key, "!")
-					if s[1] == "" {
-						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
-					}
-					oldStr := "[" + key + "]"
-					variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-					if err != nil {
-						return err
-					}
-					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
-				}
-				if strings.Contains(key, "&") {
-					s := strings.Split(key, "&")
-					if s[1] == "" {
-						return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
-					}
-					oldStr := "[" + key + "]"
-					variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-					if err != nil {
-						return err
-					}
-					newLine = strings.Replace(newLine, oldStr, variableValue, -1)
-				}
+
+				//if strings.Contains(key, "@") {
+				//	s := strings.Split(key, "@")
+				//	if s[1] == "" {
+				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+				//	}
+				//	oldStr := "[" + key + "]"
+				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
+				//	if err != nil {
+				//		return err
+				//	}
+				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
+				//}
+				//if strings.Contains(key, "!") {
+				//	s := strings.Split(key, "!")
+				//	if s[1] == "" {
+				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+				//	}
+				//	oldStr := "[" + key + "]"
+				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
+				//	if err != nil {
+				//		return err
+				//	}
+				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
+				//}
+				//if strings.Contains(key, "&") {
+				//	s := strings.Split(key, "&")
+				//	if s[1] == "" {
+				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+				//	}
+				//	oldStr := "[" + key + "]"
+				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
+				//	if err != nil {
+				//		return err
+				//	}
+				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
+				//}
 			}
 		}
 		_, err = f.WriteString(newLine + "\n")
