@@ -3,7 +3,7 @@ FROM  webankpartners/salt-master-base:v1
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
 ENV DEFAULT_S3_KEY=access_key
 ENV DEFAULT_S3_PASSWORD=secret_key
-ENV SALTSTACK_DEFAULT_SPECIAL_REPLACE
+ENV SALTSTACK_DEFAULT_SPECIAL_REPLACE=@
 
 RUN export LOG_PATH=$APP_HOME/logs \
     && mkdir -p $APP_HOME $LOG_PATH
