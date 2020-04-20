@@ -168,7 +168,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
 		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 	} else {
-		output.NewS3PkgPath = input.VariableFilePath
+		output.NewS3PkgPath = input.EndPoint
 		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 	}
 
