@@ -27,7 +27,7 @@
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_SRC" scopeType="global" defaultValue="http://10.128.202.3:9001/wecube-agent/apache-tomcat-7.0.103.tar.gz"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_PATH" scopeType="global" defaultValue="/nemo/"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_UNPACK" scopeType="plugins" defaultValue="true"/>
-                <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#,!,&"/>
+                <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue=""/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
