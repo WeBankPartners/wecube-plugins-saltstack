@@ -116,10 +116,10 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 	logrus.Infof("action do with parameters = %v", actionParam)
 	outputs, err := action.Do(actionParam)
 	if err != nil {
-		return &pluginResponse, err
+		logrus.Infof("action response error --> %v ", err)
 	}
 
 	pluginResponse.Results = outputs
 
-	return &pluginResponse, nil
+	return &pluginResponse, err
 }
