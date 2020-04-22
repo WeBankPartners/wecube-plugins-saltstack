@@ -138,6 +138,8 @@
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -274,6 +276,8 @@
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -593,6 +597,8 @@
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -766,6 +772,8 @@
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>

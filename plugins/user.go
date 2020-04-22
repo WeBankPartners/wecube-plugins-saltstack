@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
@@ -45,6 +46,8 @@ type AddUserInput struct {
 	UserGroup string `json:"userGroup,omitempty"`
 	GroupId   string `json:"groupId,omitempty"`
 	HomeDir   string `json:"homeDir,omitempty"`
+	OwnerDir   string `json:"ownerDir,omitempty"`
+	RwFile   string `json:"rwFile,omitempty"`
 }
 
 type AddUserOutputs struct {
@@ -124,6 +127,18 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		}
 		if input.HomeDir != "" {
 			execArg += " --home " + input.HomeDir
+		}
+		if input.OwnerDir != "" {
+			input.OwnerDir = strings.Replace(input.OwnerDir, "[", "", -1)
+			input.OwnerDir = strings.Replace(input.OwnerDir, "]", "", -1)
+			input.OwnerDir = strings.Replace(input.OwnerDir, "&", "", -1)
+			execArg += " --makeDir " + input.OwnerDir
+		}
+		if input.RwFile != "" {
+			input.RwFile = strings.Replace(input.RwFile, "[", "", -1)
+			input.RwFile = strings.Replace(input.RwFile, "]", "", -1)
+			input.RwFile = strings.Replace(input.RwFile, "&", "", -1)
+			execArg += " --rwFile " + input.RwFile
 		}
 
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
