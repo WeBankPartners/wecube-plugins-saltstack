@@ -287,11 +287,11 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	}
 
 	//need to decode
-	afterDecode,err := AesDePassword(values[1], seed, values[0])
+	afterDecode, err := AesDePassword(values[1], seed, values[0])
 	if err != nil {
 		logrus.Errorf("AesDePassword meet error=%v", err)
 	}
-	return key,afterDecode,err
+	return key, afterDecode, err
 
 	// pass code
 	//guid := values[1]
@@ -489,7 +489,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				}
 				key = key[0 : len(key)-1]
 
-				for _,specialFlag := range DefaultSpecialReplaceList {
+				for _, specialFlag := range DefaultSpecialReplaceList {
 					if specialFlag == "" {
 						continue
 					}
@@ -567,10 +567,10 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	}
 
 	if suffix == ".zip" {
-		sh = "cd " + decompressDirName + " && " + "zip -r " + UPLOADS3FILE_DIR + newPackageName + " *"
+		sh = "cd " + decompressDirName + " && " + "zip -r " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
 	}
 	if suffix == ".tgz" || suffix == ".tar.gz" {
-		sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " *"
+		sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
 	}
 	fmt.Printf("compressDir sh=%s\n", sh)
 
