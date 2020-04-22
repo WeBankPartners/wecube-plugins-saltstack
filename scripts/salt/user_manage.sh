@@ -61,6 +61,14 @@ parse_args(){
             export USER_HOME=$2
             shift
         ;;
+        --makeDir)
+            export MAKE_DIR=$2
+            shift
+        ;;
+        --rwFile)
+            export RW_FILE=$2
+            shift
+        ;;
         *)
             # unknown option
             log "unkonw option [$key]"
@@ -116,14 +124,32 @@ addUser(){
             fi
         fi 
 
-        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group 
-    else
-	    exit 0
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group
     fi   
 }
 
 removeUser(){
     userdel -rf  $USER_NAME
+}
+
+addDir(){
+    if [[ ! -z $MAKE_DIR ]]; then
+        arr=(${MAKE_DIR//,/ })
+        for i in ${arr[@]}
+        do
+            mkdir -p $i && chown -R $USER_NAME $i
+        done
+    fi
+}
+
+authorizeFile(){
+    if [[ ! -z $RW_FILE ]]; then
+        arr=(${RW_FILE//,/ })
+        for i in ${arr[@]}
+        do
+            chmod 666 $i
+        done
+    fi
 }
 
 
@@ -132,6 +158,8 @@ check_args "$@"
 
 if [[ $ACTION = "add" ]];then
     addUser
+    addDir
+    authorizeFile
 elif [[ $ACTION = "remove" ]];then
     removeUser
 else 
