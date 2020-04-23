@@ -493,10 +493,13 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 					if specialFlag == "" {
 						continue
 					}
-					if strings.Contains(key, specialFlag) {
+					if strings.HasPrefix(key, specialFlag) {
 						s := strings.Split(key, specialFlag)
 						if s[1] == "" {
 							return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+						}
+						if strings.Contains(s[1], " ") {
+							continue
 						}
 						oldStr := "[" + key + "]"
 						variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
