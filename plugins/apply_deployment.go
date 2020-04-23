@@ -48,6 +48,8 @@ type ApplyNewDeploymentInput struct {
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 	Password             string `json:"password,omitempty"`
+	OwnerDir   string `json:"ownerDir,omitempty"`
+	RwFile   string `json:"rwFile,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -125,6 +127,8 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 				Target:   input.Target,
 				UserName: input.UserName,
 				Password: input.Password,
+				OwnerDir: input.OwnerDir,
+				RwFile:   input.RwFile,
 			},
 		},
 	}
