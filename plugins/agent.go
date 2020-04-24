@@ -261,6 +261,7 @@ func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
 	agents, _ := input.(AgentUninstallInputs)
 	outputs := AgentUninstallOutputs{}
 	var finalErr error
+	var hosts []string
 	for _, agent := range agents.Inputs {
 		agentUninstallOutput, err := action.agentUninstall(&agent)
 		if err != nil {
@@ -270,7 +271,9 @@ func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
 		// salt-key -d
 		removeSaltKeys(agent.Host)
 		outputs.Outputs = append(outputs.Outputs, agentUninstallOutput)
+		hosts = append(hosts, agent.Host)
 	}
+	go SendHostDelete(hosts)
 
 	logrus.Infof("all agents = %v have been uninstalled", agents)
 	return &outputs, finalErr
