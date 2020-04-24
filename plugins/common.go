@@ -437,6 +437,7 @@ func SyncClusterList()  {
 	for _,v := range coreResult.Data {
 		if v != MasterHostIp {
 			tmpClusterIps += fmt.Sprintf("  - %s\n", v)
+			ClusterList = append(ClusterList, v)
 		}
 	}
 	minionByte,err := ioutil.ReadFile("/srv/salt/minions/conf/minion")
