@@ -22,6 +22,8 @@ func init() {
 
 func main() {
 	plugins.InitEnvParam()
+	plugins.SyncClusterList()
+	go plugins.StartClusterServer()
 	logrus.Infof("Start WeCube-Plungins Deploy Service at port %v ... ", PLUGIN_SERVICE_PORT)
 
 	if err := http.ListenAndServe(":"+PLUGIN_SERVICE_PORT, nil); err != nil {
