@@ -34,6 +34,9 @@ var (
 	DefaultS3Key = "access_key"
 	DefaultS3Password = "secret_key"
 	DefaultSpecialReplaceList []string
+	ClusterList []string
+	MasterHostIp  string
+	CoreUrl  string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -378,5 +381,22 @@ func InitEnvParam()  {
 	}else{
 		DefaultSpecialReplaceList = []string{"@","#","!","&"}
 		logrus.Infof("variable replace without param,use default @,#,!,&  \n")
+	}
+	tmpHostIp := os.Getenv("minion_master_ip")
+	if tmpHostIp != "" {
+		logrus.Infof("master host ip: %s  \n", tmpHostIp)
+		MasterHostIp = tmpHostIp
+	}else{
+		logrus.Infof("master host ip not found,default null!!  \n")
+	}
+	tmpCoreUrl := os.Getenv("CORE_ADDR")
+	if tmpCoreUrl == "" {
+		tmpCoreUrl = os.Getenv("GATEWAY_URL")
+	}
+	if tmpCoreUrl != "" {
+		logrus.Infof("core url : %s  \n", tmpCoreUrl)
+		CoreUrl = tmpCoreUrl
+	}else{
+		logrus.Infof("core url is empty!!  \n")
 	}
 }
