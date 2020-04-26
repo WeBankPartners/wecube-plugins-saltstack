@@ -193,15 +193,19 @@ func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
 				}
 				param = param[0 : len(param)-1]
 
-				for _,specialFlag := range DefaultSpecialReplaceList {
+				for _, specialFlag := range DefaultSpecialReplaceList {
 					if specialFlag == "" {
 						continue
 					}
-					if strings.Contains(param, specialFlag) {
+					if strings.HasPrefix(param, specialFlag) {
 						s := strings.Split(param, specialFlag)
 						if s[1] == "" {
 							return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
 						}
+						if strings.Contains(s[1], " ") {
+							continue
+						}
+
 						configKey.Line = n
 						configKey.Key = s[1]
 						variableList = append(variableList, configKey)
