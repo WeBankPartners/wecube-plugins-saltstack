@@ -501,6 +501,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						if strings.Contains(s[1], " ") {
 							continue
 						}
+						// fmt.Println("key: ", key)
 						oldStr := "[" + key + "]"
 						variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
 						if err != nil {

@@ -15,10 +15,20 @@ func TestReplaceFileVar(t *testing.T) {
 		"SecretKey": "my_secret_key",
 		"Allow":     "yes",
 	}
-	filepath := "/Users/tylertang/Desktop/config2.conf"
-	err := replaceFileVar(keyMap, filepath, "seed", "private_key", "public_key", "{cpher_A}")
+
+	filepath := "/Users/tylertang/Desktop/go_test/config2.conf"
+
+	keyInfo, err := GetVariable(filepath)
 	if err != nil {
-		fmt.Printf("err=%v\n", err)
+		fmt.Printf("GetVariable err=%v\n", err)
 	}
+
+	fmt.Println("keyINfo", keyInfo)
+
+	err = replaceFileVar(keyMap, filepath, "seed", "private_key", "public_key", "{cpher_A}")
+	if err != nil {
+		fmt.Printf("replaceFileVar err=%v\n", err)
+	}
+
 	fmt.Println("done")
 }
