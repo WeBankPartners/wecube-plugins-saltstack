@@ -46,8 +46,8 @@ type AddUserInput struct {
 	UserGroup string `json:"userGroup,omitempty"`
 	GroupId   string `json:"groupId,omitempty"`
 	HomeDir   string `json:"homeDir,omitempty"`
-	OwnerDir   string `json:"ownerDir,omitempty"`
-	RwFile   string `json:"rwFile,omitempty"`
+	OwnerDir  string `json:"ownerDir,omitempty"`
+	RwFile    string `json:"rwFile,omitempty"`
 }
 
 type AddUserOutputs struct {

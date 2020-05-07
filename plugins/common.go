@@ -28,17 +28,16 @@ const (
 	RESULT_CODE_ERROR   = "1"
 	PASSWORD_LEN        = 12
 	DEFALT_CIPHER       = "CIPHER_A"
-	ASCII_CODE_LF =10
-	
+	ASCII_CODE_LF       = 10
 )
 
 var (
-	DefaultS3Key = "access_key"
-	DefaultS3Password = "secret_key"
+	DefaultS3Key              = "access_key"
+	DefaultS3Password         = "secret_key"
 	DefaultSpecialReplaceList []string
-	ClusterList []string
-	MasterHostIp  string
-	CoreUrl  string
+	ClusterList               []string
+	MasterHostIp              string
+	CoreUrl                   string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -292,8 +291,8 @@ func readStringFromFile(fileName string) (string, error) {
 		return "", err
 	}
 	if f[len(f)-1] == ASCII_CODE_LF {
-            f=f[:len(f)-1]
-        }
+		f = f[:len(f)-1]
+	}
 	return string(f), nil
 }
 
@@ -369,7 +368,7 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error 
 	return nil
 }
 
-func InitEnvParam()  {
+func InitEnvParam() {
 	tmpKey := os.Getenv("DEFAULT_S3_KEY")
 	if tmpKey != "" {
 		DefaultS3Key = tmpKey
@@ -383,15 +382,15 @@ func InitEnvParam()  {
 	if tmpSpecialReplace != "" {
 		logrus.Infof("variable replace  --> special flag: %s  \n", tmpSpecialReplace)
 		DefaultSpecialReplaceList = strings.Split(tmpSpecialReplace, ",")
-	}else{
-		DefaultSpecialReplaceList = []string{"@","#","!","&"}
+	} else {
+		DefaultSpecialReplaceList = []string{"@", "#", "!", "&"}
 		logrus.Infof("variable replace without param,use default @,#,!,&  \n")
 	}
 	tmpHostIp := os.Getenv("minion_master_ip")
 	if tmpHostIp != "" {
 		logrus.Infof("master host ip: %s  \n", tmpHostIp)
 		MasterHostIp = tmpHostIp
-	}else{
+	} else {
 		logrus.Infof("master host ip not found,default null!!  \n")
 	}
 	tmpCoreUrl := os.Getenv("CORE_ADDR")
@@ -401,7 +400,7 @@ func InitEnvParam()  {
 	if tmpCoreUrl != "" {
 		logrus.Infof("core url : %s  \n", tmpCoreUrl)
 		CoreUrl = tmpCoreUrl
-	}else{
+	} else {
 		logrus.Infof("core url is empty!!  \n")
 	}
 }
