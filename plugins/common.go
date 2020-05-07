@@ -28,6 +28,8 @@ const (
 	RESULT_CODE_ERROR   = "1"
 	PASSWORD_LEN        = 12
 	DEFALT_CIPHER       = "CIPHER_A"
+	ASCII_CODE_LF =10
+	
 )
 
 var (
@@ -289,6 +291,9 @@ func readStringFromFile(fileName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if f[len(f)-1] == ASCII_CODE_LF {
+            f=f[:len(f)-1]
+        }
 	return string(f), nil
 }
 
