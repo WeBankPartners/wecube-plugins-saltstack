@@ -440,6 +440,9 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 		return "", errors.New("getVariableValue privateKey is empty")
 	}
 
+	publicKey = replaceLF(publicKey)
+	privateKey = replaceLF(privateKey)
+
 	return encrpytSenstiveData(value, publicKey, privateKey)
 }
 

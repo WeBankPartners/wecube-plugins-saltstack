@@ -53,6 +53,16 @@ type Result struct {
 	Message string `json:"errorMessage"`
 }
 
+func replaceLF(str string) string {
+	if str == "" {
+		return str
+	}
+	buf := []byte(str)
+	ns := bytes.Replace(buf, []byte{92, 110}, []byte{ASCII_CODE_LF}, -1)
+
+	return string(ns)
+}
+
 func Md5Encode(rawData string) string {
 	data := []byte(rawData)
 	return fmt.Sprintf("%x", md5.Sum(data))
