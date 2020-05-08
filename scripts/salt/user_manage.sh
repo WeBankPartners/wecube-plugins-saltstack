@@ -137,7 +137,7 @@ addDir(){
         arr=(${MAKE_DIR//,/ })
         for i in ${arr[@]}
         do
-            mkdir -p $i && chown -R $USER_NAME $i
+            mkdir -p $i && chmod 777 $i
         done
     fi
 }
