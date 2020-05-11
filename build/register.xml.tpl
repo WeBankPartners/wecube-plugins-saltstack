@@ -20,11 +20,11 @@
                 <systemParameter name="SCRIPT_END_POINT_TYPE_USER_PARAM" scopeType="global" defaultValue="USER_PARAM"/>
                 <systemParameter name="ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!"/>
                 <systemParameter name="SYSTEM_PRIVATE_KEY" scopeType="global" defaultValue=""/>
-                <systemParameter name="SALTSTACK_SERVER_URL" scopeType="global" defaultValue="http://10.128.202.3:20002"/>
+                <systemParameter name="SALTSTACK_SERVER_URL" scopeType="global" defaultValue="http://127.0.0.1:20002"/>
         	    <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
                 <systemParameter name="SALTSTACK_AGENT_PORT" scopeType="global" defaultValue="22"/>
                 <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="PA888888"/>
-                <systemParameter name="SALTSTACK_HOST_TOMCAT_SRC" scopeType="global" defaultValue="http://10.128.202.3:9001/wecube-agent/apache-tomcat-7.0.103.tar.gz"/>
+                <systemParameter name="SALTSTACK_HOST_TOMCAT_SRC" scopeType="global" defaultValue="http://127.0.0.1:9001/wecube-agent/apache-tomcat-7.0.103.tar.gz"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_PATH" scopeType="global" defaultValue="/nemo/"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_UNPACK" scopeType="plugins" defaultValue="true"/>
                 <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue=""/>
