@@ -211,34 +211,6 @@ func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
 						variableList = append(variableList, configKey)
 					}
 				}
-
-				//if strings.Contains(param, "@") {
-				//	s := strings.Split(param, "@")
-				//	if s[1] == "" {
-				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-				//	}
-				//	configKey.Line = n
-				//	configKey.Key = s[1]
-				//	variableList = append(variableList, configKey)
-				//}
-				//if strings.Contains(param, "!") {
-				//	s := strings.Split(param, "!")
-				//	if s[1] == "" {
-				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-				//	}
-				//	configKey.Line = n
-				//	configKey.Key = s[1]
-				//	variableList = append(variableList, configKey)
-				//}
-				//if strings.Contains(param, "&") {
-				//	s := strings.Split(param, "&")
-				//	if s[1] == "" {
-				//		return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
-				//	}
-				//	configKey.Line = n
-				//	configKey.Key = s[1]
-				//	variableList = append(variableList, configKey)
-				//}
 			}
 		}
 		lineNumber++

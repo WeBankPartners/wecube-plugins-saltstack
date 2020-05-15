@@ -63,6 +63,7 @@ type VariableReplaceInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+	FileReplacePrefix    string `json:"fileReplacePrefix,omitempty"`
 }
 
 //VariableReplaceOutputs .
@@ -181,7 +182,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 			logrus.Infof("confFilePath=%v", confFilePath)
 
-			if err = ReplaceFileVar(confFilePath, input); err != nil {
+			if err = ReplaceFileVar(confFilePath, input, decompressDirName); err != nil {
 				os.RemoveAll(decompressDirName)
 				return output, err
 			}
@@ -229,7 +230,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 }
 
 //variablelist,seed,publicKey,privateKey string
-func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
+func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirName string) error {
 	variablelist := input.VariableList
 	seed := input.Seed
 	publicKey := input.AppPublicKey
@@ -267,7 +268,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput) error {
 		return err
 	}
 
-	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix)
+	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix, input.FileReplacePrefix, decompressDirName)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
@@ -282,7 +283,7 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	if len(values) == 1 {
 		return key, values[0], nil
 	}
-	if len(values) != 2 {
+	if len(values) != 2 || values[1] == "" {
 		return key, "", fmt.Errorf("getRawKeyValue key=%v,value=%v is not right formt", key, value)
 	}
 
@@ -446,7 +447,7 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	return encrpytSenstiveData(value, publicKey, privateKey)
 }
 
-func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix string) error {
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix, fileReplacePrefix, decompressDirName string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		logrus.Errorf("open file fail: %s", err)
@@ -471,7 +472,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 		return err
 	}
 	defer f.Close()
-
+	fileReplaceMap := make(map[string]string)
 	br := bufio.NewReader(bf)
 	for {
 		line, _, err := br.ReadLine()
@@ -510,46 +511,13 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						if err != nil {
 							return err
 						}
-						newLine = strings.Replace(newLine, oldStr, variableValue, -1)
+						if specialFlag == fileReplacePrefix {
+							fileReplaceMap[key[len(specialFlag):]] = variableValue
+						}else {
+							newLine = strings.Replace(newLine, oldStr, variableValue, -1)
+						}
 					}
 				}
-
-				//if strings.Contains(key, "@") {
-				//	s := strings.Split(key, "@")
-				//	if s[1] == "" {
-				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
-				//	}
-				//	oldStr := "[" + key + "]"
-				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-				//	if err != nil {
-				//		return err
-				//	}
-				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
-				//}
-				//if strings.Contains(key, "!") {
-				//	s := strings.Split(key, "!")
-				//	if s[1] == "" {
-				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
-				//	}
-				//	oldStr := "[" + key + "]"
-				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-				//	if err != nil {
-				//		return err
-				//	}
-				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
-				//}
-				//if strings.Contains(key, "&") {
-				//	s := strings.Split(key, "&")
-				//	if s[1] == "" {
-				//		return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
-				//	}
-				//	oldStr := "[" + key + "]"
-				//	variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
-				//	if err != nil {
-				//		return err
-				//	}
-				//	newLine = strings.Replace(newLine, oldStr, variableValue, -1)
-				//}
 			}
 		}
 		_, err = f.WriteString(newLine + "\n")
@@ -562,6 +530,28 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	if err != nil {
 		logrus.Errorf("file rename Error: %s", err)
 		return err
+	}
+	if len(fileReplaceMap) > 0 {
+		for k,v := range fileReplaceMap {
+			if k == "" || v == "" {
+				continue
+			}
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password)
+			if err != nil {
+				logrus.Errorf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err)
+				return err
+			}
+			moveCmd := fmt.Sprintf("mv -f %s %s/%s", sourceFile, decompressDirName, k)
+			if k[:1] == "/" {
+				moveCmd = fmt.Sprintf("mv -f %s %s%s", sourceFile, decompressDirName, k)
+			}
+			logrus.Infof("File replace ,source: %s -> dist: %s command: %s \n", sourceFile, k, moveCmd)
+			err = exec.Command("/bin/bash", "-c", moveCmd).Run()
+			if err != nil {
+				logrus.Errorf("File replace fail,command: %s, error: %v", moveCmd, err)
+				return err
+			}
+		}
 	}
 
 	return nil

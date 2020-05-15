@@ -19,6 +19,7 @@
                 <systemParameter name="SCRIPT_END_POINT_TYPE_S3" scopeType="global" defaultValue="S3"/>
                 <systemParameter name="SCRIPT_END_POINT_TYPE_USER_PARAM" scopeType="global" defaultValue="USER_PARAM"/>
                 <systemParameter name="ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!"/>
+                <systemParameter name="FILE_VARIBLE_PREFIX" scopeType="global" defaultValue="^"/>
                 <systemParameter name="SYSTEM_PRIVATE_KEY" scopeType="global" defaultValue=""/>
                 <systemParameter name="SALTSTACK_SERVER_URL" scopeType="global" defaultValue="http://127.0.0.1:20002"/>
         	    <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
@@ -27,7 +28,7 @@
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_SRC" scopeType="global" defaultValue="http://127.0.0.1:9001/wecube-agent/apache-tomcat-7.0.103.tar.gz"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_PATH" scopeType="global" defaultValue="/nemo/"/>
                 <systemParameter name="SALTSTACK_HOST_TOMCAT_UNPACK" scopeType="plugins" defaultValue="true"/>
-                <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue=""/>
+                <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#,&,!,^"/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
@@ -79,6 +80,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
@@ -138,7 +140,7 @@
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
-                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
@@ -276,12 +278,14 @@
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
-                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                             <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                         </outputParameters>
@@ -305,6 +309,8 @@
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                         </outputParameters>
@@ -366,6 +372,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url">endpoint</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.variable_values">variableList</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
@@ -384,6 +391,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.deploy_package>wecmdb:deploy_package.deploy_package_url">endpoint</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.variable_values">variableList</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
@@ -404,6 +412,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_package>wecmdb:deploy_package.deploy_package_url">endpoint</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.variable_values">variableList</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
@@ -422,6 +431,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_package>wecmdb:deploy_package.deploy_package_url">endpoint</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.variable_values">variableList</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
@@ -597,7 +607,7 @@
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
-                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
@@ -772,12 +782,14 @@
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                             <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.unit>wecmdb:unit.public_key">appPublicKey</parameter>
                             <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
-                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">ownerDir</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
                             <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.deploy_user_password">password</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                         </outputParameters>
@@ -801,6 +813,8 @@
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                             <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                         </outputParameters>
