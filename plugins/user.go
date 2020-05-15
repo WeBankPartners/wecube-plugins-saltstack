@@ -46,7 +46,7 @@ type AddUserInput struct {
 	UserGroup string `json:"userGroup,omitempty"`
 	GroupId   string `json:"groupId,omitempty"`
 	HomeDir   string `json:"homeDir,omitempty"`
-	OwnerDir  string `json:"ownerDir,omitempty"`
+	RwDir  string `json:"rwDir,omitempty"`
 	RwFile    string `json:"rwFile,omitempty"`
 }
 
@@ -128,11 +128,11 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		if input.HomeDir != "" {
 			execArg += " --home " + input.HomeDir
 		}
-		if input.OwnerDir != "" {
-			input.OwnerDir = strings.Replace(input.OwnerDir, "[", "", -1)
-			input.OwnerDir = strings.Replace(input.OwnerDir, "]", "", -1)
-			input.OwnerDir = strings.Replace(input.OwnerDir, "&", "", -1)
-			execArg += " --makeDir " + input.OwnerDir
+		if input.RwDir != "" {
+			input.RwDir = strings.Replace(input.RwDir, "[", "", -1)
+			input.RwDir = strings.Replace(input.RwDir, "]", "", -1)
+			input.RwDir = strings.Replace(input.RwDir, "&", "", -1)
+			execArg += " --makeDir " + input.RwDir
 		}
 		if input.RwFile != "" {
 			input.RwFile = strings.Replace(input.RwFile, "[", "", -1)
