@@ -147,7 +147,7 @@ authorizeFile(){
         arr=(${RW_FILE//,/ })
         for i in ${arr[@]}
         do
-            chmod 666 $i
+            chmod 777 $i
         done
     fi
 }
