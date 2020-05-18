@@ -58,7 +58,7 @@ func init() {
 	registerPlugin("log", new(LogPlugin))
 	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
 	registerPlugin("web-console", new(WebConsolePlugin))
-
+	registerPlugin("password", new(PasswordPlugin))
 }
 
 type PluginRequest struct {

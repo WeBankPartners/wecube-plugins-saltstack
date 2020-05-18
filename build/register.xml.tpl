@@ -330,7 +330,34 @@
                         </outputParameters>
                     </interface>
                 </plugin>
-
+                <plugin name="password" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                    <interface action="encode" path="/saltstack/v1/password/encode" filterRule="">
+                        <inputParameters>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        </inputParameters>
+                        <outputParameters>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                        </outputParameters>
+                    </interface>
+                     <interface action="decode" path="/saltstack/v1/password/decode" filterRule="">
+                        <inputParameters>
+                            <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                            <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        </inputParameters>
+                        <outputParameters>
+                            <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                            <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                        </outputParameters>
+                    </interface>
+                </plugin>
 
 
                  <!--最佳实践 -->
