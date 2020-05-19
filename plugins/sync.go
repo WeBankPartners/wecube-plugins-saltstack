@@ -43,11 +43,18 @@ func SyncClusterList() {
 		return
 	}
 	var tmpClusterIps string
+	var problemCluster bool
 	for _, v := range coreResult.Data {
 		if v != MasterHostIp {
-			tmpClusterIps += fmt.Sprintf("  - %s\n", v)
+			//tmpClusterIps += fmt.Sprintf("  - %s\n", v)
 			ClusterList = append(ClusterList, v)
+		}else{
+			problemCluster = true
 		}
+	}
+	if !problemCluster {
+		logrus.Errorf("sync cluster error,can not find masterIp:%s in cluster:%s ", MasterHostIp, ClusterList)
+		return
 	}
 	minionByte, err := ioutil.ReadFile("/srv/salt/minions/conf/minion")
 	if err != nil {
@@ -56,6 +63,17 @@ func SyncClusterList() {
 	}
 	sb := string(minionByte)
 	if strings.Contains(sb, MasterHostIp) {
+		for _,v := range ClusterList {
+			if v != MasterHostIp && v != "" {
+				if !strings.Contains(sb, v) {
+					tmpClusterIps += fmt.Sprintf("  - %s\n", v)
+				}
+			}
+		}
+		if tmpClusterIps == "" {
+			logrus.Infof("sync cluster abort with the right config ")
+			return
+		}
 		sb = strings.Replace(sb, MasterHostIp, fmt.Sprintf("%s\n%s", MasterHostIp, tmpClusterIps), -1)
 	} else {
 		logrus.Infof("read minion file,can not find master ip %s \n", MasterHostIp)
