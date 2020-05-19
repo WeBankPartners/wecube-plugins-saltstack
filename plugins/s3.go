@@ -91,6 +91,7 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	path := UPLOADS3FILE_DIR + Info[len(Info)-1]
 	_, err = os.Stat(path)
 	if err == nil {
+		logrus.Infof("os stat check path = %s return ", path)
 		return path, nil
 	}
 	err = fileReplace(endPoint, accessKey, secretKey)
@@ -104,11 +105,12 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	}
 	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get "
 	sh += " s3:/" + storagePath + " " + UPLOADS3FILE_DIR + Info[len(Info)-1]
-
+	logrus.Infof("s3 cmd -------> %s", sh)
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
+		os.Remove(path)
 		return "", fmt.Errorf("updown file error: " + fmt.Sprint(err) + ": " + stderr.String())
 	}
 	logrus.Infof("result=%v", stderr.String())
