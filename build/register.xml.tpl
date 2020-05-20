@@ -51,6 +51,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -370,6 +371,7 @@
                             <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.intranet_ip>wecmdb:ip_address.code">host</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.login_port">port</parameter>
                             <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.user_name">user</parameter>
+                            <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
                         </inputParameters>
                         <outputParameters>
                             <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
