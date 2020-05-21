@@ -54,6 +54,7 @@ func SyncClusterList() {
 	}
 	if !problemCluster {
 		logrus.Errorf("sync cluster error,can not find masterIp:%s in cluster:%s ", MasterHostIp, ClusterList)
+		ClusterList = []string{}
 		return
 	}
 	minionByte, err := ioutil.ReadFile("/srv/salt/minions/conf/minion")
