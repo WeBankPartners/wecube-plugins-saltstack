@@ -6,6 +6,8 @@ import (
 	"os/exec"
 
 	"github.com/sirupsen/logrus"
+	"net"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 var AgentActions = make(map[string]Action)
@@ -39,6 +41,7 @@ type AgentInstallInput struct {
 	Host     string `json:"host,omitempty"`
 	Port     string `json:"port,omitempty"`
 	User     string `json:"user,omitempty"`
+	Command  string `json:"command,omitempty"`
 }
 
 type AgentInstallOutputs struct {
@@ -131,6 +134,14 @@ func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output
 	}
 	if input.User == "" {
 		input.User = "root"
+	}
+
+	if input.Command != "" {
+		err = execRemote(input.User, password, input.Host, input.Command)
+		if err != nil {
+			logrus.Errorf("To host: %s Exec command: %s error %v ", input.Host, input.Command, err)
+			return output, fmt.Errorf("To host: %s Exec command: %s error %v ", input.Host, input.Command, err)
+		}
 	}
 
 	installMinionArgs := []string{
@@ -277,4 +288,36 @@ func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
 
 	logrus.Infof("all agents = %v have been uninstalled", agents)
 	return &outputs, finalErr
+}
+
+func execRemote(user,password,host,command string) error {
+	var(
+		err error
+		client *gossh.Client
+		session *gossh.Session
+	)
+	auth := make([]gossh.AuthMethod, 0)
+	auth = append(auth, gossh.Password(password))
+	clientConfig := &gossh.ClientConfig{
+		User: user,
+		Auth: auth,
+		HostKeyCallback: func(hostname string, remote net.Addr, key gossh.PublicKey) error {
+			return nil
+		},
+	}
+	if client,err = gossh.Dial("tcp", fmt.Sprintf("%s:22", host), clientConfig); err != nil {
+		fmt.Printf("ssh dial error %v \n", err)
+		return err
+	}
+	session,err = client.NewSession()
+	if err != nil {
+		fmt.Printf("ssh client new session error %v \n", err)
+		return err
+	}
+	err = session.Run(command)
+	if err != nil {
+		fmt.Printf("ssh run command error %v \n", err)
+	}
+	session.Close()
+	return err
 }
