@@ -108,37 +108,37 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		output.Result.Code = RESULT_CODE_SUCCESS
 
 		password := ""
-		execArg := fmt.Sprintf("--action add --user %s", input.UserName)
+		execArg := fmt.Sprintf("--action add --user '%s'", input.UserName)
 		if input.Password != "" {
 			password = input.Password
 		} else {
 			password = createRandomPassword()
 		}
-		execArg += " --password " + password
+		execArg += " --password '" + password + "'"
 
 		if input.UserGroup != "" {
-			execArg += " --group " + input.UserGroup
+			execArg += " --group '" + input.UserGroup + "'"
 		}
 		if input.UserId != "" {
-			execArg += " --userId " + input.UserId
+			execArg += " --userId '" + input.UserId + "'"
 		}
 		if input.GroupId != "" {
-			execArg += " --groupId " + input.GroupId
+			execArg += " --groupId '" + input.GroupId + "'"
 		}
 		if input.HomeDir != "" {
-			execArg += " --home " + input.HomeDir
+			execArg += " --home '" + input.HomeDir + "'"
 		}
 		if input.RwDir != "" {
 			input.RwDir = strings.Replace(input.RwDir, "[", "", -1)
 			input.RwDir = strings.Replace(input.RwDir, "]", "", -1)
 			input.RwDir = strings.Replace(input.RwDir, "&", "", -1)
-			execArg += " --makeDir " + input.RwDir
+			execArg += " --makeDir '" + input.RwDir + "'"
 		}
 		if input.RwFile != "" {
 			input.RwFile = strings.Replace(input.RwFile, "[", "", -1)
 			input.RwFile = strings.Replace(input.RwFile, "]", "", -1)
 			input.RwFile = strings.Replace(input.RwFile, "&", "", -1)
-			execArg += " --rwFile " + input.RwFile
+			execArg += " --rwFile '" + input.RwFile + "'"
 		}
 
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
