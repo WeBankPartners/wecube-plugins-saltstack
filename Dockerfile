@@ -1,4 +1,4 @@
-FROM  ccr.ccs.tencentyun.com/webankpartners/wecube-saltstack:v1.3
+FROM  ccr.ccs.tencentyun.com/webankpartners/wecube-saltstack:v1.4
 
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
 ENV DEFAULT_S3_KEY=access_key
