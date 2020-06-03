@@ -5,7 +5,7 @@ ENV DEFAULT_S3_KEY=access_key
 ENV DEFAULT_S3_PASSWORD=secret_key
 
 RUN export LOG_PATH=$APP_HOME/logs \
-    && mkdir -p $APP_HOME $LOG_PATH
+    && mkdir -p $APP_HOME $LOG_PATH /run/httpd && chown -R root:apache /run/httpd
 
 COPY static  $APP_HOME/static
 
