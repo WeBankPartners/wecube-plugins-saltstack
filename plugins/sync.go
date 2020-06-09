@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"os/exec"
 )
 
 const TmpCoreToken = `Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJTWVNfU0FMVFNUQUNLIiwiaWF0IjoxNTkwMTE4MjYxLCJ0eXBlIjoiYWNjZXNzVG9rZW4iLCJjbGllbnRUeXBlIjoiU1VCX1NZU1RFTSIsImV4cCI6MTc0NTYzODI2MSwiYXV0aG9yaXR5IjoiW1NVQl9TWVNURU1dIn0.N2sD9F4TKh1yaatRfr-sqRqlP7fiSqZ1znmr7AtQanr2ZmbldZt2ICeuUnIUcpGGK3YZKKqOPic2JNeECblgnw`
@@ -19,6 +20,12 @@ type coreHostDto struct {
 }
 
 func SyncClusterList() {
+	defer func() {
+		cpErr := exec.Command("bash","-c", "/bin/cp -f /srv/salt/minions/conf/minion /var/www/html/salt-minion/conf/").Run()
+		if cpErr != nil {
+			logrus.Errorf("copy /srv/salt/minions/conf/minion /var/www/html/salt-minion/conf/minion error %v \n ", cpErr)
+		}
+	}()
 	if CoreUrl == "" || MasterHostIp == "" {
 		logrus.Infof("sync cluster quit,core url or master ip is empty \n")
 		return
