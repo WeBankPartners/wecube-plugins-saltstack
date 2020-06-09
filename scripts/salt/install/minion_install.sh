@@ -22,9 +22,16 @@ curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz /tmp/salt/m
 cd /tmp/salt/
 tar zxf minion_install_pkg.tar.gz
 cd minion_install_pkg && ./install_minion.sh
-curl -O http://$master_ip:9099/salt-minion/conf/minion /tmp/salt/minion
+cd /tmp/salt/
+curl -O http://$master_ip:9099/salt-minion/conf/minion minion
 sed -i "s~{{ minion_id }}~$minion_ip~g" /tmp/salt/minion
 mv /tmp/salt/minion /etc/salt/minion
 systemctl enable salt-minion
-systemctl start salt-minion
+psout=`ps aux|grep salt-minion|grep -v 'grep'`
+if [ -n "$psout" ]
+then
+  systemctl restart salt-minion
+else
+  systemctl start salt-minion
+fi
 echo "install salt-minion done"
