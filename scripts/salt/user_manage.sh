@@ -128,6 +128,10 @@ addUser(){
     fi   
 }
 
+changePassword(){
+    echo $USER_PWD | passwd --stdin $USER_NAME
+}
+
 removeUser(){
     userdel -rf  $USER_NAME
 }
@@ -162,6 +166,8 @@ if [[ $ACTION = "add" ]];then
     authorizeFile
 elif [[ $ACTION = "remove" ]];then
     removeUser
+elif [[ $ACTION = "change_password" ]];then
+    changePassword
 else 
     log "param error:unknown action($ACTION)"
     printHelp

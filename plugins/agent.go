@@ -13,10 +13,10 @@ import (
 var AgentActions = make(map[string]Action)
 
 func init() {
-	AgentActions["install"] = new(AgentInstallAction)
-	AgentActions["uninstall"] = new(AgentUninstallAction)
-	AgentActions["install_new"] = new(MinionInstallAction)
-	AgentActions["uninstall_new"] = new(MinionUninstallAction)
+	AgentActions["install_old"] = new(AgentInstallAction)
+	AgentActions["uninstall_old"] = new(AgentUninstallAction)
+	AgentActions["install"] = new(MinionInstallAction)
+	AgentActions["uninstall"] = new(MinionUninstallAction)
 }
 
 type AgentPlugin struct {
