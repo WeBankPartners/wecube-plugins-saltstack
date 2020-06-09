@@ -8,7 +8,7 @@ RUN export LOG_PATH=$APP_HOME/logs \
     && mkdir -p $APP_HOME $LOG_PATH /run/httpd && chown -R root:apache /run/httpd
 RUN mkdir -p /var/www/html/salt-minion && mkdir -p /var/www/html/salt-minion/conf
 COPY scripts/salt/install/* /var/www/html/salt-minion/
-RUN chmod +x /var/www/html/salt-minion/minion_install.sh
+RUN chmod +x /var/www/html/salt-minion/minion_install.sh && chmod +x /var/www/html/salt-minion/minion_uninstall.sh
 
 COPY static  $APP_HOME/static
 
