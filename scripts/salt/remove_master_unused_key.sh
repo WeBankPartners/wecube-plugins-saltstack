@@ -12,7 +12,4 @@ do
    salt-key -d $host -y
 done
 
-exit 0 
-
-
-
+exit 0
