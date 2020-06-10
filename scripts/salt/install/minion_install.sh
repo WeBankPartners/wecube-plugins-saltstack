@@ -18,12 +18,12 @@ else
 fi
 
 mkdir -p /tmp/salt
-curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz /tmp/salt/minion_install_pkg.tar.gz
 cd /tmp/salt/
+curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz
 tar zxf minion_install_pkg.tar.gz
 cd minion_install_pkg && ./install_minion.sh
 cd /tmp/salt/
-curl -O http://$master_ip:9099/salt-minion/conf/minion minion
+curl -O http://$master_ip:9099/salt-minion/conf/minion
 sed -i "s~{{ minion_id }}~$minion_ip~g" /tmp/salt/minion
 mv /tmp/salt/minion /etc/salt/minion
 systemctl enable salt-minion

@@ -159,6 +159,21 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
             </interface>
+            <interface action="delete" path="/saltstack/v1/host-user/password" filterRule="">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="constant">password</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" sensitiveData="Y" mappingType="context">password</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
         </plugin>
         <plugin name="mysql-script" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
             <interface action="run" path="/saltstack/v1/mysql-script/run" filterRule="">
