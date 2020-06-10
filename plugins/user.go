@@ -17,6 +17,7 @@ var UserPluginActions = make(map[string]Action)
 func init() {
 	UserPluginActions["add"] = new(AddUserAction)
 	UserPluginActions["delete"] = new(DeleteUserAction)
+	UserPluginActions["password"] = new(ChangeUserPasswordAction)
 }
 
 type UserPlugin struct {
@@ -295,6 +296,120 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 		}
 
 		output.Detail = result
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+
+	return &outputs, finalErr
+}
+
+type ChangeUserPasswordAction struct {}
+
+type ChangeUserPasswordInputs struct {
+	Inputs []ChangeUserPasswordInput `json:"inputs,omitempty"`
+}
+
+type ChangeUserPasswordInput struct {
+	CallBackParameter
+	Guid      string `json:"guid,omitempty"`
+	Seed      string `json:"seed,omitempty"`
+	Target    string `json:"target,omitempty"`
+	UserName  string `json:"userName,omitempty"`
+	Password  string `json:"password,omitempty"`
+}
+
+type ChangeUserPasswordOutputs struct {
+	Outputs []ChangeUserPasswordOutput `json:"outputs,omitempty"`
+}
+
+type ChangeUserPasswordOutput struct {
+	CallBackParameter
+	Result
+	Guid     string `json:"guid,omitempty"`
+	Password string `json:"password,omitempty"`
+	Detail   string `json:"detail,omitempty"`
+}
+
+func (action *ChangeUserPasswordAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs ChangeUserPasswordInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(ChangeUserPasswordInputs)
+	outputs := ChangeUserPasswordOutputs{}
+	runAs := ""
+	var finalErr error
+
+	for _, input := range inputs.Inputs {
+		output := ChangeUserPasswordOutput{
+			Guid: input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+
+		password := ""
+		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
+		if input.Password != "" {
+			password = input.Password
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = "password is empty"
+			finalErr = fmt.Errorf("password is empty")
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+		execArg += " --password '" + password + "'"
+
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		if err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
+		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
+		if err != nil {
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
+		for _, v := range saltApiResult.Results[0] {
+			if v.RetCode != 0 {
+				err = fmt.Errorf("%s", v.Stdout+v.Stderr)
+			}
+			break
+		}
+		if err != nil {
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
+		encryptPassword, err := AesEnPassword(input.Guid, input.Seed, password, DEFALT_CIPHER)
+		if err != nil {
+			logrus.Errorf("AesEnPassword meet error(%v)", err)
+			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
+		output.Detail = result
+		output.Password = encryptPassword
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 

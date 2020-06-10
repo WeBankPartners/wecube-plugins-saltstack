@@ -103,7 +103,7 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	for i := 1; i < len(Info); i++ {
 		storagePath += "/" + Info[i]
 	}
-	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get "
+	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get --force "
 	sh += " s3:/" + storagePath + " " + UPLOADS3FILE_DIR + Info[len(Info)-1]
 	logrus.Infof("s3 cmd -------> %s", sh)
 	cmd := exec.Command("/bin/sh", "-c", sh)
