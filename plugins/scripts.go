@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
+	"os/exec"
+	"time"
+	"strings"
 )
 
 const (
@@ -23,6 +26,7 @@ var ScriptPluginActions = make(map[string]Action)
 
 func init() {
 	ScriptPluginActions["run"] = new(RunScriptAction)
+	ScriptPluginActions["ssh-run"] = new(SSHRunScriptAction)
 }
 
 type ScriptPlugin struct {
@@ -50,6 +54,8 @@ type RunScriptInput struct {
 	RunAs         string `json:"runAs,omitempty"`
 	ExecArg       string `json:"args,omitempty"`
 	Guid          string `json:"guid,omitempty"`
+	Password      string `json:"password,omitempty"`
+	Seed          string `json:"seed,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 }
@@ -353,6 +359,139 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 }
 
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(RunScriptInputs)
+	outputs := RunScriptOutputs{}
+	var finalErr error
+	for _, input := range inputs.Inputs {
+		output, err := action.runScript(&input)
+		if err != nil {
+			finalErr = err
+		}
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+
+	return &outputs, finalErr
+}
+
+type SSHRunScriptAction struct {}
+
+func (action *SSHRunScriptAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs RunScriptInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+
+	return inputs, nil
+}
+
+func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
+	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 && input.EndPointType != END_POINT_TYPE_USER_PARAM {
+		return errors.New("Wrong EndPointType")
+	}
+	if input.EndPoint == "" && input.EndPointType == END_POINT_TYPE_S3 {
+		return errors.New("Endpoint is empty")
+	}
+	if input.Target == "" {
+		return errors.New("Target is empty")
+	}
+	if input.Password == "" {
+		return errors.New("Password is empty")
+	}
+
+	return nil
+}
+
+func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
+	var output string
+	var cmdOut []byte
+	var err error
+	if input.RunAs == "" {
+		input.RunAs = "root"
+	}
+
+	switch input.EndPointType {
+	case END_POINT_TYPE_LOCAL:
+		cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("bash %s", scriptPath))
+		output = string(cmdOut)
+		logrus.Infof("exec ssh script:%s in target:%s output:%s \n", scriptPath, input.Target, output)
+		if err != nil {
+			return fmt.Sprintf("exec ssh to run the script:%s in %s,output:%s ,meet error=%v", scriptPath, input.Target, output, err), err
+		}
+	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
+		newScriptName := fmt.Sprintf("ssh-script-%s-%d", strings.Replace(input.Target, ".", "-", -1), time.Now().Unix())
+		err = exec.Command("/bin/cp", "-f", scriptPath, fmt.Sprintf("/var/www/html/tmp/%s", newScriptName)).Run()
+		if err != nil {
+			return fmt.Sprintf("exec ssh script,cp %s %s meet error=%v", scriptPath, newScriptName, err), err
+		}
+		err = exec.Command("bash", "-c", fmt.Sprintf("chmod 666 /var/www/html/tmp/%s", newScriptName)).Run()
+		if err != nil {
+			return fmt.Sprintf("exec ssh script,chmod to %s meet error=%v", newScriptName, err), err
+		}
+		cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName))
+		os.Remove(scriptPath)
+		os.Remove(fmt.Sprintf("/var/www/html/tmp/%s", newScriptName))
+		output = string(cmdOut)
+		logrus.Infof("exec ssh script:%s ,target:%s output:%s \n",fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName), input.Target, output)
+		if err != nil {
+			return fmt.Sprintf("exec ssh script error,target:%s output:%s error:%v", input.Target, output, err),err
+		}
+	default:
+		err = fmt.Errorf("no such EndPointType")
+		logrus.Errorf("runScript meet error=%v", err)
+		return fmt.Sprintf("runScript meet error=%v", err), err
+	}
+
+	return output, nil
+}
+
+func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.Target = input.Target
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.RetCode = 0
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.RetCode = 1
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	scriptPath := input.EndPoint
+	if input.EndPointType == END_POINT_TYPE_S3 {
+		scriptPath, err = downLoadScript(*input)
+		if err != nil {
+			return output, err
+		}
+	}
+
+	if input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
+		if err != nil {
+			return output, err
+		}
+	}
+
+	input.Password,_ = AesDePassword(input.Guid, input.Seed, input.Password)
+
+	stdOut, err := sshRunScript(scriptPath, *input)
+	if err != nil {
+		logrus.Errorf(stdOut)
+		return output, err
+	}
+	output.Detail = stdOut
+
+	return output, err
+}
+
+func (action *SSHRunScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
 	var finalErr error
