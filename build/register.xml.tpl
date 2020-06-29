@@ -24,7 +24,7 @@
         <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
         <systemParameter name="SALTSTACK_AGENT_PORT" scopeType="global" defaultValue="22"/>
         <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="PA888888"/>
-        <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue=""/>
+        <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#,%"/>
     </systemParameters>
 
     <!-- 5.权限设定 -->

@@ -157,7 +157,7 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 }
 
 //GetVariable .
-func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
+func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) {
 	_, err := PathExists(filepath)
 	if err != nil {
 		logrus.Errorf("file %s not exits", filepath)
@@ -195,7 +195,7 @@ func GetVariable(filepath string) ([]ConfigKeyInfo, error) {
 				}
 				param = param[0 : len(param)-1]
 
-				for _, specialFlag := range DefaultSpecialReplaceList {
+				for _, specialFlag := range specialList {
 					if specialFlag == "" {
 						continue
 					}
