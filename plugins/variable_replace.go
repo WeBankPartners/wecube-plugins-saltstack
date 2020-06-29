@@ -241,8 +241,11 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	if index == -1 {
 		return fmt.Errorf("Invalid endpoint %s", filepath)
 	}
+	tmpSpecialReplaceList := DefaultSpecialReplaceList
+	tmpSpecialReplaceList = appendUniqueList(tmpSpecialReplaceList, prefix)
+	tmpSpecialReplaceList = appendUniqueList(tmpSpecialReplaceList, input.FileReplacePrefix)
 	fileName := filepath[index+1:]
-	fileVarMap, err := GetVariable(filepath)
+	fileVarMap, err := GetVariable(filepath, tmpSpecialReplaceList)
 	if err != nil {
 		return err
 	}
@@ -268,7 +271,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 		return err
 	}
 
-	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix, input.FileReplacePrefix, decompressDirName)
+	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix, input.FileReplacePrefix, decompressDirName, tmpSpecialReplaceList)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
@@ -447,7 +450,7 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	return encrpytSenstiveData(value, publicKey, privateKey)
 }
 
-func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix, fileReplacePrefix, decompressDirName string) error {
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix, fileReplacePrefix, decompressDirName string,specialReplaceList []string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		logrus.Errorf("open file fail: %s", err)
@@ -493,7 +496,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				}
 				key = key[0 : len(key)-1]
 
-				for _, specialFlag := range DefaultSpecialReplaceList {
+				for _, specialFlag := range specialReplaceList {
 					if specialFlag == "" {
 						continue
 					}
@@ -668,4 +671,21 @@ func GetFileMD5Value(dir, filePath string) (string, error) {
 	}
 
 	return line[0], nil
+}
+
+func appendUniqueList(sList []string,a string) []string {
+	if a == "" {
+		return sList
+	}
+	exist := false
+	for _,v := range sList {
+		if v == a {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+		sList = append(sList, a)
+	}
+	return sList
 }

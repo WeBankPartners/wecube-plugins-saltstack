@@ -398,8 +398,7 @@ func InitEnvParam() {
 		logrus.Infof("variable replace  --> special flag: %s  \n", tmpSpecialReplace)
 		DefaultSpecialReplaceList = strings.Split(tmpSpecialReplace, ",")
 	} else {
-		DefaultSpecialReplaceList = []string{"@", "#", "!", "&", "^"}
-		logrus.Infof("variable replace without param,use default @,#,!,&,^  \n")
+		logrus.Infof("variable replace without any param  \n")
 	}
 	tmpHostIp := os.Getenv("minion_master_ip")
 	if tmpHostIp != "" {
