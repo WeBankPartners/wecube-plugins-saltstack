@@ -370,6 +370,9 @@ func PathExists(path string) (bool, error) {
 }
 
 func isKeyNeedEncrypt(key string, prefix string) bool {
+	if prefix == "" {
+		return false
+	}
 	return strings.HasPrefix(key, prefix)
 }
 
