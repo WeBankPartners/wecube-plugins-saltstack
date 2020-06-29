@@ -2,7 +2,7 @@
 <package name="saltstack" version="{{PLUGIN_VERSION}}">
     <!-- 1.依赖分析 - 描述运行本插件包需要的其他插件包 -->
     <packageDependencies>
-        <packageDependency name="wecmdb" version="v1.4.0"/>
+        <packageDependency name="wecmdb" version="v1.5.0"/>
     </packageDependencies>
 
     <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
@@ -601,6 +601,38 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
             </interface>
+            <interface action="run-s3-script" path="/saltstack/v1/host-script/run">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_S3">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">endpoint</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.ip_address">target</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">scriptContent</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">runAs</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">args</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
+            <interface action="run-local-script" path="/saltstack/v1/host-script/run">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">endpoint</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.ip_address">target</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">scriptContent</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">runAs</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">args</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
             <interface action="run-init-script" path="/saltstack/v1/host-script/run" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -644,6 +676,23 @@
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_UPLOAD_PATH">destinationPath</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="HOST_EXPORTER_UNPACK">unpack</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.NONE">fileOwner</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="host-file" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="init_package" targetEntityFilterRule="">
+            <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">endpoint</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.ip_address">target</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">destinationPath</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">unpack</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">fileOwner</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
