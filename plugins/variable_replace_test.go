@@ -18,14 +18,14 @@ func TestReplaceFileVar(t *testing.T) {
 
 	filepath := "/Users/tylertang/Desktop/go_test/config2.conf"
 
-	keyInfo, err := GetVariable(filepath)
+	keyInfo, err := GetVariable(filepath, DefaultSpecialReplaceList)
 	if err != nil {
 		fmt.Printf("GetVariable err=%v\n", err)
 	}
 
 	fmt.Println("keyINfo", keyInfo)
 
-	err = replaceFileVar(keyMap, filepath, "seed", "private_key", "public_key", "{cpher_A}")
+	err = replaceFileVar(keyMap, filepath, "seed", "private_key", "public_key", "{cpher_A}", "", "", DefaultSpecialReplaceList)
 	if err != nil {
 		fmt.Printf("replaceFileVar err=%v\n", err)
 	}
