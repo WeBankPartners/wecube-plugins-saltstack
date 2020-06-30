@@ -117,9 +117,8 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 		os.Remove(path)
 		return "", fmt.Errorf("updown file error: " + fmt.Sprint(err) + ": " + stderr.String())
 	}
-	tmpOut,err := exec.Command("/bin/sh", "-c", fmt.Sprintf("mv %s %s", tmpPath, path)).Output()
+	tmpOut,err := exec.Command("/bin/sh", "-c", fmt.Sprintf("mv -f %s %s", tmpPath, path)).Output()
 	if err != nil {
-		os.Remove(path)
 		os.Remove(tmpPath)
 		return "", fmt.Errorf("download file,mv %s %s,output:%s error: %v ", tmpPath, path, string(tmpOut), err)
 	}
