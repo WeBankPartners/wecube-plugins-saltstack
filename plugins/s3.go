@@ -72,8 +72,11 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	return path, nil
 }
 
-func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
-	tmpName := getWorkspaceName()
+func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string, error) {
+	var tmpName string
+	if randName {
+		tmpName = getWorkspaceName()
+	}
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
 		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
@@ -91,8 +94,8 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 		return "", fmt.Errorf("create upload path error : %s", err)
 	}
 
-	path := UPLOADS3FILE_DIR + Info[len(Info)-1]
-	tmpPath := UPLOADS3FILE_DIR + Info[len(Info)-1] + tmpName
+	path := UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
+	//tmpPath := UPLOADS3FILE_DIR + Info[len(Info)-1] + tmpName
 	_, err = os.Stat(path)
 	if err == nil {
 		logrus.Infof("os stat check path = %s return ", path)
@@ -108,7 +111,7 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 		storagePath += "/" + Info[i]
 	}
 	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get --force "
-	sh += " s3:/" + storagePath + " " + tmpPath
+	sh += " s3:/" + storagePath + " " + path
 	logrus.Infof("s3 cmd -------> %s", sh)
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	var stderr bytes.Buffer
@@ -116,11 +119,6 @@ func downloadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	if err = cmd.Run(); err != nil {
 		os.Remove(path)
 		return "", fmt.Errorf("updown file error: " + fmt.Sprint(err) + ": " + stderr.String())
-	}
-	tmpOut,err := exec.Command("/bin/sh", "-c", fmt.Sprintf("mv -f %s %s", tmpPath, path)).Output()
-	if err != nil {
-		os.Remove(tmpPath)
-		return "", fmt.Errorf("download file,mv %s %s,output:%s error: %v ", tmpPath, path, string(tmpOut), err)
 	}
 	logrus.Infof("result=%v", stderr.String())
 	return path, nil
@@ -169,7 +167,7 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) {
 	_, err := PathExists(filepath)
 	if err != nil {
-		logrus.Errorf("file %s not exits", filepath)
+		logrus.Errorf("check file %s status error,%v ", filepath, err)
 		return nil, err
 	}
 
@@ -234,7 +232,7 @@ var getNameLock = new(sync.RWMutex)
 
 func getWorkspaceName() (name string) {
 	getNameLock.Lock()
-	name = fmt.Sprintf("_%d", time.Now().UnixNano())
+	name = fmt.Sprintf("%d-", time.Now().UnixNano())
 	getNameLock.Unlock()
 	return name
 }

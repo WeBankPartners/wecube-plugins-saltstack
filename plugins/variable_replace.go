@@ -153,7 +153,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
 		return output, err
@@ -363,12 +363,15 @@ func CheckVariableIsAllReady(input map[string]string, variablelist []string) (er
 }
 
 func PathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+	f, err := os.Stat(path)
 	if err == nil {
+		if f.IsDir() {
+			return false,fmt.Errorf("path:%s is dir", path)
+		}
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return false, fmt.Errorf("path:%s is not exist", path)
 	}
 	return false, err
 }
@@ -560,7 +563,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 			if k == "" || v == "" {
 				continue
 			}
-			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password)
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
 			if err != nil {
 				logrus.Errorf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err)
 				return err
