@@ -173,7 +173,7 @@ func (action *SearchTextAction) searchText(input *SearchTextInput) (output Searc
 		return output, err
 	}
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		return output, err
 	}
@@ -296,7 +296,7 @@ func (action *GetContextAction) getContext(input *GetContextInput) (output GetCo
 	}
 
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		return output, err
 	}
