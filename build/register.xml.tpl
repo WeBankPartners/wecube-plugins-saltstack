@@ -18,13 +18,13 @@
         <systemParameter name="SALTSTACK_SCRIPT_LOCAL" scopeType="global" defaultValue="LOCAL"/>
         <systemParameter name="SALTSTACK_SCRIPT_S3" scopeType="global" defaultValue="S3"/>
         <systemParameter name="SALTSTACK_SCRIPT_USER_PARAM" scopeType="global" defaultValue="USER_PARAM"/>
-        <systemParameter name="SALTSTACK_ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!"/>
+        <systemParameter name="SALTSTACK_ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!,%"/>
         <systemParameter name="SALTSTACK_FILE_VARIBLE_PREFIX" scopeType="global" defaultValue="^"/>
         <systemParameter name="SALTSTACK_SYSTEM_PRIVATE_KEY" scopeType="global" defaultValue=""/>
         <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
         <systemParameter name="SALTSTACK_AGENT_PORT" scopeType="global" defaultValue="22"/>
         <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="PA888888"/>
-        <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#,%"/>
+        <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#"/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
