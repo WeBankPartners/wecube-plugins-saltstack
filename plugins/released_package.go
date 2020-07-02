@@ -117,7 +117,7 @@ func (action *ListCurrentDirAction) listCurrentDir(input *ListFilesInput) (outpu
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
 		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
 		if err != nil {
 			logrus.Errorf("ListCurrentDirAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err
@@ -244,7 +244,7 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
 		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
 		if err != nil {
 			logrus.Errorf("GetConfigFileKeyAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err

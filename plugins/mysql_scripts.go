@@ -145,7 +145,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	}
 
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		return output, err
 	}
