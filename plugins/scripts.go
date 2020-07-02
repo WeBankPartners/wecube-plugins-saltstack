@@ -214,7 +214,7 @@ func downloadFile(url string) ([]byte, error) {
 
 func downLoadScript(input RunScriptInput) (string, error) {
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		logrus.Errorf("RunScriptAction downloads3 file error=%v", err)
 		return fmt.Sprintf("RunScriptAction downloads3 file error=%v", err), err

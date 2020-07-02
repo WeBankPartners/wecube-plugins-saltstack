@@ -153,7 +153,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password)
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	if err != nil {
 		logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
 		return output, err
@@ -235,15 +235,19 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	seed := input.Seed
 	publicKey := input.AppPublicKey
 	privateKey := input.SysPrivateKey
-	prefix := input.EncryptVariblePrefix
+	prefix := strings.Split(input.EncryptVariblePrefix, ",")
+	fileReplacePrefix := strings.Split(input.FileReplacePrefix, ",")
 
 	index := strings.LastIndexAny(filepath, "/")
 	if index == -1 {
 		return fmt.Errorf("Invalid endpoint %s", filepath)
 	}
 	tmpSpecialReplaceList := DefaultSpecialReplaceList
-	tmpSpecialReplaceList = appendUniqueList(tmpSpecialReplaceList, prefix)
-	tmpSpecialReplaceList = appendUniqueList(tmpSpecialReplaceList, input.FileReplacePrefix)
+	tmpSpecialReplaceList = append(tmpSpecialReplaceList, prefix...)
+	tmpSpecialReplaceList = append(tmpSpecialReplaceList, fileReplacePrefix...)
+	if !checkIsUniqueList(tmpSpecialReplaceList) {
+		return fmt.Errorf("Prefix duplicate ,defaultPrefix:%v encryptPrefix:%v fileReplacePrefix:%v ", DefaultSpecialReplaceList, prefix, fileReplacePrefix)
+	}
 	fileName := filepath[index+1:]
 	fileVarMap, err := GetVariable(filepath, tmpSpecialReplaceList)
 	if err != nil {
@@ -271,7 +275,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 		return err
 	}
 
-	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, prefix, input.FileReplacePrefix, decompressDirName, tmpSpecialReplaceList)
+	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, decompressDirName, tmpSpecialReplaceList, prefix, fileReplacePrefix)
 	if err != nil {
 		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
@@ -359,21 +363,31 @@ func CheckVariableIsAllReady(input map[string]string, variablelist []string) (er
 }
 
 func PathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+	f, err := os.Stat(path)
 	if err == nil {
+		if f.IsDir() {
+			return false,fmt.Errorf("path:%s is dir", path)
+		}
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return false, fmt.Errorf("path:%s is not exist", path)
 	}
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string, prefix string) bool {
-	if prefix == "" {
-		return false
+func isKeyNeedEncrypt(key string, prefix []string) bool {
+	isNeed := false
+	for _,v := range prefix {
+		if v == "" {
+			continue
+		}
+		if strings.HasPrefix(key, v) {
+			isNeed = true
+			break
+		}
 	}
-	return strings.HasPrefix(key, prefix)
+	return isNeed
 }
 
 func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) {
@@ -434,9 +448,9 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 	return encryptData, nil
 }
 
-func getVariableValue(key string, value string, publicKey string, privateKey string, prefix string) (string, error) {
-	needEncryt := isKeyNeedEncrypt(key, prefix)
-	if !needEncryt {
+func getVariableValue(key string, value string, publicKey string, privateKey string, prefix []string) (string, error) {
+	needEncrypt := isKeyNeedEncrypt(key, prefix)
+	if !needEncrypt {
 		return value, nil
 	}
 
@@ -453,7 +467,7 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	return encrpytSenstiveData(value, publicKey, privateKey)
 }
 
-func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, prefix, fileReplacePrefix, decompressDirName string,specialReplaceList []string) error {
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, decompressDirName string,specialReplaceList, prefix, fileReplacePrefix []string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		logrus.Errorf("open file fail: %s", err)
@@ -517,7 +531,14 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						if err != nil {
 							return err
 						}
-						if specialFlag == fileReplacePrefix {
+						isFileReplaceFlag := false
+						for _,frPrefix := range fileReplacePrefix {
+							if specialFlag == frPrefix {
+								isFileReplaceFlag = true
+								break
+							}
+						}
+						if isFileReplaceFlag {
 							fileReplaceMap[key[len(specialFlag):]] = variableValue
 						}else {
 							newLine = strings.Replace(newLine, oldStr, variableValue, -1)
@@ -542,7 +563,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 			if k == "" || v == "" {
 				continue
 			}
-			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password)
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
 			if err != nil {
 				logrus.Errorf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err)
 				return err
@@ -676,19 +697,13 @@ func GetFileMD5Value(dir, filePath string) (string, error) {
 	return line[0], nil
 }
 
-func appendUniqueList(sList []string,a string) []string {
-	if a == "" {
-		return sList
-	}
-	exist := false
-	for _,v := range sList {
-		if v == a {
-			exist = true
-			break
+func checkIsUniqueList(aList []string) bool {
+	tmpMap := make(map[string]int)
+	for _,v := range aList {
+		if _,b:=tmpMap[v];b {
+			return false
 		}
+		tmpMap[v] = 1
 	}
-	if !exist {
-		sList = append(sList, a)
-	}
-	return sList
+	return true
 }
