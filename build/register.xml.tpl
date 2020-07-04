@@ -25,6 +25,8 @@
         <systemParameter name="SALTSTACK_AGENT_PORT" scopeType="global" defaultValue="22"/>
         <systemParameter name="SALTSTACK_PASSWORD" scopeType="plugins" defaultValue="PA888888"/>
         <systemParameter name="SALTSTACK_DEFAULT_SPECIAL_REPLACE" scopeType="global" defaultValue="@,#"/>
+        <systemParameter name="SALTSTACK_AGENT_INSTALL_YUM" scopeType="global" defaultValue="yum"/>
+        <systemParameter name="SALTSTACK_AGENT_INSTALL_LOCAL" scopeType="global" defaultValue="local"/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
@@ -48,6 +50,7 @@
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_AGENT_INSTALL_LOCAL" >method</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -401,6 +404,7 @@
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.login_port">port</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.user_name">user</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.NONE">command</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_AGENT_INSTALL_LOCAL" >method</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
