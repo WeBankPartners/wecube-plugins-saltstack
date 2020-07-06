@@ -347,6 +347,7 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 			logrus.Errorf("getRawKeyValue meet error=%v", err)
 			return inputMap, err
 		}
+		key = strings.ToLower(key)
 		inputMap[key] = value
 	}
 	return inputMap, nil
@@ -354,7 +355,8 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {
 	for _, va := range variablelist {
-		if _, ok := input[va]; !ok {
+		toLowerV := strings.ToLower(va)
+		if _, ok := input[toLowerV]; !ok {
 			return fmt.Errorf("variable %s not input", va)
 		}
 	}
@@ -525,9 +527,10 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						if strings.Contains(s[1], " ") {
 							continue
 						}
+						toLowerKey := strings.ToLower(s[1])
 						// fmt.Println("key: ", key)
 						oldStr := "[" + key + "]"
-						variableValue, err := getVariableValue(key, keyMap[s[1]], publicKey, privateKey, prefix)
+						variableValue, err := getVariableValue(key, keyMap[toLowerKey], publicKey, privateKey, prefix)
 						if err != nil {
 							return err
 						}
