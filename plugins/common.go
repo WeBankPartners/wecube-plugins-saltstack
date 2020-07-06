@@ -35,6 +35,8 @@ var (
 	DefaultS3Key              = "access_key"
 	DefaultS3Password         = "secret_key"
 	DefaultSpecialReplaceList []string
+	DefaultEncryptReplaceList []string
+	DefaultFileReplaceList    []string
 	ClusterList               []string
 	MasterHostIp              string
 	CoreUrl                   string
@@ -399,6 +401,20 @@ func InitEnvParam() {
 		DefaultSpecialReplaceList = strings.Split(tmpSpecialReplace, ",")
 	} else {
 		logrus.Infof("variable replace without any param  \n")
+	}
+	tmpEncryptReplace := os.Getenv("SALTSTACK_ENCRYPT_VARIBLE_PREFIX")
+	if tmpEncryptReplace != "" {
+		logrus.Infof("variable encrypt replace  --> special flag: %s  \n", tmpEncryptReplace)
+		DefaultEncryptReplaceList = strings.Split(tmpEncryptReplace, ",")
+	}else{
+		logrus.Infof("variable encrypt replace without any param  \n")
+	}
+	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
+	if tmpFileReplace != "" {
+		logrus.Infof("variable file replace  --> special flag: %s  \n", tmpFileReplace)
+		DefaultFileReplaceList = strings.Split(tmpFileReplace, ",")
+	}else{
+		logrus.Infof("variable file replace without any param  \n")
 	}
 	tmpHostIp := os.Getenv("minion_master_ip")
 	if tmpHostIp != "" {

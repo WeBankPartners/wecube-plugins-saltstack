@@ -19,9 +19,14 @@ fi
 
 mkdir -p /tmp/salt
 cd /tmp/salt/
-curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz
-tar zxf minion_install_pkg.tar.gz
-cd minion_install_pkg && ./install_minion.sh
+if [ "$3" = "yum" ]
+then
+  yum install -y salt-minion
+else
+  curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz
+  tar zxf minion_install_pkg.tar.gz
+  cd minion_install_pkg && ./install_minion.sh
+fi
 cd /tmp/salt/
 curl -O http://$master_ip:9099/salt-minion/conf/minion
 sed -i "s~{{ minion_id }}~$minion_ip~g" /tmp/salt/minion
