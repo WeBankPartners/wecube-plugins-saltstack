@@ -44,6 +44,7 @@ type AgentInstallInput struct {
 	Port     string `json:"port,omitempty"`
 	User     string `json:"user,omitempty"`
 	Command  string `json:"command,omitempty"`
+	Method   string `json:"method,omitempty"`
 }
 
 type AgentInstallOutputs struct {
@@ -401,7 +402,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 		}
 	}
 
-	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s", MasterHostIp, MasterHostIp, input.Host))
+	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method))
 	logrus.Infof("Install minion:%s with output: %s ", input.Host, string(cmdOut))
 	if err != nil {
 		logrus.Errorf("Install minion to host: %s  error %v ", input.Host, err)

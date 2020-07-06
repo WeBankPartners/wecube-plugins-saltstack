@@ -267,7 +267,10 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	}
 
 	logrus.Infof("ConfigFile=%v", fullPath+"/"+input.FilePath)
-	keys, err := GetVariable(fullPath + "/" + input.FilePath, DefaultSpecialReplaceList)
+	tmpSpecialReplaceList := DefaultSpecialReplaceList
+	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultEncryptReplaceList...)
+	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultFileReplaceList...)
+	keys, err := GetVariable(fullPath + "/" + input.FilePath, tmpSpecialReplaceList)
 	if err != nil {
 		return output, err
 	}
