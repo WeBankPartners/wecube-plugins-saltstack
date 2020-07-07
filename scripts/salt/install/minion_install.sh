@@ -39,4 +39,11 @@ then
 else
   systemctl start salt-minion
 fi
-echo "install salt-minion done"
+sleep 1
+is_success=`ps aux|grep salt-minion|grep -v 'grep'`
+if [ -n "$is_success" ]
+then
+  echo "start salt-minion_success"
+else
+  echo "start salt-minion_fail"
+fi

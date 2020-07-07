@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	gossh "golang.org/x/crypto/ssh"
+	"strings"
 )
 
 var AgentActions = make(map[string]Action)
@@ -403,10 +404,14 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	}
 
 	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method))
-	logrus.Infof("Install minion:%s with output: %s ", input.Host, string(cmdOut))
+	outString := string(cmdOut)
+	logrus.Infof("Install minion:%s with output: %s ", input.Host, outString)
 	if err != nil {
 		logrus.Errorf("Install minion to host: %s  error %v ", input.Host, err)
 		return output, fmt.Errorf("Install minion to host: %s  error %v ", input.Host, err)
+	}
+	if !strings.Contains(outString, "salt-minion_success") {
+		err = fmt.Errorf("Start minion fail,output -> %s ", outString)
 	}
 
 	return output, err
