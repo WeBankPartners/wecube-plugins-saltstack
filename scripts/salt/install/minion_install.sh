@@ -17,6 +17,7 @@ else
   exit 1
 fi
 
+rm -rf /tmp/salt
 mkdir -p /tmp/salt
 cd /tmp/salt/
 if [ "$3" = "yum" ]
@@ -40,8 +41,9 @@ else
   systemctl start salt-minion
 fi
 sleep 1
-is_success=`ps aux|grep salt-minion|grep -v 'grep'`
-if [ -n "$is_success" ]
+is_success=`systemctl status salt-minion|grep running|wc -l`
+echo $is_success
+if [ "$is_success" = "1" ]
 then
   echo "start salt-minion_success"
 else
