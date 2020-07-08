@@ -167,7 +167,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	os.RemoveAll(compressedFileFullPath)
 
 	if input.FilePath != "" && input.VariableList != "" {
-		for _, filePath := range strings.Split(input.FilePath, "|") {
+		for _, filePath := range splitWithCustomFlag(input.FilePath) {
 			confFilePath := ""
 
 			if decompressDirName[len(decompressDirName)-1] == '/' {
