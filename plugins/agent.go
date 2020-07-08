@@ -3,11 +3,12 @@ package plugins
 import (
 	"errors"
 	"fmt"
-	"os/exec"
-
 	"github.com/sirupsen/logrus"
 	"net"
 	gossh "golang.org/x/crypto/ssh"
+	"strings"
+	"os/exec"
+	"time"
 )
 
 var AgentActions = make(map[string]Action)
@@ -293,6 +294,33 @@ func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
+type ExecRemoteParam struct {
+	User  string
+	Password  string
+	Host  string
+	Command  string
+	Output  string
+	Err  error
+	Timeout  int
+	DoneChan  chan int
+}
+
+func execRemoteWithTimeout(param *ExecRemoteParam)  {
+	param.DoneChan = make(chan int)
+	go func(gParam *ExecRemoteParam) {
+		tmpOutput,tmpError := execRemote(gParam.User,gParam.Password,gParam.Host,gParam.Command)
+		gParam.Output = string(tmpOutput)
+		gParam.Err = tmpError
+		gParam.DoneChan <- 1
+	}(param)
+	select {
+	case <-param.DoneChan: logrus.Infof("exec remote bash to %s@%s done ", param.User, param.Host)
+	case <-time.After(time.Duration(param.Timeout)*time.Second):
+		param.Err = fmt.Errorf("exec remote command timeout %d seconds", param.Timeout)
+		logrus.Infof("exec remote bash to %s@%s timeout in %d seconds,break ", param.User, param.Host, param.Timeout)
+	}
+}
+
 func execRemote(user,password,host,command string) (output []byte,err error) {
 	var(
 		client *gossh.Client
@@ -393,20 +421,30 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	if input.User == "" {
 		input.User = "root"
 	}
-	var cmdOut []byte
+	//var cmdOut []byte
 	if input.Command != "" {
-		cmdOut,err = execRemote(input.User, password, input.Host, input.Command)
+		tmpParam := ExecRemoteParam{User:input.User,Password:input.Password,Host:input.Host,Command:input.Command,Timeout:300}
+		execRemoteWithTimeout(&tmpParam)
+		cmdOutString := tmpParam.Output
+		err = tmpParam.Err
+		//cmdOut,err = execRemote(input.User, password, input.Host, input.Command)
 		if err != nil {
-			logrus.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, string(cmdOut), err)
-			return output, fmt.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, string(cmdOut), err)
+			logrus.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, cmdOutString, err)
+			return output, fmt.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, cmdOutString, err)
 		}
 	}
-
-	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method))
-	logrus.Infof("Install minion:%s with output: %s ", input.Host, string(cmdOut))
+	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:300,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
+	execRemoteWithTimeout(&execParam)
+	//cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method))
+	outString := execParam.Output
+	err = execParam.Err
+	logrus.Infof("Install minion:%s with output: %s ", input.Host, outString)
 	if err != nil {
 		logrus.Errorf("Install minion to host: %s  error %v ", input.Host, err)
 		return output, fmt.Errorf("Install minion to host: %s  error %v ", input.Host, err)
+	}
+	if !strings.Contains(outString, "salt-minion_success") {
+		err = fmt.Errorf("Start minion fail,output -> %s ", outString)
 	}
 
 	return output, err
