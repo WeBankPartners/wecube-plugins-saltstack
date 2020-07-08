@@ -180,7 +180,8 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 
 		// split SqlFiles to *.sql
-		sqlFiles := strings.Split(input.SqlFiles, ",")
+		//sqlFiles := strings.Split(input.SqlFiles, ",")
+		sqlFiles := splitWithCustomFlag(input.SqlFiles)
 		for _, file := range sqlFiles {
 			sqlFile := newDir + "/" + strings.TrimSpace(file)
 			if !fileExist(sqlFile) {
@@ -242,4 +243,16 @@ func (action *RunMysqlScriptAction) Do(input interface{}) (interface{}, error) {
 	logrus.Infof("all mysql scripts = %v have been run", inputs)
 
 	return &outputs, finalErr
+}
+
+func splitWithCustomFlag(input string) []string {
+	input = strings.Replace(input, ",", "^^^", -1)
+	input = strings.Replace(input, "|", "^^^", -1)
+	var output []string
+	for _,v := range strings.Split(input, "^^^") {
+		if v != "" {
+			output = append(output, v)
+		}
+	}
+	return output
 }
