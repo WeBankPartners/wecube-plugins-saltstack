@@ -403,16 +403,19 @@ func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
 
 func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
 	var output string
-	var cmdOut []byte
+	//var cmdOut []byte
 	var err error
 	if input.RunAs == "" {
 		input.RunAs = "root"
 	}
-
+	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:300}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
-		cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("bash %s", scriptPath))
-		output = string(cmdOut)
+		remoteParam.Command = fmt.Sprintf("bash %s", scriptPath)
+		execRemoteWithTimeout(&remoteParam)
+		//cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("bash %s", scriptPath))
+		err = remoteParam.Err
+		output = remoteParam.Output
 		logrus.Infof("exec ssh script:%s in target:%s output:%s \n", scriptPath, input.Target, output)
 		if err != nil {
 			return fmt.Sprintf("exec ssh to run the script:%s in %s,output:%s ,meet error=%v", scriptPath, input.Target, output, err), err
@@ -427,10 +430,13 @@ func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
 		if err != nil {
 			return fmt.Sprintf("exec ssh script,chmod to %s meet error=%v", newScriptName, err), err
 		}
-		cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName))
+		remoteParam.Command = fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName)
+		execRemoteWithTimeout(&remoteParam)
+		err = remoteParam.Err
+		//cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName))
 		os.Remove(scriptPath)
 		os.Remove(fmt.Sprintf("/var/www/html/tmp/%s", newScriptName))
-		output = string(cmdOut)
+		output = remoteParam.Output
 		logrus.Infof("exec ssh script:%s ,target:%s output:%s \n",fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName), input.Target, output)
 		if err != nil {
 			return fmt.Sprintf("exec ssh script error,target:%s output:%s error:%v", input.Target, output, err),err
