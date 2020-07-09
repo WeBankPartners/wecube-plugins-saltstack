@@ -212,22 +212,26 @@ func downloadFile(url string) ([]byte, error) {
 	return body, err
 }
 
-func downLoadScript(input RunScriptInput) (string, error) {
-	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
-	if err != nil {
-		logrus.Errorf("RunScriptAction downloads3 file error=%v", err)
-		return fmt.Sprintf("RunScriptAction downloads3 file error=%v", err), err
+func downLoadScript(input RunScriptInput) ([]string, error) {
+	var result []string
+	for _,v := range splitWithCustomFlag(input.EndPoint) {
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
+		if err != nil {
+			logrus.Errorf("RunScriptAction downloads3 file:%s error=%v", v, err)
+			return result, fmt.Errorf("RunScriptAction downloads3 file:%s error=%v", v, err)
+		}
+
+		scriptPath, err := saveFileToSaltMasterBaseDir(fileName)
+		os.Remove(fileName)
+		if err != nil {
+			logrus.Errorf("saveFileToSaltMasterBaseDir file:%s meet error=%v", fileName, err)
+			return result, fmt.Errorf("saveFileToSaltMasterBaseDir file:%s meet error=%v", fileName, err)
+		}
+
+		result = append(result, scriptPath)
 	}
 
-	scriptPath, err := saveFileToSaltMasterBaseDir(fileName)
-	os.Remove(fileName)
-	if err != nil {
-		logrus.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
-		return fmt.Sprintf("saveFileToSaltMasterBaseDir meet error=%v", err), err
-	}
-
-	return scriptPath, nil
+	return result, nil
 }
 
 func runScript(scriptPath string, input RunScriptInput) (string, error) {
@@ -334,26 +338,37 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		return output, err
 	}
 
-	scriptPath := input.EndPoint
+	//scriptPath := input.EndPoint
+	scriptPathList := splitWithCustomFlag(input.EndPoint)
 	if input.EndPointType == END_POINT_TYPE_S3 {
-		scriptPath, err = downLoadScript(*input)
+		scriptPathList, err = downLoadScript(*input)
 		if err != nil {
 			return output, err
 		}
 	}
 
 	if input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		var scriptPath string
 		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
 			return output, err
 		}
+		scriptPathList = append(scriptPathList, scriptPath)
 	}
 
-	stdOut, err := runScript(scriptPath, *input)
-	if err != nil {
-		return output, err
+	var stdOut string
+	for i,v := range scriptPathList {
+		stdOut, err = runScript(v, *input)
+		stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
+		output.Detail += stdOut
+		if err != nil {
+			logrus.Errorf(stdOut)
+			err = fmt.Errorf(stdOut)
+			return output, err
+		}else{
+			logrus.Infof("%s success ", stdOut)
+		}
 	}
-	output.Detail = stdOut
 
 	return output, err
 }
@@ -470,29 +485,39 @@ func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunSc
 		return output, err
 	}
 
-	scriptPath := input.EndPoint
+	//scriptPath := input.EndPoint
+	scriptPathList := splitWithCustomFlag(input.EndPoint)
 	if input.EndPointType == END_POINT_TYPE_S3 {
-		scriptPath, err = downLoadScript(*input)
+		scriptPathList, err = downLoadScript(*input)
 		if err != nil {
 			return output, err
 		}
 	}
 
 	if input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		var scriptPath string
 		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
 			return output, err
 		}
+		scriptPathList = append(scriptPathList, scriptPath)
 	}
 
 	input.Password,_ = AesDePassword(input.Guid, input.Seed, input.Password)
 
-	stdOut, err := sshRunScript(scriptPath, *input)
-	if err != nil {
-		logrus.Errorf(stdOut)
-		return output, err
+	var stdOut string
+	for i,v := range scriptPathList {
+		stdOut, err = sshRunScript(v, *input)
+		stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
+		output.Detail += stdOut
+		if err != nil {
+			logrus.Errorf(stdOut)
+			err = fmt.Errorf(stdOut)
+			return output, err
+		}else{
+			logrus.Infof("%s success ", stdOut)
+		}
 	}
-	output.Detail = stdOut
 
 	return output, err
 }

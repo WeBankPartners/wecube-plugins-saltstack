@@ -439,7 +439,7 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 	fmt.Printf("run script out=%v\n,err=%v\n", out, err)
 	if err != nil {
 		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n", out, err)
-		return "", err
+		return "", fmt.Errorf("run rsa encrypt shell fail,please check param app_public_key and sys_private_key out:%v \n", err)
 	}
 
 	encryptData, err := readStringFromFile(encrpyDataFile)
