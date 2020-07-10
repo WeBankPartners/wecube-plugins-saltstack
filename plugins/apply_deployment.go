@@ -347,6 +347,9 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		return output, err
 	}
 
+	if !strings.Contains(input.UserName, ":") {
+		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
+	}
 	// stop apply script
 	runStopScriptRequest := RunScriptInputs{
 		Inputs: []RunScriptInput{
@@ -354,7 +357,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 				EndPointType: "LOCAL",
 				EndPoint:     input.StopScriptPath,
 				Target:       input.Target,
-				RunAs:        input.UserName,
+				RunAs:        strings.Split(input.UserName, ":")[0],
 				Guid:         input.Guid,
 			},
 		},
@@ -433,7 +436,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 				EndPointType: "LOCAL",
 				EndPoint:     input.StartScriptPath,
 				Target:       input.Target,
-				RunAs:        input.UserName,
+				RunAs:        strings.Split(input.UserName, ":")[0],
 				Guid:         input.Guid,
 			},
 		},
