@@ -108,7 +108,7 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	if databaseName != "" {
 		argv = append(argv, "-D"+databaseName)
 	}
-
+	logrus.Infof("exec sql script args--> %v \n", argv)
 	cmd := exec.Command("/usr/bin/mysql", argv...)
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -144,11 +144,18 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		return output, err
 	}
 
-	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
-	if err != nil {
-		return output, err
+	var fileNameList []string
+	for _,v := range splitWithCustomFlag(input.EndPoint) {
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
+		if err != nil {
+			return output, fmt.Errorf("download s3 file:%s fail %v ", v, err)
+		}
+		fileNameList = append(fileNameList, fileName)
 	}
+	//fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
+	//if err != nil {
+	//	return output, err
+	//}
 
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
@@ -157,7 +164,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	}
 
 	// new dir to place all *.sql
-	Info := strings.Split(fileName, "/")
+	Info := strings.Split(fileNameList[0], "/")
 	newDir := strings.Join(Info[0:len(Info)-2], "/") + "/sql"
 	err = ensureDirExist(newDir)
 	if err != nil {
@@ -166,21 +173,26 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 	files := []string{}
 	// whether the fileName is *.sql or other
-	if !strings.HasSuffix(fileName, ".sql") {
+	if !strings.HasSuffix(fileNameList[0], ".sql") {
 		if input.SqlFiles == "" {
 			err = errors.New("SqlFiles is empty")
 			return output, err
 		}
 
+		if len(fileNameList) > 1 {
+			return output,fmt.Errorf("Param endpoint validate fail,endpoint must be one when suffix not like *.sql ")
+		}
+
 		// unpack file
-		er := deriveUnpackfile(fileName, newDir, true)
+		er := deriveUnpackfile(fileNameList[0], newDir, true)
 		if er != nil {
 			err = er
 			return output, err
 		}
 
 		// split SqlFiles to *.sql
-		sqlFiles := strings.Split(input.SqlFiles, ",")
+		//sqlFiles := strings.Split(input.SqlFiles, ",")
+		sqlFiles := splitWithCustomFlag(input.SqlFiles)
 		for _, file := range sqlFiles {
 			sqlFile := newDir + "/" + strings.TrimSpace(file)
 			if !fileExist(sqlFile) {
@@ -190,34 +202,39 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 			files = append(files, sqlFile)
 		}
 	} else {
-		// move the *.sql to newDir directly
-		command := exec.Command("mv", fileName, newDir)
-		out, er := command.CombinedOutput()
-		logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), er)
-		if er != nil {
-			err = er
-			return output, err
+		for _,v := range fileNameList {
+			logrus.Infof("start to move file:%s to %s \n", v, newDir)
+			// move the *.sql to newDir directly
+			//command := exec.Command("mv", v, newDir)
+			out, er := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv -f %s %s", v, newDir)).Output()
+			logrus.Infof("run output=%v,err=%v\n", string(out), er)
+			if er != nil {
+				err = fmt.Errorf("move s3 file:%s to %s error %v ", v, newDir, er)
+				return output, err
+			}
+			tmpNameList := strings.Split(v, "/")
+			sqlFile := newDir + "/" + tmpNameList[len(tmpNameList)-1]
+			if !fileExist(sqlFile) {
+				err = fmt.Errorf("file [%v] does not exist", sqlFile)
+				return output, err
+			}
+			files = append(files, sqlFile)
 		}
-
-		sqlFile := newDir + "/" + Info[len(Info)-1]
-		if fileExist(sqlFile) {
-			err = fmt.Errorf("file [%v] does not exist", sqlFile)
-			return output, err
-		}
-		files = append(files, sqlFile)
 	}
 
 	// run sql scripts foreach
 	for _, file := range files {
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
 		if err != nil {
-			return output, err
+			return output, fmt.Errorf("run script:%s to mysql instance %s:%s database:%s error %v ", file, input.Host, input.Port, input.DatabaseName, err)
 		}
 	}
 
-	err = os.RemoveAll(fileName)
-	if err != nil {
-		return output, err
+	for _,v := range fileNameList {
+		err = os.RemoveAll(v)
+		if err != nil {
+			return output, err
+		}
 	}
 	err = os.RemoveAll(newDir)
 	if err != nil {
@@ -242,4 +259,16 @@ func (action *RunMysqlScriptAction) Do(input interface{}) (interface{}, error) {
 	logrus.Infof("all mysql scripts = %v have been run", inputs)
 
 	return &outputs, finalErr
+}
+
+func splitWithCustomFlag(input string) []string {
+	input = strings.Replace(input, ",", "^^^", -1)
+	input = strings.Replace(input, "|", "^^^", -1)
+	var output []string
+	for _,v := range strings.Split(input, "^^^") {
+		if v != "" {
+			output = append(output, v)
+		}
+	}
+	return output
 }
