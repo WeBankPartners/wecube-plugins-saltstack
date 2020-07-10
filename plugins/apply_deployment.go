@@ -119,13 +119,16 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		return output, err
 	}
 
+	if !strings.Contains(input.UserName, ":") {
+		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
+	}
 	//create apply deployment user
 	addUserRequest := AddUserInputs{
 		Inputs: []AddUserInput{
 			AddUserInput{
 				Guid:     input.Guid,
 				Target:   input.Target,
-				UserName: input.UserName,
+				UserName: strings.Split(input.UserName, ":")[0],
 				Password: input.Password,
 				RwDir:    input.RwDir,
 				RwFile:   input.RwFile,
@@ -207,7 +210,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 				EndPointType: "LOCAL",
 				EndPoint:     input.StartScriptPath,
 				Target:       input.Target,
-				RunAs:        input.UserName,
+				RunAs:        strings.Split(input.UserName, ":")[0],
 				Guid:         input.Guid,
 			},
 		},
