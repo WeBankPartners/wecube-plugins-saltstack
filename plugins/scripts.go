@@ -175,10 +175,18 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 
 	logrus.Infof("executeLocalScript fileName=%s,target=%s,runAs=%s,execArgs=%s", fileName, target, runAs, execArg)
 
-	cmdRun := "/bin/bash " + fileName
+	fileAbsPath := fileName[:strings.LastIndex(fileName, "/")]
+	if fileAbsPath == "" {
+		fileAbsPath = "/"
+	}
+	fileShellName := fileName[strings.LastIndex(fileName, "/")+1:]
+	//cmdRun := "/bin/bash " + fileName
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && ./%s", fileAbsPath, fileShellName)
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
+	cmdRun += "'"
+	logrus.Infof("exec script to %s : %s ", target, cmdRun)
 	request.Args = append(request.Args, cmdRun)
 
 	if len(runAs) > 0 {
@@ -426,7 +434,16 @@ func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
 	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:300}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
-		remoteParam.Command = fmt.Sprintf("bash %s", scriptPath)
+		localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
+		if localAbsPath == "" {
+			localAbsPath = "/"
+		}
+		localShellPath := scriptPath[strings.LastIndex(scriptPath, "/")+1:]
+		remoteParam.Command = fmt.Sprintf("/bin/bash cd %s && ./%s", localAbsPath, localShellPath)
+		if len(input.ExecArg) > 0 {
+			remoteParam.Command = remoteParam.Command + " " + input.ExecArg
+		}
+		logrus.Infof("ssh run script local: %s", remoteParam.Command)
 		execRemoteWithTimeout(&remoteParam)
 		//cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("bash %s", scriptPath))
 		err = remoteParam.Err
