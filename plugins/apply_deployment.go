@@ -3,6 +3,7 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
