@@ -255,7 +255,9 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	}
 
 	if len(fileVarMap) == 0 {
-		return fmt.Errorf("file %s no variable need to replace", fileName)
+		//return fmt.Errorf("file %s no variable need to replace", fileName)
+		logrus.Infof("file %s no variable need to replace", fileName)
+		return nil
 	}
 
 	fileVarList := []string{}
