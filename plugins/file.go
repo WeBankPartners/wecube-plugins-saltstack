@@ -104,6 +104,9 @@ func changeDirecoryOwner(input *FileCopyInput) error {
 	request.TargetType = "ipcidr"
 	request.Target = input.Target
 	request.Function = "cmd.run"
+	if !strings.Contains(input.FileOwner, ":") {
+		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
+	}
 
 	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
 	cmdRun := "chown -R " + input.FileOwner + "  " + directory
