@@ -181,7 +181,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	}
 	fileShellName := fileName[strings.LastIndex(fileName, "/")+1:]
 	//cmdRun := "/bin/bash " + fileName
-	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && ./%s", fileAbsPath, fileShellName)
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", fileAbsPath, fileShellName, fileShellName)
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
