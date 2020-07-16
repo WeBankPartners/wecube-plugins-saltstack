@@ -361,7 +361,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		if err != nil {
 			return output, err
 		}
-		scriptPathList = append(scriptPathList, scriptPath)
+		scriptPathList = []string{scriptPath}
 	}
 
 	var stdOut string
@@ -517,7 +517,7 @@ func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunSc
 		if err != nil {
 			return output, err
 		}
-		scriptPathList = append(scriptPathList, scriptPath)
+		scriptPathList = []string{scriptPath}
 	}
 
 	input.Password,_ = AesDePassword(input.Guid, input.Seed, input.Password)
