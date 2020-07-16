@@ -119,6 +119,10 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 	if err != nil {
 		return output, err
 	}
+	userGroup := input.UserName
+	if strings.Contains(userGroup, ":") {
+		userGroup = strings.Split(userGroup, ":")[1]
+	}
 
 	if !strings.Contains(input.UserName, ":") {
 		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
@@ -133,6 +137,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 				Password: input.Password,
 				RwDir:    input.RwDir,
 				RwFile:   input.RwFile,
+				UserGroup: userGroup,
 			},
 		},
 	}

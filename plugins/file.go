@@ -112,9 +112,13 @@ func changeDirecoryOwner(input *FileCopyInput) error {
 	cmdRun := "chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
-	_, err := CallSaltApi("https://127.0.0.1:8080", request)
+	output, err := CallSaltApi("https://127.0.0.1:8080", request)
 	if err != nil {
 		return err
+	}
+	logrus.Infof("chown output --> %s \n", output)
+	if strings.Contains(output, "chown") {
+		return fmt.Errorf(output)
 	}
 
 	return nil
