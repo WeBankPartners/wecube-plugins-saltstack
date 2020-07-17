@@ -246,7 +246,9 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	var result string
 	var output string
 	var err error
-
+        if strings.Contains(input.RunAs, ":") {
+		input.RunAs = strings.Split(input.RunAs, ":")[0]
+	}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
 		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg)
