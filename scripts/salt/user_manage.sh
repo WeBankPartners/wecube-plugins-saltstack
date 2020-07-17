@@ -128,6 +128,13 @@ addUser(){
     fi   
 }
 
+addGroup(){
+    if [[ -n $GROUP ]]; then
+        grep -qw ^$GROUP /etc/group || groupadd $GROUP
+        usermod -a -G $GROUP $USER_NAME
+    fi
+}
+
 changePassword(){
     echo $USER_PWD | passwd --stdin $USER_NAME
 }
@@ -162,6 +169,7 @@ check_args "$@"
 
 if [[ $ACTION = "add" ]];then
     addUser
+    addGroup
     addDir
     authorizeFile
 elif [[ $ACTION = "remove" ]];then
