@@ -181,7 +181,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	}
 	fileShellName := fileName[strings.LastIndex(fileName, "/")+1:]
 	//cmdRun := "/bin/bash " + fileName
-	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && ./%s", fileAbsPath, fileShellName)
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", fileAbsPath, fileShellName, fileShellName)
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
@@ -361,7 +361,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		if err != nil {
 			return output, err
 		}
-		scriptPathList = append(scriptPathList, scriptPath)
+		scriptPathList = []string{scriptPath}
 	}
 
 	var stdOut string
@@ -517,7 +517,7 @@ func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunSc
 		if err != nil {
 			return output, err
 		}
-		scriptPathList = append(scriptPathList, scriptPath)
+		scriptPathList = []string{scriptPath}
 	}
 
 	input.Password,_ = AesDePassword(input.Guid, input.Seed, input.Password)
