@@ -107,7 +107,12 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
-
+		if strings.Contains(input.UserName, ":") {
+			input.UserName = strings.Split(input.UserName, ":")[0]
+			if input.UserGroup == "" {
+				input.UserGroup = strings.Split(input.UserName, ":")[1]
+			}
+		}
 		password := ""
 		execArg := fmt.Sprintf("--action add --user '%s'", input.UserName)
 		if input.Password != "" {
@@ -252,7 +257,9 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
-
+		if strings.Contains(input.UserName, ":") {
+			input.UserName = strings.Split(input.UserName, ":")[0]
+		}
 		if err := deleteUserCheckParam(input); err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
@@ -349,7 +356,9 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
-
+		if strings.Contains(input.UserName, ":") {
+			input.UserName = strings.Split(input.UserName, ":")[0]
+		}
 		password := ""
 		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
 		if input.Password != "" {
