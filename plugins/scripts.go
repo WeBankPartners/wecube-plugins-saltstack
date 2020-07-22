@@ -181,7 +181,12 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	}
 	fileShellName := fileName[strings.LastIndex(fileName, "/")+1:]
 	//cmdRun := "/bin/bash " + fileName
-	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", fileAbsPath, fileShellName, fileShellName)
+	fileShellName = strings.TrimSpace(fileShellName)
+	tmpFileShellBin := fileShellName
+	if strings.Contains(tmpFileShellBin, " ") {
+		tmpFileShellBin = strings.Split(tmpFileShellBin, " ")[0]
+	}
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", fileAbsPath, tmpFileShellBin, fileShellName)
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
@@ -246,7 +251,9 @@ func runScript(scriptPath string, input RunScriptInput) (string, error) {
 	var result string
 	var output string
 	var err error
-
+	if strings.Contains(input.RunAs, ":") {
+		input.RunAs = strings.Split(input.RunAs, ":")[0]
+	}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
 		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg)
@@ -428,10 +435,13 @@ func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
 	var output string
 	//var cmdOut []byte
 	var err error
+	if strings.Contains(input.RunAs, ":") {
+		input.RunAs = strings.Split(input.RunAs, ":")[0]
+	}
 	if input.RunAs == "" {
 		input.RunAs = "root"
 	}
-	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:300}
+	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:1800}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
 		localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
@@ -439,10 +449,16 @@ func sshRunScript(scriptPath string, input RunScriptInput) (string, error) {
 			localAbsPath = "/"
 		}
 		localShellPath := scriptPath[strings.LastIndex(scriptPath, "/")+1:]
-		remoteParam.Command = fmt.Sprintf("/bin/bash cd %s && ./%s", localAbsPath, localShellPath)
+		localShellPath = strings.TrimSpace(localShellPath)
+		tmpFileShellBin := localShellPath
+		if strings.Contains(tmpFileShellBin, " ") {
+			tmpFileShellBin = strings.Split(tmpFileShellBin, " ")[0]
+		}
+		remoteParam.Command = fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", localAbsPath, tmpFileShellBin, localShellPath)
 		if len(input.ExecArg) > 0 {
 			remoteParam.Command = remoteParam.Command + " " + input.ExecArg
 		}
+		remoteParam.Command += "'"
 		logrus.Infof("ssh run script local: %s", remoteParam.Command)
 		execRemoteWithTimeout(&remoteParam)
 		//cmdOut,err = execRemote(input.RunAs, input.Password, input.Target, fmt.Sprintf("bash %s", scriptPath))
