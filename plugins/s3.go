@@ -118,7 +118,11 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
 		os.Remove(path)
-		return "", fmt.Errorf("updown file error: " + fmt.Sprint(err) + ": " + stderr.String())
+		tmpErrorMsg := fmt.Sprint(err) + ": " + stderr.String()
+		if strings.Contains(tmpErrorMsg, "404") {
+			tmpErrorMsg = "can not find "+storagePath+" in S3"
+		}
+		return "", fmt.Errorf("download %s error: %s", storagePath, tmpErrorMsg)
 	}
 	logrus.Infof("result=%v", stderr.String())
 	return path, nil
