@@ -395,6 +395,10 @@
 
          <!--最佳实践 -->
         <plugin name="agent" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="host" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="install" path="/saltstack/v1/agent/install" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -427,6 +431,10 @@
             </interface>
         </plugin>
         <plugin name="package-variable" targetPackage="wecmdb" targetEntity="app_instance" registerName="app_instance" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="create-replace" path="/saltstack/v1/package-variable/replace" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
@@ -467,6 +475,10 @@
             </interface>
         </plugin>
         <plugin name="package-variable" targetPackage="wecmdb" targetEntity="rdb_instance" registerName="rdb_instance" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="create-replace" path="/saltstack/v1/package-variable/replace" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.guid">guid</parameter>
@@ -507,6 +519,10 @@
             </interface>
         </plugin>
         <plugin name="host-script" targetPackage="wecmdb" targetEntity="app_instance" registerName="app_deploy" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="run-start-script" path="/saltstack/v1/host-script/run" filterRule="{state_code eq 'startup'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
@@ -573,6 +589,10 @@
             </interface>
         </plugin>
         <plugin name="host-script" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="host" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="install-monitor-agent" path="/saltstack/v1/host-script/run" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -655,6 +675,10 @@
             </interface>
         </plugin>
         <plugin name="host-file" targetPackage="wecmdb" targetEntity="app_instance" registerName="app_deploy" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="{state_code eq 'changed'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
@@ -672,6 +696,10 @@
             </interface>
         </plugin>
         <plugin name="host-file" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="monitor_agent" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -689,6 +717,10 @@
             </interface>
         </plugin>
         <plugin name="host-file" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="init_package" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -706,6 +738,10 @@
             </interface>
         </plugin>
         <plugin name="host-user" targetPackage="wecmdb" targetEntity="host_resource_instance" registerName="host" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="add" path="/saltstack/v1/host-user/add">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:host_resource_instance.guid">guid</parameter>
@@ -741,6 +777,10 @@
             </interface>
         </plugin>
         <plugin name="mysql-script" targetPackage="wecmdb" targetEntity="rdb_instance" registerName="db_deploy" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="run-deploy-script" path="/saltstack/v1/mysql-script/run" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.deploy_package_url">endpoint</parameter>
@@ -797,6 +837,10 @@
             </interface>
         </plugin>
         <plugin name="mysql-database" targetPackage="wecmdb" targetEntity="rdb_instance" registerName="db_deploy" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="add" path="/saltstack/v1/mysql-database/add" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_instance.rdb_resource_instance>wecmdb:rdb_resource_instance.guid">guid</parameter>
@@ -837,6 +881,10 @@
         </plugin>
 
         <plugin name="mysql-user" targetPackage="wecmdb" targetEntity="rdb_resource_instance" registerName="db_monitor" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="add" path="/saltstack/v1/mysql-user/add" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:rdb_resource_instance.guid">guid</parameter>
@@ -876,6 +924,10 @@
             </interface>
         </plugin>
         <plugin name="apply-deployment" targetPackage="wecmdb" targetEntity="app_instance" registerName="app_deploy" targetEntityFilterRule="">
+            <roleBinds>
+                <roleBind permission="MGMT" roleName="SUPER_ADMIN"/>
+                <roleBind permission="USE" roleName="SUPER_ADMIN"/>
+            </roleBinds>
             <interface action="new" path="/saltstack/v1/apply-deployment/new" filterRule="{state_code eq 'created'}{fixed_date is NULL}">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="wecmdb:app_instance.guid">guid</parameter>
