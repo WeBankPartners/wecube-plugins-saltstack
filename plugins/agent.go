@@ -194,6 +194,7 @@ type AgentUninstallInput struct {
 	CallBackParameter
 	Guid     string `json:"guid,omitempty"`
 	Seed     string `json:"seed,omitempty"`
+	User     string `json:"user,omitempty"`
 	Password string `json:"password,omitempty"`
 	Host     string `json:"host,omitempty"`
 }
@@ -509,9 +510,11 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 		logrus.Errorf("AesDePassword meet error(%v)", err)
 		return output, err
 	}
-
+	if input.User == "" {
+		input.User = "root"
+	}
 	var cmdOut []byte
-	cmdOut,err = execRemote("root", password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp))
+	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp))
 	logrus.Infof("Uninstall minion:%s with output: %s ", input.Host, string(cmdOut))
 	if err != nil {
 		logrus.Errorf("Uninstall minion from host: %s  error %v ", input.Host, err)
