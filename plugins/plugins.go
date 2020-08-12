@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var (
@@ -20,6 +20,8 @@ type Action interface {
 	ReadParam(param interface{}) (interface{}, error)
 	// CheckParam(param interface{}) error
 	Do(param interface{}) (interface{}, error)
+	// Set accept language
+	SetAcceptLanguage(language string)
 }
 
 func registerPlugin(name string, plugin Plugin) {
@@ -27,7 +29,7 @@ func registerPlugin(name string, plugin Plugin) {
 	defer pluginsMutex.Unlock()
 
 	if _, found := plugins[name]; found {
-		logrus.Fatalf("deploy plugin provider %q was registered twice", name)
+		log.Logger.Fatal("deploy plugin twice", log.String("plugin", name))
 	}
 
 	plugins[name] = plugin
@@ -80,17 +82,15 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 	var err error
 	defer func() {
 		if err != nil {
-			logrus.Errorf("plguin[%v]-action[%v] meet error = %v", pluginRequest.Name, pluginRequest.Action, err)
 			pluginResponse.ResultCode = "1"
 			pluginResponse.ResultMsg = fmt.Sprint(err)
 		} else {
-			logrus.Infof("plguin[%v]-action[%v] completed", pluginRequest.Name, pluginRequest.Action)
 			pluginResponse.ResultCode = "0"
 			pluginResponse.ResultMsg = "success"
 		}
 	}()
 
-	logrus.Infof("plguin[%v]-action[%v] start...", pluginRequest.Name, pluginRequest.Action)
+	log.Logger.Info("Start", log.String("plugin", pluginRequest.Name), log.String("action", pluginRequest.Action))
 
 	plugin, err := getPluginByName(pluginRequest.Name)
 	if err != nil {
@@ -102,21 +102,21 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 		return &pluginResponse, err
 	}
 
-	logrus.Infof("read parameters from http request = %v", pluginRequest.Parameters)
 	actionParam, err := action.ReadParam(pluginRequest.Parameters)
 	if err != nil {
 		return &pluginResponse, err
 	}
 
-	logrus.Infof("check parameters = %v", actionParam)
+	action.SetAcceptLanguage("")
+
 	// if err = action.CheckParam(actionParam); err != nil {
 	// 	return &pluginResponse, err
 	// }
 
-	logrus.Infof("action do with parameters = %v", actionParam)
+	log.Logger.Debug("Request param", log.JsonObj("param", actionParam))
 	outputs, err := action.Do(actionParam)
 	if err != nil {
-		logrus.Infof("action response error --> %v ", err)
+		log.Logger.Error("Action handle error", log.Error(err))
 	}
 
 	pluginResponse.Results = outputs

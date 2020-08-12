@@ -50,6 +50,11 @@ type SaltApiCallOutput struct {
 }
 
 type SaltApiCallAction struct {
+	Language string
+}
+
+func (action *SaltApiCallAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *SaltApiCallAction) ReadParam(param interface{}) (interface{}, error) {
@@ -138,7 +143,7 @@ func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (outpu
 	request.Target = input.Target
 	request.Args = input.Args
 
-	result, err := CallSaltApi("https://127.0.0.1:8080", request)
+	result, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
 	if err != nil {
 		return output, err
 	}

@@ -1,21 +1,19 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	gossh "golang.org/x/crypto/ssh"
 	"strings"
 	"os/exec"
 	"time"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 )
 
 var AgentActions = make(map[string]Action)
 
 func init() {
-	AgentActions["install_old"] = new(AgentInstallAction)
-	AgentActions["uninstall_old"] = new(AgentUninstallAction)
 	AgentActions["install"] = new(MinionInstallAction)
 	AgentActions["uninstall"] = new(MinionUninstallAction)
 }
@@ -67,45 +65,16 @@ type Roster struct {
 	Sudo   string
 }
 
-type AgentInstallAction struct {
-}
-
-func (action *AgentInstallAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs AgentInstallInputs
-	err := UnmarshalJson(param, &inputs)
-	if err != nil {
-		return nil, err
-	}
-	return inputs, nil
-}
-
-func (action *AgentInstallAction) CheckParam(input AgentInstallInput) error {
-	if input.Host == "" {
-		return errors.New("Host is empty")
-	}
-	if input.Guid == "" {
-		return errors.New("Guid is empty")
-	}
-	if input.Seed == "" {
-		return errors.New("Seed is empty")
-	}
-
-	if input.Password == "" {
-		return errors.New("Password is empty")
-	}
-
-	return nil
-}
 
 func runBashScript(shellPath string, args []string) (string, error) {
 	cmd := exec.Command(shellPath, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		logrus.Errorf("failed to runBashScript(%s), err = %v,args=%v,out=%v", shellPath, err, args, string(out))
+		log.Logger.Error("RunBashScript error", log.String("path", shellPath), log.StringList("args", args), log.String("output", string(out)), log.Error(err))
 		return "", err
 	}
 
-	logrus.Infof("runBashScript,output=%s", string(out))
+	log.Logger.Debug("RunBashScript", log.String("output", string(out)))
 	return string(out), nil
 }
 
@@ -114,77 +83,6 @@ func removeSaltKeys(host string) {
 	return
 }
 
-func (action *AgentInstallAction) installAgent(input *AgentInstallInput) (output AgentInstallOutput, err error) {
-	defer func() {
-		output.Guid = input.Guid
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err == nil {
-			output.Result.Code = RESULT_CODE_SUCCESS
-		} else {
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
-		}
-	}()
-
-	err = action.CheckParam(*input)
-	if err != nil {
-		return output, err
-	}
-
-	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
-	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
-		return output, err
-	}
-	if input.User == "" {
-		input.User = "root"
-	}
-
-	if input.Command != "" {
-		_,err = execRemote(input.User, password, input.Host, input.Command)
-		if err != nil {
-			logrus.Errorf("To host: %s Exec command: %s error %v ", input.Host, input.Command, err)
-			return output, fmt.Errorf("To host: %s Exec command: %s error %v ", input.Host, input.Command, err)
-		}
-	}
-
-	installMinionArgs := []string{
-		input.Host,
-		password,
-		input.User,
-	}
-	if input.Port != "" {
-		installMinionArgs = append(installMinionArgs, input.Port)
-	}
-	out, er := runBashScript("./scripts/salt/install_minion.sh", installMinionArgs)
-	if er != nil {
-		err = fmt.Errorf("failed to install salt-minion, err = %v,out=%v", er, string(out))
-		return output, err
-	}
-	logrus.Infof("installAgent run install_minion.sh out=%v", string(out))
-
-	return output, err
-}
-
-func (action *AgentInstallAction) Do(input interface{}) (interface{}, error) {
-	agents, _ := input.(AgentInstallInputs)
-	outputs := AgentInstallOutputs{}
-	var finalErr error
-	for _, agent := range agents.Inputs {
-		removeSaltKeys(agent.Host)
-		agentInstallOutput, err := action.installAgent(&agent)
-		if err != nil {
-			finalErr = err
-		}
-		outputs.Outputs = append(outputs.Outputs, agentInstallOutput)
-	}
-
-	logrus.Infof("all agents = %v have been installed", agents)
-	return &outputs, finalErr
-}
-
-type AgentUninstallAction struct {
-}
 
 type AgentUninstallInputs struct {
 	Inputs []AgentUninstallInput `json:"inputs,omitempty"`
@@ -209,92 +107,6 @@ type AgentUninstallOutput struct {
 	Guid string `json:"guid,omitempty"`
 }
 
-func (action *AgentUninstallAction) agentUninstallCheckParam(input AgentUninstallInput) error {
-	if input.Guid == "" {
-		return errors.New("Guid is empty")
-	}
-	if input.Host == "" {
-		return errors.New("Host is empty")
-	}
-	if input.Seed == "" {
-		return errors.New("Seed is empty")
-	}
-	if input.Password == "" {
-		return errors.New("Password is empty")
-	}
-	return nil
-}
-
-func (action *AgentUninstallAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs AgentUninstallInputs
-	err := UnmarshalJson(param, &inputs)
-	if err != nil {
-		return nil, err
-	}
-	return inputs, nil
-}
-
-func (action *AgentUninstallAction) agentUninstall(input *AgentUninstallInput) (output AgentUninstallOutput, err error) {
-	defer func() {
-		output.Guid = input.Guid
-		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
-		if err == nil {
-			output.Result.Code = RESULT_CODE_SUCCESS
-		} else {
-			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = err.Error()
-		}
-	}()
-
-	err = action.agentUninstallCheckParam(*input)
-	if err != nil {
-		return output, err
-	}
-
-	// Decrypt Password
-	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
-	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
-		return output, err
-	}
-
-	// run uninstall_minion.sh
-	uninstallMinionArgs := []string{
-		input.Host,
-		password,
-	}
-	out, er := runBashScript("./scripts/salt/uninstall_minion.sh", uninstallMinionArgs)
-	if er != nil {
-		err = fmt.Errorf("failed to uninstall salt-minion, err = %v,out=%v", er, string(out))
-		return output, err
-	}
-	logrus.Infof("agentUninstall run uninstall_minion.sh out=%v", string(out))
-
-	return output, err
-}
-
-func (action *AgentUninstallAction) Do(input interface{}) (interface{}, error) {
-	agents, _ := input.(AgentUninstallInputs)
-	outputs := AgentUninstallOutputs{}
-	var finalErr error
-	var hosts []string
-	for _, agent := range agents.Inputs {
-		agentUninstallOutput, err := action.agentUninstall(&agent)
-		if err != nil {
-			finalErr = err
-		}
-
-		// salt-key -d
-		removeSaltKeys(agent.Host)
-		outputs.Outputs = append(outputs.Outputs, agentUninstallOutput)
-		hosts = append(hosts, agent.Host)
-	}
-	go SendHostDelete(hosts)
-
-	logrus.Infof("all agents = %v have been uninstalled", agents)
-	return &outputs, finalErr
-}
-
 type ExecRemoteParam struct {
 	User  string
 	Password  string
@@ -315,10 +127,9 @@ func execRemoteWithTimeout(param *ExecRemoteParam)  {
 		gParam.DoneChan <- 1
 	}(param)
 	select {
-	case <-param.DoneChan: logrus.Infof("exec remote bash to %s@%s done ", param.User, param.Host)
+	case <-param.DoneChan: log.Logger.Debug("Exec remote bash done ", log.String("host", param.Host))
 	case <-time.After(time.Duration(param.Timeout)*time.Second):
 		param.Err = fmt.Errorf("exec remote command timeout %d seconds", param.Timeout)
-		logrus.Infof("exec remote bash to %s@%s timeout in %d seconds,break ", param.User, param.Host, param.Timeout)
 	}
 }
 
@@ -337,25 +148,23 @@ func execRemote(user,password,host,command string) (output []byte,err error) {
 		},
 	}
 	if client,err = gossh.Dial("tcp", fmt.Sprintf("%s:22", host), clientConfig); err != nil {
-		fmt.Printf("ssh dial error %v \n", err)
-		return output,err
+		return output,fmt.Errorf("ssh dial error:%s", err.Error())
 	}
 	session,err = client.NewSession()
 	if err != nil {
-		fmt.Printf("ssh client new session error %v \n", err)
-		return output,err
+		return output,fmt.Errorf("ssh client new session error:%s", err.Error())
 	}
 	output,err = session.Output(command)
 	if err != nil {
-		fmt.Printf("ssh run command error %v \n", err)
+		err = fmt.Errorf("ssh run command error:%s", err.Error())
 	}
 	session.Close()
 	return output,err
 }
 
-type MinionInstallAction struct {}
+type MinionInstallAction struct { Language string }
 
-type MinionUninstallAction struct {}
+type MinionUninstallAction struct { Language string }
 
 func (action *MinionInstallAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs AgentInstallInputs
@@ -364,6 +173,10 @@ func (action *MinionInstallAction) ReadParam(param interface{}) (interface{}, er
 		return nil, err
 	}
 	return inputs, nil
+}
+
+func (action *MinionInstallAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *MinionUninstallAction) ReadParam(param interface{}) (interface{}, error) {
@@ -375,23 +188,27 @@ func (action *MinionUninstallAction) ReadParam(param interface{}) (interface{}, 
 	return inputs, nil
 }
 
+func (action *MinionUninstallAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *MinionInstallAction) CheckParam(input AgentInstallInput) error {
 	if input.Host == "" {
-		return errors.New("Host is empty ")
+		return getParamEmptyError(action.Language, "host")
 	}
 	if input.Guid == "" {
-		return errors.New("Guid is empty ")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("Seed is empty ")
+		return getParamEmptyError(action.Language, "seed")
 	}
 
 	if input.Password == "" {
-		return errors.New("Password is empty ")
+		return getParamEmptyError(action.Language, "password")
 	}
 
 	if MasterHostIp == "" {
-		return errors.New("Master ip is empty,please check docker env ")
+		return getSysParamEmptyError(action.Language, "minion_master_ip")
 	}
 
 	return nil
@@ -416,36 +233,34 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 	if input.User == "" {
 		input.User = "root"
 	}
-	//var cmdOut []byte
 	if input.Command != "" {
-		tmpParam := ExecRemoteParam{User:input.User,Password:input.Password,Host:input.Host,Command:input.Command,Timeout:300}
+		tmpParam := ExecRemoteParam{User:input.User,Password:input.Password,Host:input.Host,Command:input.Command,Timeout:models.Config.ExecRemoteCommandTimeout}
 		execRemoteWithTimeout(&tmpParam)
 		cmdOutString := tmpParam.Output
 		err = tmpParam.Err
-		//cmdOut,err = execRemote(input.User, password, input.Host, input.Command)
 		if err != nil {
-			logrus.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, cmdOutString, err)
-			return output, fmt.Errorf("To host: %s Exec command: %s output: %s error %v ", input.Host, input.Command, cmdOutString, err)
+			log.Logger.Error("Exec command", log.String("host", input.Host), log.String("command", input.Command), log.String("output", cmdOutString), log.Error(err))
+			err = getRemoteCommandError(action.Language, input.Host, err)
+			return output, err
 		}
 	}
-	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:300,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
+	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:models.Config.InstallMinionTimeout,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
 	execRemoteWithTimeout(&execParam)
-	//cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method))
 	outString := execParam.Output
 	err = execParam.Err
-	logrus.Infof("Install minion:%s with output: %s ", input.Host, outString)
 	if err != nil {
-		logrus.Errorf("Install minion to host: %s  error %v ", input.Host, err)
-		return output, fmt.Errorf("Install minion to host: %s  error %v ", input.Host, err)
+		log.Logger.Error("Install minion", log.String("host", input.Host), log.String("output", outString), log.Error(err))
+		err = getRemoteCommandError(action.Language, input.Host, err)
+		return output, err
 	}
 	if !strings.Contains(outString, "salt-minion_success") {
-		err = fmt.Errorf("Start minion fail,output -> %s ", outString)
+		err = getInstallMinionError(action.Language, input.Host, outString)
 	}
 
 	return output, err
@@ -462,27 +277,27 @@ func (action *MinionInstallAction) Do(input interface{}) (interface{}, error) {
 		}
 		agentInstallOutput, err := action.installMinion(&agent)
 		if err != nil {
+			log.Logger.Error("Install minion action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, agentInstallOutput)
 	}
 
-	logrus.Infof("all agents = %v have been installed", agents)
 	return &outputs, finalErr
 }
 
 func (action *MinionUninstallAction) agentUninstallCheckParam(input AgentUninstallInput) error {
 	if input.Guid == "" {
-		return errors.New("Guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Host == "" {
-		return errors.New("Host is empty")
+		return getParamEmptyError(action.Language, "host")
 	}
 	if input.Seed == "" {
-		return errors.New("Seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.Password == "" {
-		return errors.New("Password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 	return nil
 }
@@ -507,7 +322,7 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 	// Decrypt Password
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 	if input.User == "" {
@@ -515,10 +330,10 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 	}
 	var cmdOut []byte
 	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp))
-	logrus.Infof("Uninstall minion:%s with output: %s ", input.Host, string(cmdOut))
+	log.Logger.Debug("Uninstall minion", log.String("host", input.Host), log.String("output", string(cmdOut)))
 	if err != nil {
-		logrus.Errorf("Uninstall minion from host: %s  error %v ", input.Host, err)
-		return output, fmt.Errorf("Uninstall minion from host: %s  error %v ", input.Host, err)
+		err = getUninstallMinionError(action.Language, input.Host, string(cmdOut), err)
+		return output, err
 	}
 
 	return output, err
@@ -532,6 +347,7 @@ func (action *MinionUninstallAction) Do(input interface{}) (interface{}, error) 
 	for _, agent := range agents.Inputs {
 		agentUninstallOutput, err := action.agentUninstall(&agent)
 		if err != nil {
+			log.Logger.Error("Uninstall minion action", log.Error(err))
 			finalErr = err
 		}
 
@@ -542,6 +358,5 @@ func (action *MinionUninstallAction) Do(input interface{}) (interface{}, error) 
 	}
 	go SendHostDelete(hosts)
 
-	logrus.Infof("all agents = %v have been uninstalled", agents)
 	return &outputs, finalErr
 }

@@ -53,6 +53,11 @@ type ListFilesOutput struct {
 }
 
 type ListCurrentDirAction struct {
+	Language string
+}
+
+func (action *ListCurrentDirAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *ListCurrentDirAction) ReadParam(param interface{}) (interface{}, error) {
@@ -117,7 +122,7 @@ func (action *ListCurrentDirAction) listCurrentDir(input *ListFilesInput) (outpu
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
 		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 		if err != nil {
 			logrus.Errorf("ListCurrentDirAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err
@@ -196,6 +201,11 @@ type ConfigKeyInfo struct {
 }
 
 type GetConfigFileKeyAction struct {
+	Language string
+}
+
+func (action *GetConfigFileKeyAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *GetConfigFileKeyAction) ReadParam(param interface{}) (interface{}, error) {
@@ -244,7 +254,7 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
 		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 		if err != nil {
 			logrus.Errorf("GetConfigFileKeyAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err

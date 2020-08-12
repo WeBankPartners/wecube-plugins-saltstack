@@ -74,6 +74,11 @@ type RunScriptOutput struct {
 }
 
 type RunScriptAction struct {
+	Language string
+}
+
+func (action *RunScriptAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *RunScriptAction) ReadParam(param interface{}) (interface{}, error) {
@@ -105,18 +110,17 @@ func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
 	return nil
 }
 
+// why not move? TODO
 func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 	var err error
 	content, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		logrus.Errorf("saveFileToSaltMasterBaseDir,readfile meet err=%v", err)
-		return "", err
+		return "", fmt.Errorf("read %s fail,%s", fileName, err.Error())
 	}
 
 	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
 	if err != nil {
-		logrus.Errorf("saveScript,create tempfile meet err=%v", err)
-		return "", err
+		return "", fmt.Errorf("create tmp file fail,%s", err.Error())
 	}
 
 	defer func() {
@@ -126,13 +130,11 @@ func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 	}()
 
 	if _, err = tmpFile.Write(content); err != nil {
-		logrus.Errorf("saveScript,write tempfile meet err=%v", err)
-		return "", err
+		return "", fmt.Errorf("write content to tmp file fail,%s", err.Error())
 	}
 
 	if err = tmpFile.Close(); err != nil {
-		logrus.Errorf("saveScript,close tempfile meet err=%v", err)
-		return "", err
+		return "", fmt.Errorf("close tmp file fail,%s", err.Error())
 	}
 
 	fullPath := tmpFile.Name()
@@ -403,7 +405,11 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
-type SSHRunScriptAction struct {}
+type SSHRunScriptAction struct { Language string }
+
+func (action *SSHRunScriptAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
 
 func (action *SSHRunScriptAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs RunScriptInputs

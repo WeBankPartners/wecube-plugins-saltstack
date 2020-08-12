@@ -64,6 +64,11 @@ type AddUserOutput struct {
 }
 
 type AddUserAction struct {
+	Language string
+}
+
+func (action *AddUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *AddUserAction) ReadParam(param interface{}) (interface{}, error) {
@@ -223,6 +228,11 @@ type DeleteUserOutput struct {
 }
 
 type DeleteUserAction struct {
+	Language string
+}
+
+func (action *DeleteUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *DeleteUserAction) ReadParam(param interface{}) (interface{}, error) {
@@ -309,7 +319,13 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
-type ChangeUserPasswordAction struct {}
+type ChangeUserPasswordAction struct {
+	Language string
+}
+
+func (action *ChangeUserPasswordAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
 
 type ChangeUserPasswordInputs struct {
 	Inputs []ChangeUserPasswordInput `json:"inputs,omitempty"`

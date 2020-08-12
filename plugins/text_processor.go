@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -68,6 +69,11 @@ type SearchTextOutput struct {
 }
 
 type SearchTextAction struct {
+	Language string
+}
+
+func (action *SearchTextAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *SearchTextAction) ReadParam(param interface{}) (interface{}, error) {
@@ -115,7 +121,7 @@ func runCmd(shellCommand string) (string, error) {
 	cmd.Stdout = &stdout
 
 	if err := cmd.Run(); err != nil {
-		logrus.Errorf("runCmd (%s) meet err=%v,stderr=%v", shellCommand, err, stderr.String())
+		log.Logger.Error("Run cmd error", log.String("command", shellCommand), log.String("output", stderr.String()), log.Error(err))
 		return stderr.String(), nil
 	}
 
@@ -173,7 +179,7 @@ func (action *SearchTextAction) searchText(input *SearchTextInput) (output Searc
 		return output, err
 	}
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
 	if err != nil {
 		return output, err
 	}
@@ -231,6 +237,11 @@ type GetContextOutput struct {
 }
 
 type GetContextAction struct {
+	Language string
+}
+
+func (action *GetContextAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *GetContextAction) ReadParam(param interface{}) (interface{}, error) {
@@ -296,7 +307,7 @@ func (action *GetContextAction) getContext(input *GetContextInput) (output GetCo
 	}
 
 	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
+	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
 	if err != nil {
 		return output, err
 	}

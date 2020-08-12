@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 //VariableActions .
@@ -665,7 +666,7 @@ func LogReadLine(cmd *exec.Cmd, stdout io.ReadCloser) ([]string, error) {
 				break
 			}
 			if err.Error() != "EOF" {
-				logrus.Info("readline is error")
+				log.Logger.Warn("Read line error", log.Error(err))
 				return []string{}, nil
 			}
 		}

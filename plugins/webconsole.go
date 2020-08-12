@@ -543,6 +543,11 @@ type WebConsoleOutput struct {
 }
 
 type GetWebConsoleUrlAction struct {
+	Language string
+}
+
+func (action *GetWebConsoleUrlAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *GetWebConsoleUrlAction) ReadParam(param interface{}) (interface{}, error) {

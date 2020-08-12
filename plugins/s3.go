@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
@@ -72,38 +73,34 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	return path, nil
 }
 
-func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string, error) {
+func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language string) (string, error) {
 	var tmpName string
 	if randName {
 		tmpName = getWorkspaceName()
 	}
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
-		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 
 	Info := strings.Split(s[1], "/")
 	if len(Info) < 3 {
-		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 
 	//check dir exist
-	err := ensureDirExist(UPLOADS3FILE_DIR)
-	if err != nil {
-		logrus.Infof("downloadS3File ensureDirExist meet err=%v", err)
-		return "", fmt.Errorf("create upload path error : %s", err)
-	}
+	ensureDirExist(UPLOADS3FILE_DIR)
 
 	path := UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
-	//tmpPath := UPLOADS3FILE_DIR + Info[len(Info)-1] + tmpName
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	if err == nil {
-		logrus.Infof("os stat check path = %s return ", path)
+		log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
 		return path, nil
 	}
+	//config s3,need to change different workspace TODO
 	err = fileReplace(endPoint, accessKey, secretKey)
 	if err != nil {
-		return "", fmt.Errorf("template execution error: %s", err)
+		return "", getS3DownloadError(language, endPoint, fmt.Sprintf("s3 template config error: %s", err.Error()))
 	}
 
 	storagePath := ""
@@ -112,7 +109,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string
 	}
 	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get --force "
 	sh += " s3:/" + storagePath + " " + path
-	logrus.Infof("s3 cmd -------> %s", sh)
+	log.Logger.Debug("S3 command", log.String("command", sh))
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -120,11 +117,11 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string
 		os.Remove(path)
 		tmpErrorMsg := fmt.Sprint(err) + ": " + stderr.String()
 		if strings.Contains(tmpErrorMsg, "404") {
-			tmpErrorMsg = "can not find "+storagePath+" in S3"
+			return "", getS3FileNotFoundError(language, storagePath)
 		}
-		return "", fmt.Errorf("download %s error: %s", storagePath, tmpErrorMsg)
+		return "", getS3DownloadError(language, endPoint, tmpErrorMsg)
 	}
-	logrus.Infof("result=%v", stderr.String())
+	log.Logger.Debug("Download s3 file result", log.String("output", stderr.String()))
 	return path, nil
 }
 
