@@ -26,8 +26,7 @@ func (plugin *MysqlUserPlugin) GetActionByName(actionName string) (Action, error
 }
 
 //------------AddMysqlDatabaseUserAction--------------
-type AddMysqlDatabaseUserAction struct {
-}
+type AddMysqlDatabaseUserAction struct {  Language string  }
 
 type AddMysqlDatabaseUserInputs struct {
 	Inputs []AddMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -60,6 +59,10 @@ type AddMysqlDatabaseUserOutput struct {
 	Result
 	DatabaseUserGuid     string `json:"databaseUserGuid,omitempty"`
 	DatabaseUserPassword string `json:"databaseUserPassword,omitempty"`
+}
+
+func (action *AddMysqlDatabaseUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *AddMysqlDatabaseUserAction) ReadParam(param interface{}) (interface{}, error) {
@@ -113,7 +116,7 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	}
 
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName)
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName, action.Language)
 	if err != nil {
 		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
@@ -170,8 +173,7 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 	return outputs, finalErr
 }
 
-type DeleteMysqlDatabaseUserAction struct {
-}
+type DeleteMysqlDatabaseUserAction struct { Language string }
 
 type DeleteMysqlDatabaseUserInputs struct {
 	Inputs []DeleteMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -199,6 +201,10 @@ type DeleteMysqlDatabaseUserOutput struct {
 	CallBackParameter
 	Result
 	DatabaseUserGuid string `json:"databaseUserGuid,omitempty"`
+}
+
+func (action *DeleteMysqlDatabaseUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *DeleteMysqlDatabaseUserAction) ReadParam(param interface{}) (interface{}, error) {

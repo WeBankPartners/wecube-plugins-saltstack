@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -168,8 +168,8 @@ type callSaltApiResults struct {
 	Results []map[string]interface{} `json:"return,omitempty"`
 }
 
-func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
-	logrus.Infof("call salt api request = %v", request)
+func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (string, error) {
+	log.Logger.Debug("Call salt api request", log.JsonObj("param", request))
 
 	token, err := getSaltApiToken()
 	if err != nil {
@@ -200,24 +200,23 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest) (string, error) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	result := string(body)
-	logrus.Infof("call salt api response = %v", result)
+	log.Logger.Debug("Call salt api response", log.String("body", result))
 
 	apiResult := callSaltApiResults{}
 	if err := json.Unmarshal([]byte(result), &apiResult); err != nil {
-		logrus.Infof("callSaltApi unmarshal result meet error=%v ", err)
+		log.Logger.Error("Call salt api unmarshal result error", log.Error(err))
 		return "", err
 	}
-	logrus.Infof("apiResult: %++v", apiResult)
 
 	if len(apiResult.Results) == 0 || len(apiResult.Results[0]) == 0 {
-		return "", fmt.Errorf("salt api:no target match ,please check if salt-agent installed on target,reqeust=%v", request)
+		return "", getSaltApiTargetError(language, request.Target)
 	}
 	for _, result := range apiResult.Results {
 		for k, v := range result {
 			switch v.(type) {
 			case bool:
 				if v.(bool) == false {
-					return "", fmt.Errorf("salt api: can not connect to target[%v]", k)
+					return "", getSaltApiConnectError(language, k)
 				}
 			}
 		}
@@ -342,7 +341,7 @@ func listFile(myDir string) ([]string, error) {
 	return output, err
 }
 
-func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error {
+func deriveUnpackfile(filePath string, desDirPath string, overwrite bool, language string) error {
 	name := ""
 	args := []string{}
 	lowerFilepath := strings.ToLower(filePath)
@@ -373,14 +372,14 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool) error 
 		name = "tar"
 		args = append(args, "zxf", filePath, "-C", unpackToDirPath)
 	} else {
-		return fmt.Errorf("%s has invalid compressed format", lowerFilepath)
+		return getDecompressSuffixError(language, lowerFilepath)
 	}
 
 	command := exec.Command(name, args...)
 	out, err := command.CombinedOutput()
-	logrus.Infof("runDatabaseCommand(%v) output=%v,err=%v\n", command, string(out), err)
 	if err != nil {
-		return err
+		log.Logger.Error("Unpack file", log.String("command", command.String()), log.String("output", string(out)), log.Error(err))
+		return getUnpackFileError(language, lowerFilepath, err)
 	}
 	return nil
 }
@@ -394,43 +393,44 @@ func InitEnvParam() {
 	if tmpPwd != "" {
 		DefaultS3Password = tmpPwd
 	}
-	logrus.Infof("s3  --> key: %s  password: %s \n", DefaultS3Key, DefaultS3Password)
+	log.Logger.Info("S3 config", log.String("key", DefaultS3Key))
+	log.Logger.Debug("S3 config", log.String("password", DefaultS3Password))
 	tmpSpecialReplace := os.Getenv("SALTSTACK_DEFAULT_SPECIAL_REPLACE")
 	if tmpSpecialReplace != "" {
-		logrus.Infof("variable replace  --> special flag: %s  \n", tmpSpecialReplace)
 		DefaultSpecialReplaceList = strings.Split(tmpSpecialReplace, ",")
+		log.Logger.Info("Variable replace config", log.StringList("special", DefaultSpecialReplaceList))
 	} else {
-		logrus.Infof("variable replace without any param  \n")
+		log.Logger.Warn("Variable replace without any param")
 	}
 	tmpEncryptReplace := os.Getenv("SALTSTACK_ENCRYPT_VARIBLE_PREFIX")
 	if tmpEncryptReplace != "" {
-		logrus.Infof("variable encrypt replace  --> special flag: %s  \n", tmpEncryptReplace)
 		DefaultEncryptReplaceList = strings.Split(tmpEncryptReplace, ",")
+		log.Logger.Info("Variable encrypt", log.StringList("special", DefaultEncryptReplaceList))
 	}else{
-		logrus.Infof("variable encrypt replace without any param  \n")
+		log.Logger.Warn("Variable encrypt replace without any param")
 	}
 	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
 	if tmpFileReplace != "" {
-		logrus.Infof("variable file replace  --> special flag: %s  \n", tmpFileReplace)
 		DefaultFileReplaceList = strings.Split(tmpFileReplace, ",")
+		log.Logger.Info("Variable file", log.StringList("special", DefaultFileReplaceList))
 	}else{
-		logrus.Infof("variable file replace without any param  \n")
+		log.Logger.Warn("Variable file replace without any param")
 	}
 	tmpHostIp := os.Getenv("minion_master_ip")
 	if tmpHostIp != "" {
-		logrus.Infof("master host ip: %s  \n", tmpHostIp)
 		MasterHostIp = tmpHostIp
+		log.Logger.Info("Master host", log.String("ip", MasterHostIp))
 	} else {
-		logrus.Infof("master host ip not found,default null!!  \n")
+		log.Logger.Warn("Master host ip not found,default null")
 	}
 	tmpCoreUrl := os.Getenv("CORE_ADDR")
 	if tmpCoreUrl == "" {
 		tmpCoreUrl = os.Getenv("GATEWAY_URL")
 	}
 	if tmpCoreUrl != "" {
-		logrus.Infof("core url : %s  \n", tmpCoreUrl)
 		CoreUrl = tmpCoreUrl
+		log.Logger.Info("Core url", log.String("url", CoreUrl))
 	} else {
-		logrus.Infof("core url is empty!!  \n")
+		log.Logger.Warn("Core url is empty")
 	}
 }

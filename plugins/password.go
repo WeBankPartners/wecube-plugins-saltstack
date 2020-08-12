@@ -70,11 +70,15 @@ type PasswordDecodeOutput struct {
 }
 
 type PasswordEncodeAction struct {
-
+	Language string
 }
 
 type PasswordDecodeAction struct {
+	Language string
+}
 
+func (action *PasswordEncodeAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *PasswordEncodeAction) CheckParam(input PasswordEncodeInput) error {
@@ -130,6 +134,10 @@ func (action *PasswordEncodeAction) Do(input interface{}) (interface{}, error) {
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 	return &outputs, finalErr
+}
+
+func (action *PasswordDecodeAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *PasswordDecodeAction) ReadParam(param interface{}) (interface{}, error) {

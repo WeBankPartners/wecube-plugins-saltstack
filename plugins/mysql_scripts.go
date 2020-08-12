@@ -1,13 +1,12 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var MysqlScriptPluginActions = make(map[string]Action)
@@ -58,7 +57,10 @@ type RunMysqlScriptOutput struct {
 	Detail string `json:"detail,omitempty"`
 }
 
-type RunMysqlScriptAction struct {
+type RunMysqlScriptAction struct { Language string }
+
+func (action *RunMysqlScriptAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *RunMysqlScriptAction) ReadParam(param interface{}) (interface{}, error) {
@@ -70,24 +72,24 @@ func (action *RunMysqlScriptAction) ReadParam(param interface{}) (interface{}, e
 	return inputs, nil
 }
 
-func runMysqlScriptCheckParam(input RunMysqlScriptInput) error {
+func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScriptInput) error {
 	if input.Host == "" {
-		return errors.New("Host is empty")
+		return getParamEmptyError(action.Language, "host")
 	}
 	if input.Guid == "" {
-		return errors.New("Guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("Seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.UserName == "" {
-		return errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Password == "" {
-		return errors.New("Password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 	if input.EndPoint == "" {
-		return errors.New("EndPoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 
 	if input.Port == "" {
@@ -108,12 +110,11 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	if databaseName != "" {
 		argv = append(argv, "-D"+databaseName)
 	}
-	logrus.Infof("exec sql script args--> %v \n", argv)
+	log.Logger.Debug("Exec sql script", log.StringList("args", argv))
 	cmd := exec.Command("/usr/bin/mysql", argv...)
 	f, err := os.Open(fileName)
 	if err != nil {
-		logrus.Errorf("open file failed err=%v", err)
-		return "", err
+		return "", fmt.Errorf("Exec sql script,open script file fail,%s ", err.Error())
 	}
 
 	defer f.Close()
@@ -121,8 +122,8 @@ func execSqlScript(hostName string, port string, userName string, password strin
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		logrus.Errorf("failed to execSqlScript err=%v,output=%v", err, string(out))
-		return "", fmt.Errorf("failed to execSqlScript, err = %v,output=%v", err, string(out))
+		log.Logger.Error("Exec sql script", log.String("output", string(out)), log.Error(err))
+		return "", fmt.Errorf("Exec sql fail,output=%s,err=%s ", string(out), err.Error())
 	}
 
 	return string(out), nil
@@ -139,16 +140,16 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 			output.Result.Message = err.Error()
 		}
 	}()
-	err = runMysqlScriptCheckParam(*input)
+	err = action.runMysqlScriptCheckParam(*input)
 	if err != nil {
 		return output, err
 	}
 
 	var fileNameList []string
 	for _,v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
 		if err != nil {
-			return output, fmt.Errorf("download s3 file:%s fail %v ", v, err)
+			return output, err
 		}
 		fileNameList = append(fileNameList, fileName)
 	}
@@ -159,7 +160,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDecode meet error(%v)", err)
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 
@@ -175,7 +176,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	// whether the fileName is *.sql or other
 	if !strings.HasSuffix(fileNameList[0], ".sql") {
 		if input.SqlFiles == "" {
-			err = errors.New("SqlFiles is empty")
+			err = getParamEmptyError(action.Language, "sql_files")
 			return output, err
 		}
 
@@ -184,9 +185,8 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 
 		// unpack file
-		er := deriveUnpackfile(fileNameList[0], newDir, true)
-		if er != nil {
-			err = er
+		err = deriveUnpackfile(fileNameList[0], newDir, true, action.Language)
+		if err != nil {
 			return output, err
 		}
 
@@ -196,26 +196,24 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		for _, file := range sqlFiles {
 			sqlFile := newDir + "/" + strings.TrimSpace(file)
 			if !fileExist(sqlFile) {
-				err = fmt.Errorf("file [%v] does not exist", sqlFile)
+				err = getFileNotExistError(action.Language, sqlFile)
 				return output, err
 			}
 			files = append(files, sqlFile)
 		}
 	} else {
 		for _,v := range fileNameList {
-			logrus.Infof("start to move file:%s to %s \n", v, newDir)
 			// move the *.sql to newDir directly
-			//command := exec.Command("mv", v, newDir)
-			out, er := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv -f %s %s", v, newDir)).Output()
-			logrus.Infof("run output=%v,err=%v\n", string(out), er)
-			if er != nil {
-				err = fmt.Errorf("move s3 file:%s to %s error %v ", v, newDir, er)
+			out, tmpErr := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv -f %s %s", v, newDir)).Output()
+			log.Logger.Debug("Run move command", log.String("output", string(out)), log.Error(tmpErr))
+			if tmpErr != nil {
+				err = fmt.Errorf("Move s3 file:%s to %s error %v ", v, newDir, tmpErr)
 				return output, err
 			}
 			tmpNameList := strings.Split(v, "/")
 			sqlFile := newDir + "/" + tmpNameList[len(tmpNameList)-1]
 			if !fileExist(sqlFile) {
-				err = fmt.Errorf("file [%v] does not exist", sqlFile)
+				err = getFileNotExistError(action.Language, sqlFile)
 				return output, err
 			}
 			files = append(files, sqlFile)
@@ -226,7 +224,8 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	for _, file := range files {
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
 		if err != nil {
-			return output, fmt.Errorf("run script:%s to mysql instance %s:%s database:%s error %v ", file, input.Host, input.Port, input.DatabaseName, err)
+			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, err.Error())
+			return output, err
 		}
 	}
 
@@ -252,11 +251,11 @@ func (action *RunMysqlScriptAction) Do(input interface{}) (interface{}, error) {
 	for _, input := range inputs.Inputs {
 		output, err := action.runMysqlScript(&input)
 		if err != nil {
+			log.Logger.Error("Run mysql script action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-	logrus.Infof("all mysql scripts = %v have been run", inputs)
 
 	return &outputs, finalErr
 }

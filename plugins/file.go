@@ -1,13 +1,12 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var FileActions = make(map[string]Action)
@@ -40,8 +39,6 @@ type FileCopyInput struct {
 	DestinationPath string `json:"destinationPath,omitempty"`
 	Unpack          string `json:"unpack,omitempty"`
 	FileOwner       string `json:"fileOwner,omitempty"`
-	// AccessKey string `json:"accessKey,omitempty"`
-	// SecretKey string `json:"secretKey,omitempty"`
 }
 
 type FileCopyOutputs struct {
@@ -55,8 +52,7 @@ type FileCopyOutput struct {
 	Detail string `json:"detail,omitempty"`
 }
 
-type FileCopyAction struct {
-}
+type FileCopyAction struct { Language string }
 
 func (action *FileCopyAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs FileCopyInputs
@@ -67,23 +63,20 @@ func (action *FileCopyAction) ReadParam(param interface{}) (interface{}, error) 
 	return inputs, nil
 }
 
+func (action *FileCopyAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *FileCopyAction) CheckParam(input FileCopyInput) error {
 	if input.EndPoint == "" {
-		return errors.New("EndPoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 	if input.Target == "" {
-		return errors.New("Target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
 	if input.DestinationPath == "" {
-		return errors.New("DestinationPath is empty")
+		return getParamEmptyError(action.Language, "destinationPath")
 	}
-
-	// if input.SecretKey == "" {
-	// 	return errors.New("SecretKey is empty")
-	// }
-	// if input.AccessKey == "" {
-	// 	return errors.New("AccessKey is empty")
-	// }
 
 	return nil
 }
@@ -98,7 +91,7 @@ func buildFileDestinationPath(endpoint string, destPath string) string {
 	return destPath + packageName
 }
 
-func changeDirecoryOwner(input *FileCopyInput) error {
+func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
@@ -112,11 +105,11 @@ func changeDirecoryOwner(input *FileCopyInput) error {
 	cmdRun := "chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
-	output, err := CallSaltApi("https://127.0.0.1:8080", request)
+	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
 	if err != nil {
 		return err
 	}
-	logrus.Infof("chown output --> %s \n", output)
+	log.Logger.Debug("Change dir owner", log.String("command", cmdRun), log.String("output", output))
 	if strings.Contains(output, "chown") {
 		return fmt.Errorf(output)
 	}
@@ -141,32 +134,32 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		return output, err
 	}
 
-	fileName, er := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
-	if er != nil {
-		logrus.Errorf("CopyFile downloads3 file error=%v", er)
-		err = fmt.Errorf("CopyFile downloads3 file error=%v", er)
+	fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
+	if tmpErr != nil {
+		log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
+		err = tmpErr
 		return output, err
 	}
 
 	input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
 
-	savePath, er := saveFileToSaltMasterBaseDir(fileName)
+	savePath, tmpErr := saveFileToSaltMasterBaseDir(fileName)
 	os.Remove(fileName)
-	if er != nil {
-		err = fmt.Errorf("saveFileToSaltMasterBaseDir meet error=%v", err)
+	if tmpErr != nil {
+		err = getS3DownloadError(action.Language, input.EndPoint, fmt.Sprintf("move download file to salt-dir error:%s", tmpErr.Error()))
 		return output, err
 	}
 
 	//copy file
 	copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
-	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest)
+	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
 	os.Remove(savePath)
 	if err != nil {
 		return output, err
 	}
 
 	md5SumRequest, _ := action.deriveMd5SumRequest(input)
-	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest)
+	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
 	if err != nil {
 		return output, err
 	}
@@ -178,11 +171,11 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 			return output, err
 		}
 
-		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest); err != nil {
+		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language); err != nil {
 			return output, err
 		}
 		if input.FileOwner != "" {
-			if err = changeDirecoryOwner(input); err != nil {
+			if err = action.changeDirectoryOwner(input); err != nil {
 				return output, err
 			}
 		}
@@ -241,7 +234,7 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 		request.Args = append(request.Args, input.DestinationPath)
 		request.Args = append(request.Args, "dest="+currentDirectory)
 	} else {
-		return &request, fmt.Errorf("%s has invalid compressed format", lowerFilepath)
+		return &request, getDecompressSuffixError(action.Language, lowerFilepath)
 	}
 
 	return &request, nil
@@ -254,12 +247,12 @@ func (action *FileCopyAction) Do(input interface{}) (interface{}, error) {
 	for _, file := range files.Inputs {
 		fileCopyOutput, err := action.copyFile(&file)
 		if err != nil {
+			log.Logger.Error("File copy action", log.JsonObj("param", file), log.Error(err))
 			finalErr = err
 		}
 
 		outputs.Outputs = append(outputs.Outputs, fileCopyOutput)
 	}
 
-	logrus.Infof("all files = %v are copied", files)
 	return &outputs, finalErr
 }
