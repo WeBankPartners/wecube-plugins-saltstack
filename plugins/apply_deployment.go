@@ -1,11 +1,10 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var ApplyDeploymentActions = make(map[string]Action)
@@ -71,6 +70,11 @@ type ApplyNewDeploymentOutput struct {
 }
 
 type ApplyNewDeploymentAction struct {
+	Language string
+}
+
+func (action *ApplyNewDeploymentAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *ApplyNewDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
@@ -83,19 +87,19 @@ func (action *ApplyNewDeploymentAction) ReadParam(param interface{}) (interface{
 
 func (action *ApplyNewDeploymentAction) CheckParam(input ApplyNewDeploymentInput) error {
 	if input.EndPoint == "" {
-		return errors.New("EndPoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 	if input.UserName == "" {
-		return errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Target == "" {
-		return errors.New("Target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
 	if input.StartScriptPath == "" {
-		return errors.New("StartScriptPath is empty")
+		return getParamEmptyError(action.Language, "startScript")
 	}
 	if input.DestinationPath == "" {
-		return errors.New("DestinationPath is empty")
+		return getParamEmptyError(action.Language, "destinationPath")
 	}
 
 	return nil
@@ -142,16 +146,13 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		},
 	}
 
-	logrus.Infof("ApplyNewDeploymentAction createApplyUser: input=%++v", addUserRequest)
+	log.Logger.Debug("App deploy", log.String("step", "create user"), log.JsonObj("param", addUserRequest))
 	userAddOutputs, err := createApplyUser(addUserRequest)
 	if err != nil {
-		logrus.Errorf("ApplyNewDeploymentAction createApplyUser meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Create user fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyNewDeploymentAction: userAddOutputs=%++v", userAddOutputs.(*AddUserOutputs))
 	output.UserDetail = userAddOutputs.(*AddUserOutputs).Outputs[0].Detail
 	output.Password = userAddOutputs.(*AddUserOutputs).Outputs[0].Password
-	logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 	// replace apply variable
 	var variableReplaceOutputs interface{}
@@ -171,18 +172,14 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 			},
 		}
 
-		logrus.Infof("ApplyNewDeploymentAction replaceApplyVariable: input=%++v", variableReplaceRequest)
+		log.Logger.Debug("App deploy", log.String("step", "replace variable"), log.JsonObj("param", variableReplaceRequest))
 		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
-			logrus.Errorf("ApplyNewDeploymentAction replaceApplyVariable meet error=%v", err)
-			return output, err
+			return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
 		}
-		logrus.Infof("ApplyNewDeploymentAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
 		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 	} else {
 		output.NewS3PkgPath = input.EndPoint
-		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 	}
 
 	// copy apply package
@@ -199,15 +196,12 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		},
 	}
 
-	logrus.Infof("ApplyNewDeploymentAction copyApplyFile: input=%++v", fileCopyRequest)
+	log.Logger.Debug("App deploy", log.String("step", "file copy"), log.JsonObj("param", fileCopyRequest))
 	fileCopyOutputs, err := copyApplyFile(fileCopyRequest)
 	if err != nil {
-		logrus.Errorf("ApplyNewDeploymentAction copyApplyFile meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Copy app package to target fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyNewDeploymentAction: fileCopyOutputs=%++v", fileCopyOutputs.(*FileCopyOutputs))
 	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
-	logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
 
 	// start apply script
 	runScriptRequest := RunScriptInputs{
@@ -225,13 +219,11 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		runScriptRequest.Inputs[0].ExecArg = input.ExecArg
 	}
 
-	logrus.Infof("ApplyNewDeploymentAction runApplyScript: input=%++v", runScriptRequest)
+	log.Logger.Debug("App deploy", log.String("step", "run script"), log.JsonObj("param", runScriptRequest))
 	runScriptOutputs, err := runApplyScript(runScriptRequest)
 	if err != nil {
-		logrus.Errorf("ApplyNewDeploymentAction runApplyScript meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Run start script fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyNewDeploymentAction: runScriptOutputs=%++v", runScriptOutputs.(*RunScriptOutputs))
 	output.RunScriptDetail = runScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
 	return output, err
@@ -239,7 +231,6 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 
 func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, error) {
 	inputs := input.(ApplyNewDeploymentInputs)
-	logrus.Infof("ApplyNewDeploymentAction Do: input=%++v", inputs)
 
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
@@ -247,14 +238,11 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	for _, input := range inputs.Inputs {
 		output, err := action.applyNewDeployment(&input)
 		if err != nil {
+			log.Logger.Error("App new deploy action", log.Error(err))
 			finalErr = err
 		}
-		logrus.Infof("ApplyNewDeploymentAction: output=%++v", output)
-
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-
-	logrus.Infof("All new applications = %v have been done", inputs)
 	return &outputs, finalErr
 }
 
@@ -298,6 +286,11 @@ type ApplyUpdateDeploymentOutput struct {
 }
 
 type ApplyUpdateDeploymentAction struct {
+	Language string
+}
+
+func (action *ApplyUpdateDeploymentAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *ApplyUpdateDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
@@ -310,28 +303,22 @@ func (action *ApplyUpdateDeploymentAction) ReadParam(param interface{}) (interfa
 
 func (action *ApplyUpdateDeploymentAction) CheckParam(input ApplyUpdateDeploymentInput) error {
 	if input.EndPoint == "" {
-		return errors.New("EndPoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 	if input.UserName == "" {
-		return errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Target == "" {
-		return errors.New("Target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
-	// if input.VariableFilePath == "" {
-	// 	return errors.New("VariableFilePath is empty")
-	// }
 	if input.StartScriptPath == "" {
-		return errors.New("StartScriptPath is empty")
+		return getParamEmptyError(action.Language, "startScriptPath")
 	}
 	if input.DestinationPath == "" {
-		return errors.New("DestinationPath is empty")
+		return getParamEmptyError(action.Language, "destinationPath")
 	}
-	// if input.VariableList == "" {
-	// 	return errors.New("VariableList is empty")
-	// }
 	if input.StopScriptPath == "" {
-		return errors.New("StopScriptPath is empty")
+		return getParamEmptyError(action.Language, "stopScriptPath")
 	}
 
 	return nil
@@ -372,15 +359,12 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		},
 	}
 
-	logrus.Infof("ApplyUpdateAction runApplyScript: input=%++v", runStopScriptRequest)
+	log.Logger.Debug("App update", log.String("step", "run stop script"), log.JsonObj("param", runStopScriptRequest))
 	runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
 	if err != nil {
-		logrus.Errorf("ApplyUpdateAction runApplyScript meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Run stop script fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyUpdateAction: runStopScriptOutputs=%++v", runStopScriptOutputs.(*RunScriptOutputs))
 	output.RunStopScriptDetail = runStopScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
-	logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 	// replace apply variable
 	var variableReplaceOutputs interface{}
@@ -400,18 +384,14 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 			},
 		}
 
-		logrus.Infof("ApplyUpdateAction replaceApplyVariable: input=%++v", variableReplaceRequest)
+		log.Logger.Debug("App update", log.String("step", "variable replace"), log.JsonObj("param", variableReplaceRequest))
 		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
 		if err != nil {
-			logrus.Errorf("ApplyUpdateAction replaceApplyVariable meet error=%v", err)
-			return output, err
+			return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
 		}
-		logrus.Infof("ApplyUpdateAction: variableReplaceOutputs=%++v", variableReplaceOutputs.(*VariableReplaceOutputs))
 		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 	} else {
 		output.NewS3PkgPath = input.EndPoint
-		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 	}
 
 	// copy apply package
@@ -428,15 +408,12 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		},
 	}
 
-	logrus.Infof("ApplyUpdateAction copyApplyFile: input=%++v", fileCopyRequest)
+	log.Logger.Debug("App update", log.String("step", "copy file"), log.JsonObj("param", fileCopyRequest))
 	fileCopyOutputs, err := copyApplyFile(fileCopyRequest)
 	if err != nil {
-		logrus.Errorf("ApplyUpdateAction copyApplyFile meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyUpdateAction: fileCopyOutputs=%++v", fileCopyOutputs.(*FileCopyOutputs))
 	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
-	logrus.Infof("ApplyUpdateAction: output=%++v", output)
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{
@@ -454,13 +431,11 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		runStartScriptRequest.Inputs[0].ExecArg = input.ExecArg
 	}
 
-	logrus.Infof("ApplyUpdateAction runApplyScript: input=%++v", runStartScriptRequest)
+	log.Logger.Debug("App update", log.String("step", "run start script"), log.JsonObj("param", runStartScriptRequest))
 	runStartScriptOutputs, err := runApplyScript(runStartScriptRequest)
 	if err != nil {
-		logrus.Errorf("ApplyUpdateAction runApplyScript meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Run start script fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyUpdateAction: runStartScriptOutputs=%++v", runStartScriptOutputs.(*RunScriptOutputs))
 	output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
 	return output, err
@@ -474,13 +449,11 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 	for _, input := range inputs.Inputs {
 		output, err := action.applyUpdateDeployment(&input)
 		if err != nil {
+			log.Logger.Error("App update action", log.Error(err))
 			finalErr = err
 		}
-		logrus.Infof("ApplyUpdateAction: output=%++v", output)
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
-
-	logrus.Infof("All applictions = %v have been updated", inputs)
 	return &outputs, finalErr
 }
 
@@ -489,7 +462,7 @@ func createApplyUser(input interface{}) (interface{}, error) {
 
 	userAddOutputs, err := addUserAction.Do(input)
 	if err != nil {
-		logrus.Errorf("createApplyUser Do meet error=%v", err)
+		log.Logger.Error("Create app user fail", log.Error(err))
 		return nil, err
 	}
 
@@ -501,7 +474,7 @@ func replaceApplyVariable(input interface{}) (interface{}, error) {
 
 	variableReplaceOutputs, err := variableReplaceAction.Do(input)
 	if err != nil {
-		logrus.Errorf("replaceApplyVariable Do meet error=%v", err)
+		log.Logger.Error("Replace app variable fail", log.Error(err))
 		return nil, err
 	}
 
@@ -513,7 +486,7 @@ func copyApplyFile(input interface{}) (interface{}, error) {
 
 	fileCopyOutputs, err := fileCopyAction.Do(input)
 	if err != nil {
-		logrus.Errorf("copyApplyFile Do meet error=%v", err)
+		log.Logger.Error("Copy app file fail", log.Error(err))
 		return nil, err
 	}
 
@@ -525,7 +498,7 @@ func runApplyScript(input interface{}) (interface{}, error) {
 
 	runScriptOutputs, err := runScriptAction.Do(input)
 	if err != nil {
-		logrus.Errorf("runApplyScript Do meet error=%v", err)
+		log.Logger.Error("Run app script fail", log.Error(err))
 		return nil, err
 	}
 
@@ -533,6 +506,7 @@ func runApplyScript(input interface{}) (interface{}, error) {
 }
 
 type ApplyDeleteDeploymentAction struct {
+	Language string
 }
 
 type ApplyDeleteDeploymentInputs struct {
@@ -558,6 +532,10 @@ type ApplyDeleteDeploymentOutput struct {
 	Guid string `json:"guid,omitempty"`
 }
 
+func (action *ApplyDeleteDeploymentAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *ApplyDeleteDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs ApplyDeleteDeploymentInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -568,19 +546,19 @@ func (action *ApplyDeleteDeploymentAction) ReadParam(param interface{}) (interfa
 
 func (action *ApplyDeleteDeploymentAction) deleteDeploymentCheckParam(input ApplyDeleteDeploymentInput) error {
 	if input.Guid == "" {
-		errors.New("Guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.UserName == "" {
-		errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Target == "" {
-		errors.New("Target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
 	if input.StopScriptPath == "" {
-		errors.New("StopScriptPath is empty")
+		return getParamEmptyError(action.Language, "stopScriptPath")
 	}
 	if input.DestinationPath == "" {
-		errors.New("DestinationPath is empty")
+		return getParamEmptyError(action.Language, "destinationPath")
 	}
 
 	return nil
@@ -615,24 +593,22 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 		},
 	}
 
-	logrus.Infof("ApplyDeleteAction runApplyScript: input=%++v", runStopScriptRequest)
-	runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
+	log.Logger.Debug("App delete", log.JsonObj("param", runStopScriptRequest))
+	_, err = runApplyScript(runStopScriptRequest)
 	if err != nil {
-		logrus.Errorf("ApplyDeleteAction runApplyScript meet error=%v", err)
-		return output, err
+		return output, fmt.Errorf("Run stop script fail,%s ", err.Error())
 	}
-	logrus.Infof("ApplyDeleteAction: runStopScriptOutputs=%++v", runStopScriptOutputs.(*RunScriptOutputs))
 
 	// rm package-dir
-	err = deleteDirecory(input.Target, input.DestinationPath)
+	err = deleteDirecory(input.Target, input.DestinationPath, action.Language)
 	if err != nil {
-		logrus.Errorf("ApplyDeleteAction remove target[%v] dir[%v] meet error=%v", input.Target, input.DestinationPath, err)
+		log.Logger.Error(fmt.Sprintf("ApplyDeleteAction remove target[%v] dir[%v] meet error=%v", input.Target, input.DestinationPath, err))
 	}
 
 	return output, err
 }
 
-func deleteDirecory(target, destinationPath string) error {
+func deleteDirecory(target, destinationPath, language string) error {
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
@@ -642,7 +618,7 @@ func deleteDirecory(target, destinationPath string) error {
 	cmdRun := "rm -rf " + destinationPath
 	request.Args = append(request.Args, cmdRun)
 
-	_, err := CallSaltApi("https://127.0.0.1:8080", request)
+	_, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
 		return err
 	}
@@ -658,12 +634,11 @@ func (action *ApplyDeleteDeploymentAction) Do(input interface{}) (interface{}, e
 	for _, input := range inputs.Inputs {
 		output, err := action.applyDeleteDeployment(&input)
 		if err != nil {
+			log.Logger.Error("App delete deploy action", log.Error(err))
 			finalErr = err
 		}
-		logrus.Infof("ApplyDeleteAction: output=%++v", output)
 		outputs.Outputs = append(outputs.Outputs, output)
 	}
 
-	logrus.Infof("All applictions = %v have been deleted", inputs)
 	return &outputs, finalErr
 }

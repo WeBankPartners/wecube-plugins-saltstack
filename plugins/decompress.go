@@ -113,7 +113,7 @@ func getDeCompressorFunc(comporessedFileFullPath string) (decompressFunc, error)
 		}
 	}
 
-	return nil, fmt.Errorf("Unsupported compress type,fileName=%s", fileName)
+	return nil, fmt.Errorf("Unsupported compress type,fileName=%s ", fileName)
 }
 
 func validateCompressedFile(comporessedFileFullPath string) error {
@@ -126,7 +126,7 @@ func validateCompressedFile(comporessedFileFullPath string) error {
 		}
 	}
 
-	return fmt.Errorf("Unsupported compress type,fileName=%s", fileName)
+	return fmt.Errorf("Unsupported compress type,fileName=%s ", fileName)
 }
 
 func getDecompressDirName(comporessedFileName string) string {

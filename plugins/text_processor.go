@@ -2,14 +2,12 @@ package plugins
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
@@ -87,27 +85,15 @@ func (action *SearchTextAction) ReadParam(param interface{}) (interface{}, error
 
 func (action *SearchTextAction) CheckParam(input SearchTextInput) error {
 	if input.EndPoint == "" {
-		return errors.New("endpoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 
 	if input.Target == "" {
-		return errors.New("target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
-
-	if input.EndPoint == "" {
-		return errors.New("endpoint is empty")
-	}
-
-	// if input.AccessKey == "" {
-	// 	return errors.New("accessKey is empty")
-	// }
-
-	// if input.SecretKey == "" {
-	// 	return errors.New("secretKey is empty")
-	// }
 
 	if input.SearchPattern == "" {
-		return errors.New("search pattern is empty")
+		return getParamEmptyError(action.Language, "search")
 	}
 
 	return nil
@@ -122,7 +108,7 @@ func runCmd(shellCommand string) (string, error) {
 
 	if err := cmd.Run(); err != nil {
 		log.Logger.Error("Run cmd error", log.String("command", shellCommand), log.String("output", stderr.String()), log.Error(err))
-		return stderr.String(), nil
+		return stderr.String(), err
 	}
 
 	return stdout.String(), nil
@@ -146,7 +132,7 @@ func searchText(fileName string, pattern string) ([]SearchResult, error) {
 
 		lineNum, err := strconv.Atoi(line[0:index])
 		if err != nil {
-			logrus.Errorf("searchText  get lineNum meet error,lineNum=%s", line[0:index])
+			log.Logger.Error("SearchText get line error", log.String("lineNum", line[0:index]))
 			continue
 		}
 
@@ -178,7 +164,6 @@ func (action *SearchTextAction) searchText(input *SearchTextInput) (output Searc
 	if err != nil {
 		return output, err
 	}
-	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
 	if err != nil {
 		return output, err
@@ -202,6 +187,7 @@ func (action *SearchTextAction) Do(input interface{}) (interface{}, error) {
 	for _, input := range inputs.Inputs {
 		output, err := action.searchText(&input)
 		if err != nil {
+			log.Logger.Error("Search text action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
@@ -255,19 +241,11 @@ func (action *GetContextAction) ReadParam(param interface{}) (interface{}, error
 
 func (action *GetContextAction) CheckParam(input GetContextInput) error {
 	if input.EndPoint == "" {
-		return errors.New("endpoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 
-	// if input.AccessKey == "" {
-	// 	return errors.New("accessKey is empty")
-	// }
-
-	// if input.SecretKey == "" {
-	// 	return errors.New("secretKey is empty")
-	// }
-
 	if input.LineNum <= 0 {
-		return errors.New("invalid lineNum")
+		return getParamEmptyError(action.Language, "lineNum")
 	}
 
 	return nil
@@ -306,7 +284,6 @@ func (action *GetContextAction) getContext(input *GetContextInput) (output GetCo
 		return output, err
 	}
 
-	// fileName, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
 	fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
 	if err != nil {
 		return output, err
@@ -330,6 +307,9 @@ func (action *GetContextAction) Do(input interface{}) (interface{}, error) {
 	for _, input := range inputs.Inputs {
 		output, err := action.getContext(&input)
 		if err != nil {
+			if err != nil {
+				log.Logger.Error("Get context action", log.Error(err))
+			}
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
