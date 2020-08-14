@@ -1,6 +1,7 @@
 {
   "success": "Success",
   "param_empty_error": "Parameter %s can not empty",
+  "param_validate_error": "Parameter %s validate fail,%s",
   "sys_param_empty_error": "Dependent environment param %s is empty,please check environment params",
   "password_decode_error": "Password decode error,detail:%s",
   "password_encode_error": "Password encode error,detail:%s",
@@ -10,6 +11,7 @@
   "s3_url_validate_error": "S3 url %s is illegal",
   "s3_file_empty_error": "S3 file %s not found",
   "s3_download_error": "S3 download %s fail,detail:%s",
+  "s3_upload_error": "S3 file %s upload fail,%s",
   "salt_api_target_error": "Salt-master can not recognize %s,please check if salt-minion installed in this target",
   "salt_api_connect_error": "Can not connect to target %s",
   "decompress_suffix_error": "File %s is illegal compressed type",
@@ -19,5 +21,7 @@
   "delete_mysql_database_error": "Delete mysql database and user fail,%s",
   "run_mysql_command_error": "Run command:%s to mysql fail,%s",
   "file_not_exist_error": "File %s does not exist",
-  "run_mysql_script_error": "Run script %s to %s_%s fail,%s"
+  "run_mysql_script_error": "Run script %s to %s_%s fail,%s",
+  "mysql_create_user_error": "Add mysql user:%s fail,%s",
+  "run_remote_script_error": "Run script to target %s fail,output=%s,err=%s"
 }

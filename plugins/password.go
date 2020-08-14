@@ -2,8 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"errors"
 )
 
 var PasswordPluginActions = make(map[string]Action)
@@ -83,13 +81,13 @@ func (action *PasswordEncodeAction) SetAcceptLanguage(language string) {
 
 func (action *PasswordEncodeAction) CheckParam(input PasswordEncodeInput) error {
 	if input.Guid == "" {
-		return errors.New("PasswordEncodeAction guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("PasswordEncodeAction seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.Password == "" {
-		return errors.New("PasswordEncodeAction password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 
 	return nil
@@ -122,8 +120,7 @@ func (action *PasswordEncodeAction) Do(input interface{}) (interface{}, error) {
 		}
 		encryptPassword,err := AesEnPassword(input.Guid, input.Seed, input.Password, DEFALT_CIPHER)
 		if err != nil {
-			logrus.Errorf("AesEncodePassword meet error(%v)", err)
-			err = fmt.Errorf("passwordEncode meet err=%v", err)
+			err = getPasswordEncodeError(action.Language, err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -150,13 +147,13 @@ func (action *PasswordDecodeAction) ReadParam(param interface{}) (interface{}, e
 
 func (action *PasswordDecodeAction) CheckParam(input PasswordDecodeInput) error {
 	if input.Guid == "" {
-		return errors.New("PasswordDecodeAction guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("PasswordDecodeAction seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.Password == "" {
-		return errors.New("PasswordDecodeAction password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 
 	return nil
@@ -181,8 +178,7 @@ func (action *PasswordDecodeAction) Do(input interface{}) (interface{}, error) {
 		}
 		decodePassword,err := AesDePassword(input.Guid, input.Seed, input.Password)
 		if err != nil {
-			logrus.Errorf("AesDecodePassword meet error(%v)", err)
-			err = fmt.Errorf("passwordDecode meet err=%v", err)
+			err = getPasswordDecodeError(action.Language, err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err

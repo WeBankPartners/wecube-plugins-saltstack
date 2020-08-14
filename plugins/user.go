@@ -1,11 +1,10 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"strings"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -82,19 +81,19 @@ func (action *AddUserAction) ReadParam(param interface{}) (interface{}, error) {
 
 func (action *AddUserAction) CheckParam(input AddUserInput) error {
 	if input.Target == "" {
-		return errors.New("AddUserAction target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
 
 	if input.UserName == "" {
-		return errors.New("AddUserAction userName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 
 	if input.Guid == "" {
-		return errors.New("AddUserAction guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 
 	if input.Seed == "" {
-		return errors.New("AddUserAction seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 
 	return nil
@@ -112,6 +111,15 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
+
+		if err := action.CheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		}
+
 		if strings.Contains(input.UserName, ":") {
 			input.UserName = strings.Split(input.UserName, ":")[0]
 			if input.UserGroup == "" {
@@ -152,8 +160,9 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			execArg += " --rwFile '" + input.RwFile + "'"
 		}
 
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
 		if err != nil {
+			log.Logger.Error("Add user action", log.Error(err))
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -163,7 +172,8 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
+			log.Logger.Error("Add user action", log.Error(err))
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -178,7 +188,8 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			break
 		}
 		if err != nil {
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
+			log.Logger.Error("Add user action", log.Error(err))
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -188,8 +199,8 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 
 		encryptPassword, err := AesEnPassword(input.Guid, input.Seed, password, DEFALT_CIPHER)
 		if err != nil {
-			logrus.Errorf("AesEnPassword meet error(%v)", err)
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = getPasswordEncodeError(action.Language, err)
+			log.Logger.Error("Add user action", log.Error(err))
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -243,13 +254,13 @@ func (action *DeleteUserAction) ReadParam(param interface{}) (interface{}, error
 	return inputs, nil
 }
 
-func deleteUserCheckParam(input DeleteUserInput) error {
+func (action *DeleteUserAction) DeleteUserCheckParam(input DeleteUserInput) error {
 	if input.Target == "" {
-		return errors.New("DeleteUserAction target is empty")
+		return getParamEmptyError(action.Language, "target")
 	}
 
 	if input.UserName == "" {
-		return errors.New("DeleteUserAction userName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 
 	return nil
@@ -270,7 +281,7 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 		if strings.Contains(input.UserName, ":") {
 			input.UserName = strings.Split(input.UserName, ":")[0]
 		}
-		if err := deleteUserCheckParam(input); err != nil {
+		if err := action.DeleteUserCheckParam(input); err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -279,7 +290,7 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 		}
 
 		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
 		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
@@ -290,7 +301,7 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -305,6 +316,7 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 			break
 		}
 		if err != nil {
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -352,6 +364,30 @@ type ChangeUserPasswordOutput struct {
 	Detail   string `json:"detail,omitempty"`
 }
 
+func (action *ChangeUserPasswordAction) CheckParam(input ChangeUserPasswordInput) error {
+	if input.Target == "" {
+		return getParamEmptyError(action.Language, "target")
+	}
+
+	if input.UserName == "" {
+		return getParamEmptyError(action.Language, "userName")
+	}
+
+	if input.Password == "" {
+		return getParamEmptyError(action.Language, "password")
+	}
+
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+
+	if input.Seed == "" {
+		return getParamEmptyError(action.Language, "seed")
+	}
+
+	return nil
+}
+
 func (action *ChangeUserPasswordAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs ChangeUserPasswordInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -372,23 +408,23 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 		}
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		output.Result.Code = RESULT_CODE_SUCCESS
-		if strings.Contains(input.UserName, ":") {
-			input.UserName = strings.Split(input.UserName, ":")[0]
-		}
-		password := ""
-		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
-		if input.Password != "" {
-			password = input.Password
-		} else {
+		if err := action.CheckParam(input); err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
-			output.Result.Message = "password is empty"
-			finalErr = fmt.Errorf("password is empty")
+			output.Result.Message = err.Error()
+			finalErr = err
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
 		}
+
+		if strings.Contains(input.UserName, ":") {
+			input.UserName = strings.Split(input.UserName, ":")[0]
+		}
+		password := input.Password
+		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
+
 		execArg += " --password '" + password + "'"
 
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
 		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
@@ -399,7 +435,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 
 		saltApiResult, err := parseSaltApiCmdScriptCallResult(result)
 		if err != nil {
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -414,7 +450,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 			break
 		}
 		if err != nil {
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = fmt.Errorf("Parse SaltApi CallResult meet err=%v ", err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err
@@ -424,8 +460,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 
 		encryptPassword, err := AesEnPassword(input.Guid, input.Seed, password, DEFALT_CIPHER)
 		if err != nil {
-			logrus.Errorf("AesEnPassword meet error(%v)", err)
-			err = fmt.Errorf("parseSaltApiCmdScriptCallResult meet err=%v", err)
+			err = getPasswordEncodeError(action.Language, err)
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
 			finalErr = err

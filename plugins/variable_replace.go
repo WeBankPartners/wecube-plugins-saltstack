@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
@@ -83,6 +82,11 @@ type VariableReplaceOutput struct {
 }
 
 type VariableReplaceAction struct {
+	Language string
+}
+
+func (action *VariableReplaceAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *VariableReplaceAction) ReadParam(param interface{}) (interface{}, error) {
@@ -96,11 +100,11 @@ func (action *VariableReplaceAction) ReadParam(param interface{}) (interface{}, 
 
 func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) error {
 	if input.EndPoint == "" {
-		return fmt.Errorf("VariableReplaceAction endpoint could not be empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 	if input.VariableList != "" {
 		if !strings.Contains(input.VariableList, "=") {
-			return fmt.Errorf("VariableReplaceAction input variable don't have '=' could't get variable key value pair")
+			return getParamValidateError(action.Language, "variableList", "can not find '=' in the content,variable should be k=v")
 		}
 	}
 
@@ -136,6 +140,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	suffix, err := getCompressFileSuffix(input.EndPoint)
 	if err != nil {
+		err = getDecompressSuffixError(action.Language, input.EndPoint)
 		return output, err
 	}
 
@@ -143,7 +148,6 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err != nil {
 		return output, err
 	}
-	logrus.Info("package name = >", packageName)
 
 	decompressDirName := getDecompressDirName(packageName)
 	if err = isDirExist(decompressDirName); err == nil {
@@ -154,14 +158,13 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
 	if err != nil {
-		logrus.Errorf("VariableReplaceAction downloadS3File fullPath=%v,err=%v", compressedFileFullPath, err)
 		return output, err
 	}
 
 	if err = decompressFile(compressedFileFullPath, decompressDirName); err != nil {
-		logrus.Errorf("VariableReplaceAction decompressFile fullPath=%v,err=%v", compressedFileFullPath, err)
+		err = getUnpackFileError(action.Language, compressedFileFullPath, err)
 		os.RemoveAll(compressedFileFullPath)
 		return output, err
 	}
@@ -181,7 +184,6 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 				confFilePath = decompressDirName + "/" + filePath
 			}
 
-			logrus.Infof("confFilePath=%v", confFilePath)
 
 			if err = ReplaceFileVar(confFilePath, input, decompressDirName); err != nil {
 				os.RemoveAll(decompressDirName)
@@ -193,20 +195,17 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	//compress file
 	nowTime := time.Now().Format("200601021504")
 	newPackageName := fmt.Sprintf("%s-%v%s", getPackageNameWithoutSuffix(packageName), nowTime, suffix)
-	fmt.Printf("newPackageName=%s\n", newPackageName)
 	if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
-		logrus.Errorf("compressDir meet error=%v", err)
 		os.RemoveAll(decompressDirName)
-		return output, err
+		return output, fmt.Errorf("After replace variable,try to compress %s fail,%s ", newPackageName, err.Error())
 	}
 	os.RemoveAll(decompressDirName)
 
 	//upload to s3
 	newS3Endpoint := getNewS3EndpointName(input.EndPoint, newPackageName)
-	logrus.Infof("NewS3EndpointName=%s\n", newS3Endpoint)
+	log.Logger.Info("Upload new file to s3", log.String("file", newS3Endpoint))
 
-	if _, err = uploadS3File(newS3Endpoint, DefaultS3Key, DefaultS3Password); err != nil {
-		logrus.Errorf("uploadS3File meet error=%v", err)
+	if _, err = uploadS3File(newS3Endpoint, DefaultS3Key, DefaultS3Password, action.Language); err != nil {
 		return output, err
 	}
 	output.NewS3PkgPath = newS3Endpoint
@@ -241,7 +240,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 
 	index := strings.LastIndexAny(filepath, "/")
 	if index == -1 {
-		return fmt.Errorf("Invalid endpoint %s", filepath)
+		return fmt.Errorf("Invalid endpoint %s ", filepath)
 	}
 	tmpSpecialReplaceList := DefaultSpecialReplaceList
 	tmpSpecialReplaceList = append(tmpSpecialReplaceList, prefix...)
@@ -256,8 +255,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	}
 
 	if len(fileVarMap) == 0 {
-		//return fmt.Errorf("file %s no variable need to replace", fileName)
-		logrus.Infof("file %s no variable need to replace", fileName)
+		log.Logger.Warn("Replace variable key,no variable need to replace", log.String("file", fileName))
 		return nil
 	}
 
@@ -268,19 +266,16 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 
 	keyMap, err := GetInputVariableMap(variablelist, seed)
 	if err != nil {
-		logrus.Errorf("GetInputVariableMap error: %s", err)
 		return err
 	}
 
 	err = CheckVariableIsAllReady(keyMap, fileVarList)
 	if err != nil {
-		logrus.Errorf("CheckVariableIsAllReady error: %s", err)
 		return err
 	}
 
 	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, decompressDirName, tmpSpecialReplaceList, prefix, fileReplacePrefix)
 	if err != nil {
-		logrus.Errorf("replaceFileVar error: %s", err)
 		return err
 	}
 
@@ -294,60 +289,34 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 		return key, values[0], nil
 	}
 	if len(values) != 2 || values[1] == "" {
-		return key, "", fmt.Errorf("getRawKeyValue key=%v,value=%v is not right formt", key, value)
+		return key, "", fmt.Errorf("GetRawKeyValue key=%v,value=%v format error,encrypt value should contain guid message", key, value)
 	}
 
 	//need to decode
 	afterDecode, err := AesDePassword(values[1], seed, values[0])
 	if err != nil {
-		logrus.Errorf("AesDePassword meet error=%v", err)
+		log.Logger.Error("GetRawKey fail,decode password error", log.Error(err))
 	}
-	return key, afterDecode, err
-
-	// pass code
-	//guid := values[1]
-	//md5sum := Md5Encode(guid + seed)
-	//
-	//// judge whether has cipher and remove it
-	//var cipher string
-	//enCode := values[0]
-	//for _, _cipher := range CIPHER_MAP {
-	//	if strings.HasPrefix(values[0], _cipher) {
-	//		cipher = _cipher
-	//		break
-	//	}
-	//}
-	//if cipher != "" {
-	//	enCode = enCode[len(cipher):]
-	//}
-	//
-	//data, err := AesDecode(md5sum[0:16], enCode)
-	//if err != nil {
-	//	logrus.Errorf("AesDecode meet error=%v", err)
-	//}
-	//return key, data, err
+	return key, afterDecode, fmt.Errorf("GetRawKeyValue decode value fail,value:%s guid:%s error:%s", values[0], values[1], err.Error())
 }
 
 func GetInputVariableMap(variable string, seed string) (map[string]string, error) {
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
 	if len(kvs) != 2 {
-		logrus.Errorf("varialbeList(%v) format error", variable)
-		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
+		return inputMap, fmt.Errorf("VarialbeList(%v) format error,can not find '='", variable)
 	}
 
 	keys := strings.Split(kvs[0], VARIABLE_VARIABLE_SEPERATOR)
 	values := strings.Split(kvs[1], KEY_KEY_SEPERATOR)
 
 	if len(keys) != len(values) {
-		logrus.Errorf("varialbeList(%v) format error", variable)
-		return inputMap, fmt.Errorf("varialbeList(%v) format error", variable)
+		return inputMap, fmt.Errorf("VarialbeList(%v) format error,keys num != value num", variable)
 	}
 
 	for i, _ := range keys {
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
-			logrus.Errorf("getRawKeyValue meet error=%v", err)
 			return inputMap, err
 		}
 		key = strings.ToLower(key)
@@ -360,7 +329,7 @@ func CheckVariableIsAllReady(input map[string]string, variablelist []string) (er
 	for _, va := range variablelist {
 		toLowerV := strings.ToLower(va)
 		if _, ok := input[toLowerV]; !ok {
-			return fmt.Errorf("variable %s not input", va)
+			return fmt.Errorf("Variable %s prefix fetch,but not input ", va)
 		}
 	}
 
@@ -439,10 +408,9 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 		encrpyDataFile,
 	}
 	out, err := runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh", args)
-	fmt.Printf("run script out=%v\n,err=%v\n", out, err)
 	if err != nil {
-		fmt.Printf("encrpytSenstiveData out=%v,err=%v\n", out, err)
-		return "", fmt.Errorf("run rsa encrypt shell fail,please check param app_public_key and sys_private_key out:%v \n", err)
+		log.Logger.Error("Encrypt variable data fail", log.String("output", out), log.Error(err))
+		return "", fmt.Errorf("Run encrypt bash shell fail,output:%s, err:%s ", out, err.Error())
 	}
 
 	encryptData, err := readStringFromFile(encrpyDataFile)
@@ -460,23 +428,26 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	}
 
 	if publicKey == "" {
-		return "", errors.New("getVariableValue publicKey is empty")
+		return "", errors.New("GetVariableValue publicKey is empty")
 	}
 	if privateKey == "" {
-		return "", errors.New("getVariableValue privateKey is empty")
+		return "", errors.New("GetVariableValue privateKey is empty")
 	}
 
 	publicKey = replaceLF(publicKey)
 	privateKey = replaceLF(privateKey)
 
-	return encrpytSenstiveData(value, publicKey, privateKey)
+	encryptValue,err := encrpytSenstiveData(value, publicKey, privateKey)
+	if err != nil {
+		err = fmt.Errorf("Try to encrypt key %s fail,%s ", key, err.Error())
+	}
+	return encryptValue,err
 }
 
 func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, decompressDirName string,specialReplaceList, prefix, fileReplacePrefix []string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
-		logrus.Errorf("open file fail: %s", err)
-		return err
+		return fmt.Errorf("Open file %s fail,%s ", filepath, err.Error())
 	}
 	defer bf.Close()
 
@@ -493,20 +464,20 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	// f, err := os.OpenFile(newfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	f, err := os.OpenFile(newfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
-		logrus.Errorf("open file error: %s", err)
-		return err
+		return fmt.Errorf("Try to create tmp file fail,%s ", err.Error())
 	}
 	defer f.Close()
 	fileReplaceMap := make(map[string]string)
+	tmpLineCount := 0
 	br := bufio.NewReader(bf)
 	for {
+		tmpLineCount = tmpLineCount + 1
 		line, _, err := br.ReadLine()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			logrus.Errorf("read file line info err: %s", err)
-			return err
+			return fmt.Errorf("Read file %s line %d error:%s ", filepath, tmpLineCount, err.Error())
 		}
 		newLine := string(line)
 		flysnowRegexp := regexp.MustCompile(`[^\[]*]`)
@@ -525,13 +496,12 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 					if strings.HasPrefix(key, specialFlag) {
 						s := strings.Split(key, specialFlag)
 						if s[1] == "" {
-							return fmt.Errorf("file %s have unvaliable variable %s", filepath, key)
+							return fmt.Errorf("File %s have empty variable [%s] in line %d ", filepath, key, tmpLineCount)
 						}
 						if strings.Contains(s[1], " ") {
 							continue
 						}
 						toLowerKey := strings.ToLower(s[1])
-						// fmt.Println("key: ", key)
 						oldStr := "[" + key + "]"
 						variableValue, err := getVariableValue(key, keyMap[toLowerKey], publicKey, privateKey, prefix)
 						if err != nil {
@@ -555,34 +525,32 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 		}
 		_, err = f.WriteString(newLine + "\n")
 		if err != nil {
-			logrus.Errorf("write to file fail: %s", err)
-			return err
+			return fmt.Errorf("Try to write new line to tmp file fail,%s ", err.Error())
 		}
 	}
 	err = os.Rename(newfilePath, filepath)
 	if err != nil {
-		logrus.Errorf("file rename Error: %s", err)
-		return err
+		return fmt.Errorf("Replace file %s with tmp file fail,%s ", filepath, err.Error())
 	}
 	if len(fileReplaceMap) > 0 {
 		for k,v := range fileReplaceMap {
 			if k == "" || v == "" {
 				continue
 			}
-			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false)
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, "")
 			if err != nil {
-				logrus.Errorf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err)
+				log.Logger.Error(fmt.Sprintf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err))
 				return err
 			}
 			moveCmd := fmt.Sprintf("mv -f %s %s/%s", sourceFile, decompressDirName, k)
 			if k[:1] == "/" {
 				moveCmd = fmt.Sprintf("mv -f %s %s%s", sourceFile, decompressDirName, k)
 			}
-			logrus.Infof("File replace ,source: %s -> dist: %s command: %s \n", sourceFile, k, moveCmd)
+			log.Logger.Debug(fmt.Sprintf("File replace ,source: %s -> dist: %s command: %s \n", sourceFile, k, moveCmd))
 			err = exec.Command("/bin/bash", "-c", moveCmd).Run()
 			if err != nil {
-				logrus.Errorf("File replace fail,command: %s, error: %v", moveCmd, err)
-				return err
+				log.Logger.Error("File replace fail", log.String("command", moveCmd), log.Error(err))
+				return fmt.Errorf("Try to replace file error,%s ", err.Error())
 			}
 		}
 	}
@@ -602,16 +570,15 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	if suffix == ".tgz" || suffix == ".tar.gz" {
 		sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
 	}
-	fmt.Printf("compressDir sh=%s\n", sh)
 
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("can not obtain stdout pipe for command: %s \n", err)
+		log.Logger.Error("Can not obtain stdout pipe", log.String("command",cmd.String()), log.Error(err))
 		return err
 	}
 	if err := cmd.Start(); err != nil {
-		fmt.Printf("conmand start is error: %s \n", err)
+		log.Logger.Error("Command start error", log.Error(err))
 		return err
 	}
 	_, err = LogReadLine(cmd, stdout)

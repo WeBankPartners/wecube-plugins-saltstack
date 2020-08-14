@@ -47,15 +47,17 @@ func getMessageMap(acceptLanguage string) *models.ErrorMessageObj {
 	if len(errorMessageList) == 0 {
 		return &models.ErrorMessageObj{}
 	}
-	acceptLanguage = strings.Replace(acceptLanguage, ";", ",", -1)
-	for _,v := range strings.Split(acceptLanguage, ",") {
-		if strings.HasPrefix(v, "q=") {
-			continue
-		}
-		lowerV := strings.ToLower(v)
-		for _,vv := range errorMessageList {
-			if vv.Language == lowerV {
-				return vv
+	if acceptLanguage != "" {
+		acceptLanguage = strings.Replace(acceptLanguage, ";", ",", -1)
+		for _, v := range strings.Split(acceptLanguage, ",") {
+			if strings.HasPrefix(v, "q=") {
+				continue
+			}
+			lowerV := strings.ToLower(v)
+			for _, vv := range errorMessageList {
+				if vv.Language == lowerV {
+					return vv
+				}
 			}
 		}
 	}
@@ -69,6 +71,10 @@ func getMessageMap(acceptLanguage string) *models.ErrorMessageObj {
 
 func getParamEmptyError(language,paramName string) error {
 	return fmt.Errorf(getMessageMap(language).ParamEmptyError, paramName)
+}
+
+func getParamValidateError(language,paramName,message string) error {
+	return fmt.Errorf(getMessageMap(language).ParamValidateError, paramName, message)
 }
 
 func getSysParamEmptyError(language,paramName string) error {
@@ -105,6 +111,10 @@ func getS3FileNotFoundError(language,file string) error {
 
 func getS3DownloadError(language,file,output string) error {
 	return fmt.Errorf(getMessageMap(language).S3DownloadError, file, output)
+}
+
+func getS3UploadError(language,file,output string) error {
+	return fmt.Errorf(getMessageMap(language).S3UploadError, file, output)
 }
 
 func getSaltApiTargetError(language,target string) error {
@@ -145,4 +155,12 @@ func getFileNotExistError(language,file string) error {
 
 func getRunMysqlScriptError(language,file,host,database,message string) error {
 	return fmt.Errorf(getMessageMap(language).RunMysqlScriptError, file, host, database, message)
+}
+
+func getMysqlCreateUserError(language,user,message string) error {
+	return fmt.Errorf(getMessageMap(language).MysqlCreateUserError, user, message)
+}
+
+func getRunRemoteScriptError(language,target,output string, err error) error {
+	return fmt.Errorf(getMessageMap(language).RunRemoteScriptError, target, output, err.Error())
 }

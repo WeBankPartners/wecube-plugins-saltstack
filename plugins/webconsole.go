@@ -20,7 +20,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -660,8 +659,7 @@ func (action *GetWebConsoleUrlAction) Do(input interface{}) (interface{}, error)
 	for _, input := range inputs.Inputs {
 		password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 		if err != nil {
-			logrus.Errorf("AesDePassword meet error(%v)", err)
-			return outputs, err
+			return outputs, getPasswordDecodeError(action.Language, err)
 		}
 
 		go trySshConnect(&input, password, chResult)
