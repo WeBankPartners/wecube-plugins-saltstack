@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -99,6 +98,9 @@ func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
 	}
 	if input.Target == "" {
 		return getParamEmptyError(action.Language, "target")
+	}
+	if input.RunAs == "" {
+		return getParamEmptyError(action.Language, "runAs")
 	}
 
 	return nil
@@ -200,6 +202,78 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	return result, nil
 }
 
+func checkRunUserIsExists(target,userGroup,language string) (exist bool,output string) {
+	if userGroup == "" {
+		return false,"user is empty"
+	}
+	exist = false
+	var user,group string
+	if strings.Contains(userGroup, ":") {
+		tmpList := strings.Split(userGroup, ":")
+		user = tmpList[0]
+		group = tmpList[1]
+	}else{
+		user = userGroup
+	}
+	log.Logger.Info("Check user group if exist", log.String("user", user), log.String("group",group))
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = target
+	request.Function = "cmd.run"
+	request.FullReturn = true
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cat /etc/passwd|grep %s:'", user)
+	request.Args = append(request.Args, cmdRun)
+	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
+	if err != nil {
+		log.Logger.Error("Check user exists,call salt api error", log.Error(err))
+		return false,fmt.Sprintf("check user exists,call salt api error,%s", err.Error())
+	}
+	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+	if err != nil {
+		log.Logger.Error("check user exists,parse salt api result error", log.Error(err))
+		return false,fmt.Sprintf("check user exists,parse salt api result error,%s", err.Error())
+	}
+	for _, v := range saltApiResult.Results[0] {
+		if strings.Contains(v.RetDetail, user) {
+			exist = true
+		}
+	}
+	if !exist {
+		return false,fmt.Sprintf("user %s not exist", user)
+	}
+	if group != "" {
+		exist = false
+		groupRequest := SaltApiRequest{}
+		groupRequest.Client = "local"
+		groupRequest.TargetType = "ipcidr"
+		groupRequest.Target = target
+		groupRequest.Function = "cmd.run"
+		groupRequest.FullReturn = true
+		cmdRun := fmt.Sprintf("/bin/bash -c 'cat /etc/group|grep %s:'", group)
+		groupRequest.Args = append(groupRequest.Args, cmdRun)
+		result, err := CallSaltApi("https://127.0.0.1:8080", groupRequest, language)
+		if err != nil {
+			log.Logger.Error("check group exists,call salt api error", log.Error(err))
+			return false,fmt.Sprintf("check group exists,call salt api error,%s", err.Error())
+		}
+		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+		if err != nil {
+			log.Logger.Error("check group exists,parse salt api result error", log.Error(err))
+			return false,fmt.Sprintf("check group exists,parse salt api result error,%s", err.Error())
+		}
+		for _, v := range saltApiResult.Results[0] {
+			if strings.Contains(v.RetDetail, group) {
+				exist = true
+			}
+		}
+		if !exist {
+			return false,fmt.Sprintf("group %s not exist", group)
+		}
+	}
+	return true,""
+}
+
 func downloadFile(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -259,7 +333,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 				err = fmt.Errorf("Script run ip[%s] is not a available target[%s] ", k, input.Target)
 				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
 			}
-			if v.RetCode != 0 {
+			if v.RetCode != 0 || strings.Contains(v.RetDetail, "ERROR") {
 				err = fmt.Errorf("Script run ip[%s] meet error = %v ", k, v.RetDetail)
 				return k + ": " + v.RetDetail, err
 			}
@@ -278,8 +352,8 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 		}
 
 		for _, v := range saltApiResult.Results[0] {
-			if v.RetCode != 0 {
-				return v.Stderr, fmt.Errorf("Script run retCode=%v ", v.RetCode)
+			if v.RetCode != 0 || strings.Contains(v.Stdout, "ERROR") {
+				return v.Stderr, fmt.Errorf("Script run retCode=%d output=%s error=%s ", v.RetCode, v.Stdout, v.Stderr)
 			}
 			output = v.Stdout + v.Stderr
 			break
@@ -338,6 +412,17 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	err = action.CheckParam(*input)
 	if err != nil {
 		return output, err
+	}
+
+	if input.RunAs != "" {
+		if strings.Contains(input.RunAs, ":") {
+			input.RunAs = strings.Split(input.RunAs, ":")[0]
+		}
+		userExist,errOut := checkRunUserIsExists(input.Target, input.RunAs, action.Language)
+		if !userExist {
+			err = fmt.Errorf(errOut)
+			return output,err
+		}
 	}
 
 	//scriptPath := input.EndPoint
@@ -408,18 +493,20 @@ func (action *SSHRunScriptAction) ReadParam(param interface{}) (interface{}, err
 
 func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
 	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 && input.EndPointType != END_POINT_TYPE_USER_PARAM {
-		return errors.New("Wrong EndPointType")
+		return getParamValidateError(action.Language, "endpointType", fmt.Sprintf("must in (%s,%s,%s)",END_POINT_TYPE_LOCAL,END_POINT_TYPE_S3,END_POINT_TYPE_USER_PARAM))
 	}
 	if input.EndPoint == "" && input.EndPointType == END_POINT_TYPE_S3 {
-		return errors.New("Endpoint is empty")
+		return getParamValidateError(action.Language, "endpoint", "endpoint cat not empty when endpointType="+END_POINT_TYPE_S3)
 	}
 	if input.Target == "" {
-		return errors.New("Target is empty")
+		return getParamEmptyError(action.Language, "target")
+	}
+	if input.RunAs == "" {
+		return getParamEmptyError(action.Language, "runAs")
 	}
 	if input.Password == "" {
-		return errors.New("Password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
-
 	return nil
 }
 
@@ -429,9 +516,6 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 	var err error
 	if strings.Contains(input.RunAs, ":") {
 		input.RunAs = strings.Split(input.RunAs, ":")[0]
-	}
-	if input.RunAs == "" {
-		input.RunAs = "root"
 	}
 	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:1800}
 	switch input.EndPointType {

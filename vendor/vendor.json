@@ -18,6 +18,46 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "0zu2FS8IXNQSrJKjn5eb9VgTq1E=",
+			"path": "go.uber.org/atomic",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "yMjpW1E37IpyxqZl+Cv2zHE0I0U=",
+			"path": "go.uber.org/multierr",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "0/OIshmoBSMErrRjCTDJUzit6aw=",
+			"path": "go.uber.org/zap",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "afFbYQlWVvMANwhNqMazS3uM0Dc=",
+			"path": "go.uber.org/zap/buffer",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "Y0uE8U8wxuPku0bFZyVmYLznd/o=",
+			"path": "go.uber.org/zap/internal/bufferpool",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "AA/i5mzFuQBeFcE+d9ZBLPropjU=",
+			"path": "go.uber.org/zap/internal/color",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "fjEB1pcePOWjEmayG54E92JYgWk=",
+			"path": "go.uber.org/zap/internal/exit",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "vIk6gh7RiQIjmn5p3JbT2h8/iDY=",
+			"path": "go.uber.org/zap/zapcore",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "8iDRMd1IFU/NY9TKVBq0ZmBgm0s=",
 			"path": "golang.org/x/crypto/ssh/terminal",
 			"revision": ""
