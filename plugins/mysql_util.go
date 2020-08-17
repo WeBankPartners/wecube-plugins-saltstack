@@ -125,7 +125,7 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 	command := exec.Command("/usr/bin/mysql", argv...)
 	out, err := command.CombinedOutput()
 	if err != nil {
-		log.Logger.Debug("Run mysql command", log.String("command", command.String()), log.String("output", string(out)), log.Error(err))
+		log.Logger.Debug("Run mysql command", log.StringList("command", argv), log.String("output", string(out)), log.Error(err))
 		return fmt.Errorf("output:%s,error:%s", string(out), err.Error())
 	}
 	return nil

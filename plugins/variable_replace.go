@@ -574,7 +574,7 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Logger.Error("Can not obtain stdout pipe", log.String("command",cmd.String()), log.Error(err))
+		log.Logger.Error("Can not obtain stdout pipe", log.String("command", sh), log.Error(err))
 		return err
 	}
 	if err := cmd.Start(); err != nil {
