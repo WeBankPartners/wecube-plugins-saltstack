@@ -60,7 +60,7 @@ func routeDispatcher(w http.ResponseWriter, r *http.Request) {
 	}else{
 		log.Logger.Debug("Handle success", log.JsonObj("response", pluginResponse))
 	}
-	log.Logger.Info("Request",log.String("url", r.RequestURI), log.String("method",r.Method), log.String("ip",strings.Split(r.RemoteAddr,":")[0]), log.Float64("cost_second",time.Now().Sub(start).Seconds()))
+	log.Logger.Info("Request end ----------------<<",log.String("url", r.RequestURI), log.String("method",r.Method), log.String("ip",strings.Split(r.RemoteAddr,":")[0]), log.Float64("cost_second",time.Now().Sub(start).Seconds()))
 	write(w, pluginResponse)
 }
 

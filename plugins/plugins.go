@@ -90,7 +90,7 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 		}
 	}()
 
-	log.Logger.Info("Start", log.String("plugin", pluginRequest.Name), log.String("action", pluginRequest.Action))
+	log.Logger.Info("Request start ---------------->>", log.String("plugin", pluginRequest.Name), log.String("action", pluginRequest.Action))
 
 	plugin, err := getPluginByName(pluginRequest.Name)
 	if err != nil {

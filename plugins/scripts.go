@@ -544,13 +544,13 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
 		newScriptName := fmt.Sprintf("ssh-script-%s-%d", strings.Replace(input.Target, ".", "-", -1), time.Now().Unix())
-		err = exec.Command("/bin/cp", "-f", scriptPath, fmt.Sprintf("/var/www/html/tmp/%s", newScriptName)).Run()
+		tmpOut,err := exec.Command("/bin/cp", "-f", scriptPath, fmt.Sprintf("/var/www/html/tmp/%s", newScriptName)).Output()
 		if err != nil {
-			return fmt.Sprintf("exec ssh script,cp %s %s meet error=%v", scriptPath, newScriptName, err), err
+			return fmt.Sprintf("exec ssh script,cp %s %s meet error output=%s,err=%s", scriptPath, newScriptName, string(tmpOut), err.Error()), err
 		}
-		err = exec.Command("bash", "-c", fmt.Sprintf("chmod 666 /var/www/html/tmp/%s", newScriptName)).Run()
+		tmpOut,err = exec.Command("bash", "-c", fmt.Sprintf("chmod 666 /var/www/html/tmp/%s", newScriptName)).Output()
 		if err != nil {
-			return fmt.Sprintf("exec ssh script,chmod to %s meet error=%v", newScriptName, err), err
+			return fmt.Sprintf("exec ssh script,chmod to %s meet output=%s,err=%s", newScriptName, string(tmpOut), err.Error()), err
 		}
 		remoteParam.Command = fmt.Sprintf("curl http://%s:9099/tmp/%s | bash ", MasterHostIp, newScriptName)
 		execRemoteWithTimeout(&remoteParam)
