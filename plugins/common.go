@@ -378,7 +378,7 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool, langua
 	command := exec.Command(name, args...)
 	out, err := command.CombinedOutput()
 	if err != nil {
-		log.Logger.Error("Unpack file", log.String("command", command.String()), log.String("output", string(out)), log.Error(err))
+		log.Logger.Error("Unpack file", log.String("name", name), log.StringList("args", args), log.String("output", string(out)), log.Error(err))
 		return getUnpackFileError(language, lowerFilepath, err)
 	}
 	return nil
