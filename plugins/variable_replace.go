@@ -533,6 +533,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 		return fmt.Errorf("Replace file %s with tmp file fail,%s ", filepath, err.Error())
 	}
 	if len(fileReplaceMap) > 0 {
+		var tmpOut []byte
 		for k,v := range fileReplaceMap {
 			if k == "" || v == "" {
 				continue
@@ -547,10 +548,10 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				moveCmd = fmt.Sprintf("mv -f %s %s%s", sourceFile, decompressDirName, k)
 			}
 			log.Logger.Debug(fmt.Sprintf("File replace ,source: %s -> dist: %s command: %s \n", sourceFile, k, moveCmd))
-			err = exec.Command("/bin/bash", "-c", moveCmd).Run()
+			tmpOut,err = exec.Command("/bin/bash", "-c", moveCmd).Output()
 			if err != nil {
-				log.Logger.Error("File replace fail", log.String("command", moveCmd), log.Error(err))
-				return fmt.Errorf("Try to replace file error,%s ", err.Error())
+				log.Logger.Error("File replace fail", log.String("command", moveCmd), log.String("output", string(tmpOut)), log.Error(err))
+				return fmt.Errorf("Try to replace file fail,output:%s,error:%s ", string(tmpOut), err.Error())
 			}
 		}
 	}

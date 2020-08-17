@@ -139,6 +139,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 				Target:   input.Target,
 				UserName: strings.Split(input.UserName, ":")[0],
 				Password: input.Password,
+				Seed:     input.Seed,
 				RwDir:    input.RwDir,
 				RwFile:   input.RwFile,
 				UserGroup: userGroup,
