@@ -164,7 +164,7 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 }
 
 //GetVariable .
-func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) {
+func GetVariable(filepath string,specialList []string,showPrefix bool) ([]ConfigKeyInfo, error) {
 	_, err := PathExists(filepath)
 	if err != nil {
 		log.Logger.Error("Get variable error", log.Error(err))
@@ -216,7 +216,11 @@ func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) 
 						}
 
 						configKey.Line = n
-						configKey.Key = s[1]
+						if showPrefix {
+							configKey.Key = param
+						}else {
+							configKey.Key = s[1]
+						}
 						variableList = append(variableList, configKey)
 					}
 				}
