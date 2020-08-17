@@ -249,7 +249,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 		return fmt.Errorf("Prefix duplicate ,defaultPrefix:%v encryptPrefix:%v fileReplacePrefix:%v ", DefaultSpecialReplaceList, prefix, fileReplacePrefix)
 	}
 	fileName := filepath[index+1:]
-	fileVarMap, err := GetVariable(filepath, tmpSpecialReplaceList)
+	fileVarMap, err := GetVariable(filepath, tmpSpecialReplaceList, false)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 		fileVarList = append(fileVarList, v.Key)
 	}
 
-	keyMap, err := GetInputVariableMap(variablelist, seed)
+	keyMap, err := GetInputVariableMap(variablelist, seed, tmpSpecialReplaceList)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	return key, afterDecode, fmt.Errorf("GetRawKeyValue decode value fail,value:%s guid:%s error:%s", values[0], values[1], err.Error())
 }
 
-func GetInputVariableMap(variable string, seed string) (map[string]string, error) {
+func GetInputVariableMap(variable string, seed string, specialList []string) (map[string]string, error) {
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
 	if len(kvs) != 2 {
@@ -318,6 +318,12 @@ func GetInputVariableMap(variable string, seed string) (map[string]string, error
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
 			return inputMap, err
+		}
+		for _,v := range specialList {
+			if strings.HasPrefix(key, v) {
+				key = key[len(v):]
+				break
+			}
 		}
 		key = strings.ToLower(key)
 		inputMap[key] = value

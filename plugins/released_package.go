@@ -267,7 +267,7 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	tmpSpecialReplaceList := DefaultSpecialReplaceList
 	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultEncryptReplaceList...)
 	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultFileReplaceList...)
-	keys, err := GetVariable(fullPath + "/" + input.FilePath, tmpSpecialReplaceList)
+	keys, err := GetVariable(fullPath + "/" + input.FilePath, tmpSpecialReplaceList, true)
 	if err != nil {
 		return output, err
 	}
