@@ -11,6 +11,7 @@ COPY scripts/salt/install/* /var/www/html/salt-minion/
 RUN chmod +x /var/www/html/salt-minion/minion_install.sh && chmod +x /var/www/html/salt-minion/minion_uninstall.sh
 
 COPY static  $APP_HOME/static
+COPY conf  $APP_HOME/conf
 
 COPY scripts/salt/minions /srv/salt/minions
 COPY conf/s3conf /conf/s3conf
