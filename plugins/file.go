@@ -77,6 +77,11 @@ func (action *FileCopyAction) CheckParam(input FileCopyInput) error {
 	if input.DestinationPath == "" {
 		return getParamEmptyError(action.Language, "destinationPath")
 	}
+	if input.Unpack == "true" {
+		if input.FileOwner == "" {
+			return getParamEmptyError(action.Language, "fileOwner")
+		}
+	}
 
 	return nil
 }
@@ -132,6 +137,14 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 	err = action.CheckParam(*input)
 	if err != nil {
 		return output, err
+	}
+
+	if input.FileOwner != "" {
+		userExist,errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language)
+		if !userExist {
+			err = fmt.Errorf(errOut)
+			return output,err
+		}
 	}
 
 	fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)

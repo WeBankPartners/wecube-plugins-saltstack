@@ -203,6 +203,10 @@ func (action *MinionInstallAction) CheckParam(input AgentInstallInput) error {
 		return getParamEmptyError(action.Language, "seed")
 	}
 
+	if input.User == "" {
+		return getParamEmptyError(action.Language, "user")
+	}
+
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
 	}
@@ -236,9 +240,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
-	if input.User == "" {
-		input.User = "root"
-	}
+
 	if input.Command != "" {
 		tmpParam := ExecRemoteParam{User:input.User,Password:input.Password,Host:input.Host,Command:input.Command,Timeout:models.Config.ExecRemoteCommandTimeout}
 		execRemoteWithTimeout(&tmpParam)
@@ -246,7 +248,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 		err = tmpParam.Err
 		if err != nil {
 			log.Logger.Error("Exec command", log.String("host", input.Host), log.String("command", input.Command), log.String("output", cmdOutString), log.Error(err))
-			err = getRemoteCommandError(action.Language, input.Host, err)
+			err = getRemoteCommandError(action.Language, input.Host, cmdOutString, err)
 			return output, err
 		}
 	}
@@ -256,7 +258,11 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	err = execParam.Err
 	if err != nil {
 		log.Logger.Error("Install minion", log.String("host", input.Host), log.String("output", outString), log.Error(err))
-		err = getRemoteCommandError(action.Language, input.Host, err)
+		err = getRemoteCommandError(action.Language, input.Host, outString, err)
+		return output, err
+	}
+	if strings.TrimSpace(outString) == "" {
+		err = fmt.Errorf("Remote install salt-minion fail,please check network from target to master with port 9099 ")
 		return output, err
 	}
 	if !strings.Contains(outString, "salt-minion_success") {
@@ -296,6 +302,9 @@ func (action *MinionUninstallAction) agentUninstallCheckParam(input AgentUninsta
 	if input.Seed == "" {
 		return getParamEmptyError(action.Language, "seed")
 	}
+	if input.User == "" {
+		return getParamEmptyError(action.Language, "user")
+	}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
 	}
@@ -325,9 +334,7 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
-	if input.User == "" {
-		input.User = "root"
-	}
+
 	var cmdOut []byte
 	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp))
 	log.Logger.Debug("Uninstall minion", log.String("host", input.Host), log.String("output", string(cmdOut)))

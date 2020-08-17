@@ -5,7 +5,7 @@
   "sys_param_empty_error": "Dependent environment param %s is empty,please check environment params",
   "password_decode_error": "Password decode error,detail:%s",
   "password_encode_error": "Password encode error,detail:%s",
-  "exec_remote_command_error": "Exec command to %s error,detail:%s",
+  "exec_remote_command_error": "Exec command to %s error,output:%s,error:%s",
   "install_minion_error": "Install minion to %s fail,output:%s",
   "uninstall_minion_error": "Uninstall minion from %s fail,output:%s,detail:%s",
   "s3_url_validate_error": "S3 url %s is illegal",

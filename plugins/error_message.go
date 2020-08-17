@@ -89,8 +89,8 @@ func getPasswordEncodeError(language string,err error) error {
 	return fmt.Errorf(getMessageMap(language).PasswordEncodeError, err.Error())
 }
 
-func getRemoteCommandError(language,ip string,err error) error {
-	return fmt.Errorf(getMessageMap(language).ExecRemoteCommandError, ip, err.Error())
+func getRemoteCommandError(language,ip,output string,err error) error {
+	return fmt.Errorf(getMessageMap(language).ExecRemoteCommandError, ip, output, err.Error())
 }
 
 func getInstallMinionError(language,ip,output string) error {
