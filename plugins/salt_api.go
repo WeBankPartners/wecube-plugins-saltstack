@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var SaltApiActions = make(map[string]Action)
@@ -50,6 +50,11 @@ type SaltApiCallOutput struct {
 }
 
 type SaltApiCallAction struct {
+	Language string
+}
+
+func (action *SaltApiCallAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *SaltApiCallAction) ReadParam(param interface{}) (interface{}, error) {
@@ -103,13 +108,12 @@ type SaltApiCmdRunResult struct {
 func parseSaltApiCmdRunCallResult(jsonStr string) (*SaltApiCmdRunResults, error) {
 	result := SaltApiCmdRunResults{}
 
-	logrus.Infof("parseSaltApiCmdRunCallResult jsonStr: %++v", jsonStr)
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 		return &result, err
 	}
 
 	if len(result.Results) == 0 {
-		return &result, fmt.Errorf("parseSaltApiCmdRunCallResult,get %d result", len(result.Results))
+		return &result, fmt.Errorf("Parse SaltApiCmdRunCallResult,get %d result ", len(result.Results))
 	}
 
 	return &result, nil
@@ -138,7 +142,7 @@ func (action *SaltApiCallAction) callSaltApiCall(input *SaltApiCallInput) (outpu
 	request.Target = input.Target
 	request.Args = input.Args
 
-	result, err := CallSaltApi("https://127.0.0.1:8080", request)
+	result, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
 	if err != nil {
 		return output, err
 	}
@@ -154,11 +158,11 @@ func (action *SaltApiCallAction) Do(input interface{}) (interface{}, error) {
 	for _, file := range files.Inputs {
 		fileOutput, err := action.callSaltApiCall(&file)
 		if err != nil {
+			log.Logger.Error("Salt api call action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, fileOutput)
 	}
 
-	logrus.Infof("all salt request = %v have been handled", files)
 	return &outputs, finalErr
 }

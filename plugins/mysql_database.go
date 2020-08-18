@@ -1,10 +1,9 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var MysqlDatabasePluginActions = make(map[string]Action)
@@ -26,8 +25,7 @@ func (plugin *MysqlDatabasePlugin) GetActionByName(actionName string) (Action, e
 	return action, nil
 }
 
-type AddMysqlDatabaseAction struct {
-}
+type AddMysqlDatabaseAction struct { Language string }
 
 type AddMysqlDatabaseInputs struct {
 	Inputs []AddMysqlDatabaseInput `json:"inputs,omitempty"`
@@ -63,6 +61,10 @@ type AddMysqlDatabaseOutput struct {
 	DatabaseOwnerPassword string `json:"databaseOwnerPassword,omitempty"`
 }
 
+func (action *AddMysqlDatabaseAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *AddMysqlDatabaseAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs AddMysqlDatabaseInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -74,28 +76,28 @@ func (action *AddMysqlDatabaseAction) ReadParam(param interface{}) (interface{},
 
 func (action *AddMysqlDatabaseAction) addMysqlDatabaseCheckParam(input *AddMysqlDatabaseInput) error {
 	if input.Host == "" {
-		return errors.New("Host is empty")
+		return getParamEmptyError(action.Language, "host")
 	}
 	if input.Guid == "" {
-		return errors.New("Guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("Seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.UserName == "" {
-		return errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Password == "" {
-		return errors.New("Password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 	if input.DatabaseName == "" {
-		return errors.New("DatabaseName is empty")
+		return getParamEmptyError(action.Language, "databaseName")
 	}
 	if input.DatabaseOwnerName == "" {
-		return errors.New("DatabaseOwnerName is empty")
+		return getParamEmptyError(action.Language, "databaseOwnerName")
 	}
 	if input.DatabaseOwnerGuid == "" {
-		return errors.New("DatabaseOwnerGuid is empty")
+		return getParamEmptyError(action.Language, "databaseOwnerGuid")
 	}
 	return nil
 }
@@ -119,7 +121,7 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	//get root password
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 
@@ -128,32 +130,29 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	}
 
 	// check database database whether is existed.
-	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName)
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName, action.Language)
 	if err != nil {
-		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
 	}
 	if dbIsExist == true {
-		logrus.Errorf("db[%v] is existed", input.DatabaseName)
-		err = fmt.Errorf("db[%v] is existed", input.DatabaseName)
+		err = getAddMysqlDatabaseError(action.Language, fmt.Sprintf("database %s already exists", input.DatabaseName))
 		return output, err
 	}
 
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseOwnerName)
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseOwnerName, action.Language)
 	if err != nil {
-		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
 	}
 	if isExist == true {
-		logrus.Errorf("user[%v] is existed", input.DatabaseOwnerName)
-		err = fmt.Errorf("user[%v] is existed", input.DatabaseOwnerName)
+		err = getAddMysqlDatabaseError(action.Language, fmt.Sprintf("user %s already exists", input.DatabaseOwnerName))
 		return output, err
 	}
 
 	// create database
 	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
@@ -165,13 +164,14 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	// create user
 	cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
 	// encrypt password
 	encryptPassword, err := AesEnPassword(input.DatabaseOwnerGuid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
 	if err != nil {
-		logrus.Errorf("AesEnPassword meet error(%v)", err)
+		err = getPasswordEncodeError(action.Language, err)
 		return output, err
 	}
 	output.DatabaseOwnerPassword = encryptPassword
@@ -180,6 +180,7 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	permission := "ALL PRIVILEGES"
 	cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseOwnerName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
@@ -194,6 +195,7 @@ func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error)
 	for _, input := range inputs.Inputs {
 		output, err := action.addMysqlDatabaseAndUser(&input)
 		if err != nil {
+			log.Logger.Error("Add mysql database action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
@@ -202,8 +204,7 @@ func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error)
 	return outputs, finalErr
 }
 
-type DeleteMysqlDatabaseAction struct {
-}
+type DeleteMysqlDatabaseAction struct { Language string }
 
 type DeleteMysqlDatabaseInputs struct {
 	Inputs []DeleteMysqlDatabaseInput `json:"inputs,omitempty"`
@@ -233,6 +234,10 @@ type DeleteMysqlDatabaseOutput struct {
 	DatabaseOwnerGuid string `json:"databaseOwnerGuid,omitempty"`
 }
 
+func (action *DeleteMysqlDatabaseAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *DeleteMysqlDatabaseAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs DeleteMysqlDatabaseInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -244,25 +249,25 @@ func (action *DeleteMysqlDatabaseAction) ReadParam(param interface{}) (interface
 
 func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input DeleteMysqlDatabaseInput) error {
 	if input.Host == "" {
-		return errors.New("Host is empty")
+		return getParamEmptyError(action.Language, "host")
 	}
 	if input.Guid == "" {
-		return errors.New("Guid is empty")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return errors.New("Seed is empty")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.UserName == "" {
-		return errors.New("UserName is empty")
+		return getParamEmptyError(action.Language, "userName")
 	}
 	if input.Password == "" {
-		return errors.New("Password is empty")
+		return getParamEmptyError(action.Language, "password")
 	}
 	if input.DatabaseName == "" {
-		return errors.New("DatabaseName is empty")
+		return getParamEmptyError(action.Language, "databaseName")
 	}
 	if input.DatabaseOwnerGuid == "" {
-		return errors.New("DatabaseOwnerGuid is empty")
+		return getParamEmptyError(action.Language, "databaseOwnerGuid")
 	}
 
 	return nil
@@ -285,10 +290,10 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		return output, err
 	}
 
-	password, er := AesDePassword(input.Guid, input.Seed, input.Password)
-	if er != nil {
-		err = er
-		return output, er
+	password, tmpErr := AesDePassword(input.Guid, input.Seed, input.Password)
+	if tmpErr != nil {
+		err = getPasswordDecodeError(action.Language, tmpErr)
+		return output, err
 	}
 
 	if input.Port == "" {
@@ -296,16 +301,15 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 	}
 
 	// check database database whether is existed.
-	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName)
+	dbIsExist, err := checkDBExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseName, action.Language)
 	if err != nil {
-		logrus.Errorf("check db[%v] exist or not meet error=%v", input.DatabaseName, err)
 		return output, err
 	}
 	if dbIsExist == true {
 		var users []string
-		users, err = getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName)
+		users, err = getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName, action.Language)
 		if err != nil {
-			logrus.Errorf("get user by db[%v] meet err=%v", input.DatabaseName, err)
+			err = getDeleteMysqlDatabaseError(action.Language, err.Error())
 			return output, err
 		}
 
@@ -314,6 +318,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 			permission := "ALL PRIVILEGES"
 			cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, input.DatabaseName, user)
 			if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+				err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 				return output, err
 			}
 		}
@@ -322,6 +327,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 	// delete database
 	cmd := fmt.Sprintf("DROP DATABASE %s", input.DatabaseName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
@@ -336,6 +342,7 @@ func (action *DeleteMysqlDatabaseAction) Do(input interface{}) (interface{}, err
 	for _, input := range inputs.Inputs {
 		output, err := action.deleteMysqlDatabase(&input)
 		if err != nil {
+			log.Logger.Error("Delete mysql database action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)

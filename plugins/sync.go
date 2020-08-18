@@ -3,11 +3,11 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"os/exec"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const TmpCoreToken = `Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJTWVNfU0FMVFNUQUNLIiwiaWF0IjoxNTkwMTE4MjYxLCJ0eXBlIjoiYWNjZXNzVG9rZW4iLCJjbGllbnRUeXBlIjoiU1VCX1NZU1RFTSIsImV4cCI6MTc0NTYzODI2MSwiYXV0aG9yaXR5IjoiW1NVQl9TWVNURU1dIn0.N2sD9F4TKh1yaatRfr-sqRqlP7fiSqZ1znmr7AtQanr2ZmbldZt2ICeuUnIUcpGGK3YZKKqOPic2JNeECblgnw`
@@ -23,18 +23,18 @@ func SyncClusterList() {
 	defer func() {
 		cpErr := exec.Command("bash","-c", "/bin/cp -f /srv/salt/minions/conf/minion /var/www/html/salt-minion/conf/").Run()
 		if cpErr != nil {
-			logrus.Errorf("copy /srv/salt/minions/conf/minion /var/www/html/salt-minion/conf/minion error %v \n ", cpErr)
+			log.Logger.Error(fmt.Sprintf("copy /srv/salt/minions/conf/minion /var/www/html/salt-minion/conf/minion error %v \n ", cpErr))
 		}
 	}()
 	if CoreUrl == "" || MasterHostIp == "" {
-		logrus.Infof("sync cluster quit,core url or master ip is empty \n")
+		log.Logger.Info("sync cluster quit,core url or master ip is empty \n")
 		return
 	}
 	request, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/platform/v1/available-container-hosts", CoreUrl), strings.NewReader(""))
 	request.Header.Set("Authorization", TmpCoreToken)
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		logrus.Errorf("sync cluster list,get response error %v \n", err)
+		log.Logger.Error(fmt.Sprintf("sync cluster list,get response error %v \n", err))
 		return
 	}
 	var coreResult coreHostDto
@@ -42,11 +42,11 @@ func SyncClusterList() {
 	b, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(b, &coreResult)
 	if err != nil {
-		logrus.Errorf("sync cluster list,response json unmarshal error %v \n", err)
+		log.Logger.Error(fmt.Sprintf("sync cluster list,response json unmarshal error %v \n", err))
 		return
 	}
 	if len(coreResult.Data) == 0 {
-		logrus.Infof("sync cluster list,get plugin host list empty \n")
+		log.Logger.Info("sync cluster list,get plugin host list empty \n")
 		return
 	}
 	var tmpClusterIps string
@@ -60,13 +60,13 @@ func SyncClusterList() {
 		}
 	}
 	if !problemCluster {
-		logrus.Errorf("sync cluster error,can not find masterIp:%s in cluster:%s ", MasterHostIp, ClusterList)
+		log.Logger.Error(fmt.Sprintf("sync cluster error,can not find masterIp:%s in cluster:%s ", MasterHostIp, ClusterList))
 		ClusterList = []string{}
 		return
 	}
 	minionByte, err := ioutil.ReadFile("/srv/salt/minions/conf/minion")
 	if err != nil {
-		logrus.Errorf("read minion file error : %v \n", err)
+		log.Logger.Error(fmt.Sprintf("read minion file error : %v \n", err))
 		return
 	}
 	sb := string(minionByte)
@@ -79,20 +79,20 @@ func SyncClusterList() {
 			}
 		}
 		if tmpClusterIps == "" {
-			logrus.Infof("sync cluster abort with the right config ")
+			log.Logger.Info("sync cluster abort with the right config ")
 			return
 		}
 		sb = strings.Replace(sb, MasterHostIp, fmt.Sprintf("%s\n%s", MasterHostIp, tmpClusterIps), -1)
 	} else {
-		logrus.Infof("read minion file,can not find master ip %s \n", MasterHostIp)
+		log.Logger.Info(fmt.Sprintf("read minion file,can not find master ip %s \n", MasterHostIp))
 		return
 	}
 	err = ioutil.WriteFile("/srv/salt/minions/conf/minion", []byte(sb), 0644)
 	if err != nil {
-		logrus.Errorf("write minion file error : %v \n", err)
+		log.Logger.Error(fmt.Sprintf("write minion file error : %v \n", err))
 		return
 	}
-	logrus.Infof("replace minion file success !! \n")
+	log.Logger.Info("replace minion file success !! \n")
 }
 
 func StartClusterServer() {
@@ -135,18 +135,18 @@ func SendHostDelete(hosts []string) {
 		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s:4507%s?%s", v, ClusterDeletePath, urlParam), strings.NewReader(""))
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			logrus.Errorf("send host delete to %s error %v \n", v, err)
+			log.Logger.Error(fmt.Sprintf("send host delete to %s error %v \n", v, err))
 		} else {
 			var resultBody ClusterHostDeleteResult
 			b, _ := ioutil.ReadAll(resp.Body)
 			err = json.Unmarshal(b, &resultBody)
 			if err != nil {
-				logrus.Errorf("send host delete to %s fail, json unmarshal error %v \n", v, err)
+				log.Logger.Error(fmt.Sprintf("send host delete to %s fail, json unmarshal error %v \n", v, err))
 			} else {
 				if resultBody.Code > 0 {
-					logrus.Errorf("send host delete to %s fail, code: %d, message: %s", v, resultBody.Code, resultBody.Message)
+					log.Logger.Error(fmt.Sprintf("send host delete to %s fail, code: %d, message: %s", v, resultBody.Code, resultBody.Message))
 				} else {
-					logrus.Infof("send host delete to %s success ", v)
+					log.Logger.Error(fmt.Sprintf("send host delete to %s success ", v))
 				}
 			}
 			resp.Body.Close()

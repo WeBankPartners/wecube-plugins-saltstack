@@ -12,27 +12,27 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
-func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
+func uploadS3File(endPoint, accessKey, secretKey, language string) (string, error) {
 	//get minio url, package name
 	if !strings.Contains(endPoint, "//") {
-		return "", fmt.Errorf("Endpoint is unvaliable, don't have '//' : %s", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
-		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 
 	Info := strings.Split(s[1], "/")
 	if len(Info) < 3 {
-		return "", fmt.Errorf("Endpoint is unvaliable: %s", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 	if !strings.Contains(Info[len(Info)-1], ".") {
-		return "", fmt.Errorf("package name is unvaliable: %s", Info[len(Info)-1])
+		return "", getS3UploadError(language, endPoint, fmt.Sprintf("package name %s is unvaliable", Info[len(Info)-1]))
 	}
 
 	minioStoragePath := ""
@@ -43,20 +43,20 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	pkgInfo := strings.Split(Info[len(Info)-1], ".")
 	err := ensureDirExist(UPLOADS3FILE_DIR)
 	if err != nil {
-		return "", fmt.Errorf("create upload path error : %s", err)
+		return "", getS3UploadError(language, endPoint, fmt.Sprintf("create upload path error: %s", err.Error()))
 	}
 
 	path := UPLOADS3FILE_DIR + pkgInfo[0]
-	//check dir exist
+	//check dir exist,need to replace new file TODO
 	_, err = os.Stat(path)
 	if err == nil {
-		logrus.Infof("path %v already exist. ", path)
+		log.Logger.Warn("Upload s3 file,path already exist", log.String("path", path))
 		return path, nil
 	}
 
 	err = fileReplace(endPoint, accessKey, secretKey)
 	if err != nil {
-		return "", fmt.Errorf("template execution error: %s", err)
+		return "", getS3UploadError(language, endPoint, fmt.Sprintf("Prepare s3 template file error: %s ", err))
 	}
 
 	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf put "
@@ -67,43 +67,39 @@ func uploadS3File(endPoint, accessKey, secretKey string) (string, error) {
 	cmd.Stderr = &stderr
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+		return "", getS3UploadError(language, endPoint, fmt.Sprintf("exec s3cmd to upload fail,output:%s, error:%s", stderr.String(), err.Error()))
 	}
 	return path, nil
 }
 
-func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string, error) {
+func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language string) (string, error) {
 	var tmpName string
 	if randName {
 		tmpName = getWorkspaceName()
 	}
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
-		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 
 	Info := strings.Split(s[1], "/")
 	if len(Info) < 3 {
-		return "", fmt.Errorf("endpoint(%s) is not a valid s3 url", endPoint)
+		return "", getS3UrlValidateError(language, endPoint)
 	}
 
 	//check dir exist
-	err := ensureDirExist(UPLOADS3FILE_DIR)
-	if err != nil {
-		logrus.Infof("downloadS3File ensureDirExist meet err=%v", err)
-		return "", fmt.Errorf("create upload path error : %s", err)
-	}
+	ensureDirExist(UPLOADS3FILE_DIR)
 
 	path := UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
-	//tmpPath := UPLOADS3FILE_DIR + Info[len(Info)-1] + tmpName
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	if err == nil {
-		logrus.Infof("os stat check path = %s return ", path)
+		log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
 		return path, nil
 	}
+	//config s3,need to change different workspace TODO
 	err = fileReplace(endPoint, accessKey, secretKey)
 	if err != nil {
-		return "", fmt.Errorf("template execution error: %s", err)
+		return "", getS3DownloadError(language, endPoint, fmt.Sprintf("s3 template config error: %s", err.Error()))
 	}
 
 	storagePath := ""
@@ -112,7 +108,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string
 	}
 	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get --force "
 	sh += " s3:/" + storagePath + " " + path
-	logrus.Infof("s3 cmd -------> %s", sh)
+	log.Logger.Debug("S3 command", log.String("command", sh))
 	cmd := exec.Command("/bin/sh", "-c", sh)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -120,11 +116,11 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool) (string
 		os.Remove(path)
 		tmpErrorMsg := fmt.Sprint(err) + ": " + stderr.String()
 		if strings.Contains(tmpErrorMsg, "404") {
-			tmpErrorMsg = "can not find "+storagePath+" in S3"
+			return "", getS3FileNotFoundError(language, storagePath)
 		}
-		return "", fmt.Errorf("download %s error: %s", storagePath, tmpErrorMsg)
+		return "", getS3DownloadError(language, endPoint, tmpErrorMsg)
 	}
-	logrus.Infof("result=%v", stderr.String())
+	log.Logger.Debug("Download s3 file result", log.String("output", stderr.String()))
 	return path, nil
 }
 
@@ -168,16 +164,16 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 }
 
 //GetVariable .
-func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) {
+func GetVariable(filepath string,specialList []string,showPrefix bool) ([]ConfigKeyInfo, error) {
 	_, err := PathExists(filepath)
 	if err != nil {
-		logrus.Errorf("check file %s status error,%v ", filepath, err)
+		log.Logger.Error("Get variable error", log.Error(err))
 		return nil, err
 	}
 
 	f, err := os.Open(filepath)
 	if err != nil {
-		logrus.Errorf("open file %s error=%v", filepath, err)
+		err = fmt.Errorf("Open file %s error,%s ", filepath, err.Error())
 		return nil, err
 	}
 	defer f.Close()
@@ -213,14 +209,18 @@ func GetVariable(filepath string,specialList []string) ([]ConfigKeyInfo, error) 
 					if strings.HasPrefix(param, specialFlag) {
 						s := strings.Split(param, specialFlag)
 						if s[1] == "" {
-							return nil, fmt.Errorf("file %s have unvaliable variable %s", filepath, param)
+							return nil, fmt.Errorf("File %s have unvaliable param %s ", filepath, param)
 						}
 						if strings.Contains(s[1], " ") {
 							continue
 						}
 
 						configKey.Line = n
-						configKey.Key = s[1]
+						if showPrefix {
+							configKey.Key = param
+						}else {
+							configKey.Key = s[1]
+						}
 						variableList = append(variableList, configKey)
 					}
 				}

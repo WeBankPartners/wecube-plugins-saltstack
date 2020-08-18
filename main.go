@@ -5,49 +5,31 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
+	"flag"
+	"fmt"
+	"time"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
-	"github.com/sirupsen/logrus"
-	"github.com/snowzach/rotatefilehook"
-)
-
-const (
-	PLUGIN_SERVICE_PORT = "8082"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 func init() {
-	initLogger()
+	initConfig()
+	log.InitZapLogger()
 	initRouter()
 }
 
 func main() {
+	plugins.InitErrorMessageList()
 	plugins.InitEnvParam()
 	plugins.SyncClusterList()
 	go plugins.StartClusterServer()
-	logrus.Infof("Start WeCube-Plungins Deploy Service at port %v ... ", PLUGIN_SERVICE_PORT)
 
-	if err := http.ListenAndServe(":"+PLUGIN_SERVICE_PORT, nil); err != nil {
-		logrus.Fatalf("ListenAndServe meet err = %v", err)
+	if err := http.ListenAndServe(":"+models.Config.Http.Port, nil); err != nil {
+		log.Logger.Fatal("Start listening error", log.Error(err))
+	}else{
+		log.Logger.Info(fmt.Sprintf("Listening %s ...", models.Config.Http.Port))
 	}
-}
-
-func initLogger() {
-	fileName := "logs/wecube-plugins-saltstack.log"
-	logrus.SetReportCaller(true)
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0666)
-	if err == nil {
-		logrus.SetOutput(file)
-	}
-
-	rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
-		Filename:   fileName,
-		MaxSize:    100,
-		MaxBackups: 7,
-		MaxAge:     7,
-		Level:      logrus.InfoLevel,
-		Formatter:  &logrus.TextFormatter{DisableTimestamp: false, DisableColors: false},
-	})
-	logrus.AddHook(rotateFileHook)
 }
 
 func initRouter() {
@@ -59,19 +41,32 @@ func initRouter() {
 	http.Handle("/", fs)
 }
 
+func initConfig()  {
+	cfgFile := flag.String("c", "conf/default.json", "config file")
+	flag.Parse()
+	err := models.InitConfig(*cfgFile)
+	if err != nil {
+		fmt.Printf("Init config fail,%s \n", err.Error())
+		os.Exit(1)
+	}
+}
+
 func routeDispatcher(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	pluginRequest := parsePluginRequest(r)
 	pluginResponse, _ := plugins.Process(pluginRequest)
-	logrus.Infof("return data=%++v", pluginResponse)
+	if pluginResponse.ResultCode == "1" {
+		log.Logger.Error("Handle error", log.JsonObj("response", pluginResponse))
+	}else{
+		log.Logger.Debug("Handle success", log.JsonObj("response", pluginResponse))
+	}
+	log.Logger.Info("Request end ----------------<<",log.String("url", r.RequestURI), log.String("method",r.Method), log.String("ip",strings.Split(r.RemoteAddr,":")[0]), log.Float64("cost_second",time.Now().Sub(start).Seconds()))
 	write(w, pluginResponse)
 }
 
 func write(w http.ResponseWriter, output *plugins.PluginResponse) {
 	w.Header().Set("content-type", "application/json")
-	b, err := json.Marshal(output)
-	if err != nil {
-		logrus.Errorf("write http response (%v) meet error (%v)", output, err)
-	}
+	b, _ := json.Marshal(output)
 	w.Write(b)
 }
 

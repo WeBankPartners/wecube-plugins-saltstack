@@ -1,11 +1,11 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 //LogActions define
@@ -32,8 +32,7 @@ func (plugin *LogPlugin) GetActionByName(actionName string) (Action, error) {
 }
 
 //LogSearchAction .
-type LogSearchAction struct {
-}
+type LogSearchAction struct { Language string }
 
 //SearchInputs .
 type SearchInputs struct {
@@ -63,6 +62,10 @@ type SearchOutput struct {
 	Log      string `json:"log,omitempty"`
 }
 
+func (action *LogSearchAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 //ReadParam .
 func (action *LogSearchAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs SearchInputs
@@ -77,7 +80,7 @@ func (action *LogSearchAction) ReadParam(param interface{}) (interface{}, error)
 func (action *LogSearchAction) CheckParam(input SearchInput) error {
 
 	if input.KeyWord == "" {
-		return errors.New("LogSearchAction input KeyWord can not be empty")
+		return getParamEmptyError(action.Language, "KeyWord")
 	}
 
 	return nil
@@ -94,6 +97,8 @@ func (action *LogSearchAction) Do(input interface{}) (interface{}, error) {
 		outputs, err := action.Search(&logs.Inputs[i])
 		if err == nil {
 			logoutputs.Outputs = append(logoutputs.Outputs, outputs.Outputs...)
+		}else{
+			log.Logger.Error("Log search action", log.Error(err))
 		}
 		finalErr = err
 	}
@@ -139,13 +144,13 @@ func (action *LogSearchAction) Search(input *SearchInput) (outputs SearchOutputs
 	//创建获取命令输出管道
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("can not obtain stdout pipe for command when get log filename: %s \n", err)
+		err = fmt.Errorf("can not obtain stdout pipe for command,%s", err.Error())
 		return outputs, err
 	}
 
 	//执行命令
 	if err := cmd.Start(); err != nil {
-		fmt.Printf("conmand start is error when get log filename: %s \n", err)
+		err = fmt.Errorf("command start fail,%s", err.Error())
 		return outputs, err
 	}
 
@@ -205,8 +210,7 @@ func (action *LogSearchAction) Search(input *SearchInput) (outputs SearchOutputs
 }
 
 //LogSearchDetailAction .
-type LogSearchDetailAction struct {
-}
+type LogSearchDetailAction struct { Language string }
 
 //SearchDetailInputs .
 type SearchDetailInputs struct {
@@ -237,6 +241,10 @@ type SearchDetailOutput struct {
 	Logs       string `json:"logs,omitempty"`
 }
 
+func (action *LogSearchDetailAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 //ReadParam .
 func (action *LogSearchDetailAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs SearchDetailInputs
@@ -250,10 +258,10 @@ func (action *LogSearchDetailAction) ReadParam(param interface{}) (interface{}, 
 //CheckParam .
 func (action *LogSearchDetailAction) CheckParam(input SearchDetailInput) error {
 	if input.FileName == "" {
-		return errors.New("LogSearchDetailAction input finename can not be empty")
+		return getParamEmptyError(action.Language, "fileName")
 	}
 	if input.LineNumber == "" {
-		return errors.New("LogSearchDetailAction input LineNumber can not be empty")
+		return getParamEmptyError(action.Language, "lineNumber")
 	}
 
 	return nil
@@ -268,6 +276,7 @@ func (action *LogSearchDetailAction) Do(input interface{}) (interface{}, error) 
 	for i := 0; i < len(logs.Inputs); i++ {
 		output, err := action.SearchDetail(&logs.Inputs[i])
 		if err != nil {
+			log.Logger.Error("Log search detail action", log.Error(err))
 			finalErr = err
 		}
 

@@ -4,13 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -80,30 +80,29 @@ func newSaltApiToken() error {
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(request)
 	if err != nil {
-		logrus.Errorf("newRequest meet error=%v,url=%v", err, urlPath)
+		log.Logger.Error(fmt.Sprintf("newRequest meet error=%v,url=%v", err, urlPath))
 		return fmt.Errorf("newRequest meet error=%v,url=%v", err, urlPath)
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		logrus.Errorf("newSaltApiToken StatusCode != 200,statusCode=%v,url=%v", resp.StatusCode, urlPath)
+		log.Logger.Error(fmt.Sprintf("newSaltApiToken StatusCode != 200,statusCode=%v,url=%v", resp.StatusCode, urlPath))
 		return fmt.Errorf("newSaltApiToken StatusCode != 200,statusCode=%v", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logrus.Errorf("newSaltApiToken,readAll meet err=%v", err)
+		log.Logger.Error(fmt.Sprintf("newSaltApiToken,readAll meet err=%v", err))
 		return fmt.Errorf("newSaltApiToken,readAll meet err=%v", err)
 	}
 
-	logrus.Infof("newSaltApiToken http result=%s", []byte(body))
 	rtnData := NewSaltApiTokenRsp{}
 	if err = json.Unmarshal(body, &rtnData); err != nil {
-		logrus.Errorf("newSaltApiToken unmarshal meet err=%v", err)
+		log.Logger.Error(fmt.Sprintf("newSaltApiToken unmarshal meet err=%v", err))
 		return fmt.Errorf("newSaltApiToken unmarshal meet err=%v", err)
 	}
 	if len(rtnData.Result) != 1 {
-		logrus.Errorf("newSaltApiToken len(result)=%v", len(rtnData.Result))
+		log.Logger.Error(fmt.Sprintf("newSaltApiToken len(result)=%v", len(rtnData.Result)))
 		return fmt.Errorf("newSaltApiToken len(result)=%v", len(rtnData.Result))
 	}
 
@@ -111,8 +110,6 @@ func newSaltApiToken() error {
 	saltToken.CreateTime = time.Now()
 	saltToken.Expire = SALT_TOKEN_VALID_TIME
 	//saltToken.Expire = rtnData.Result[0].Expire - rtnData.Result[0].Start
-
-	logrus.Infof("newSaltApiToken ok,token=%++v", saltToken)
 
 	return nil
 }

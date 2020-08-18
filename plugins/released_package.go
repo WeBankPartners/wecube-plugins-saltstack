@@ -1,12 +1,11 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var ReleasedPackagePluginActions = make(map[string]Action)
@@ -53,6 +52,11 @@ type ListFilesOutput struct {
 }
 
 type ListCurrentDirAction struct {
+	Language string
+}
+
+func (action *ListCurrentDirAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *ListCurrentDirAction) ReadParam(param interface{}) (interface{}, error) {
@@ -66,23 +70,15 @@ func (action *ListCurrentDirAction) ReadParam(param interface{}) (interface{}, e
 
 func (action *ListCurrentDirAction) CheckParam(input ListFilesInput) error {
 	if input.EndPoint == "" {
-		return errors.New("Endpoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
-
-	// if input.AccessKey == "" {
-	// 	return errors.New("AccessKey is empty")
-	// }
-
-	// if input.SecretKey == "" {
-	// 	return errors.New("SecretKey is empty")
-	// }
 	return nil
 }
 
 func getPackageNameFromEndpoint(endpoint string) (string, error) {
 	index := strings.LastIndexAny(endpoint, "/")
 	if index == -1 {
-		return "", fmt.Errorf("Invalid endpoint %s", endpoint)
+		return "", fmt.Errorf("Invalid endpoint %s ", endpoint)
 	}
 
 	return endpoint[index+1:], nil
@@ -111,20 +107,19 @@ func (action *ListCurrentDirAction) listCurrentDir(input *ListFilesInput) (outpu
 	}
 
 	if err := validateCompressedFile(packageName); err != nil {
+		err = getDecompressSuffixError(action.Language, packageName)
 		return output, err
 	}
 
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
-		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 		if err != nil {
-			logrus.Errorf("ListCurrentDirAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err
 		}
 
 		if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
-			logrus.Errorf("ListCurrentDirAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
+			err = getUnpackFileError(action.Language, comporessedFileFullPath, err)
 			os.RemoveAll(comporessedFileFullPath)
 			return output, err
 		}
@@ -150,13 +145,14 @@ func (action *ListCurrentDirAction) Do(input interface{}) (interface{}, error) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logrus.Errorf("panic err=%v", err)
+			log.Logger.Error("List current dir,recover error", log.String("error", fmt.Sprintf("err=%v", err)))
 		}
 	}()
 
 	for _, input := range inputs.Inputs {
 		output, err := action.listCurrentDir(&input)
 		if err != nil {
+			log.Logger.Error("List current dir action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
@@ -196,6 +192,11 @@ type ConfigKeyInfo struct {
 }
 
 type GetConfigFileKeyAction struct {
+	Language string
+}
+
+func (action *GetConfigFileKeyAction) SetAcceptLanguage(language string) {
+	action.Language = language
 }
 
 func (action *GetConfigFileKeyAction) ReadParam(param interface{}) (interface{}, error) {
@@ -209,10 +210,10 @@ func (action *GetConfigFileKeyAction) ReadParam(param interface{}) (interface{},
 
 func (action *GetConfigFileKeyAction) CheckParam(input GetConfigFileKeyInput) error {
 	if input.FilePath == "" {
-		return errors.New("FilePath is empty")
+		return getParamEmptyError(action.Language, "filePath")
 	}
 	if input.EndPoint == "" {
-		return errors.New("Endpoint is empty")
+		return getParamEmptyError(action.Language, "endpoint")
 	}
 
 	return nil
@@ -239,25 +240,22 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	if err != nil {
 		return output, err
 	}
-	logrus.Info("package name = >", packageName)
+	log.Logger.Debug("Package name", log.String("name", packageName))
 
 	fullPath := getDecompressDirName(packageName)
 	if err = isDirExist(fullPath); err != nil {
-		// comporessedFileFullPath, err := downloadS3File(input.EndPoint, input.AccessKey, input.SecretKey)
-		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true)
+		comporessedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 		if err != nil {
-			logrus.Errorf("GetConfigFileKeyAction downloadS3File fullPath=%v,err=%v", comporessedFileFullPath, err)
 			return output, err
 		}
 
 		if err = decompressFile(comporessedFileFullPath, fullPath); err != nil {
-			logrus.Errorf("GetConfigFileKeyAction decompressFile fullPath=%v,err=%v", comporessedFileFullPath, err)
+			err = getUnpackFileError(action.Language, comporessedFileFullPath, err)
 			os.RemoveAll(comporessedFileFullPath)
 			return output, err
 		}
 		os.RemoveAll(comporessedFileFullPath)
 	}
-	logrus.Info("full path = >", fullPath)
 
 	if fullPath[len(fullPath)-1] == '/' {
 		fullPath = fullPath[:len(fullPath)-1]
@@ -265,12 +263,11 @@ func (action *GetConfigFileKeyAction) getConfigFileKey(input *GetConfigFileKeyIn
 	if input.FilePath[0] == '/' {
 		input.FilePath = input.FilePath[1:]
 	}
-
-	logrus.Infof("ConfigFile=%v", fullPath+"/"+input.FilePath)
+	log.Logger.Debug("ConfigFile", log.String("file", fullPath+"/"+input.FilePath))
 	tmpSpecialReplaceList := DefaultSpecialReplaceList
 	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultEncryptReplaceList...)
 	tmpSpecialReplaceList = append(tmpSpecialReplaceList, DefaultFileReplaceList...)
-	keys, err := GetVariable(fullPath + "/" + input.FilePath, tmpSpecialReplaceList)
+	keys, err := GetVariable(fullPath + "/" + input.FilePath, tmpSpecialReplaceList, true)
 	if err != nil {
 		return output, err
 	}
@@ -292,6 +289,7 @@ func (action *GetConfigFileKeyAction) Do(input interface{}) (interface{}, error)
 	for _, input := range inputs.Inputs {
 		output, err := action.getConfigFileKey(&input)
 		if err != nil {
+			log.Logger.Error("Get config file key action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)
