@@ -1,0 +1,17 @@
+{
+  "http": {
+    "port": "8082",
+    "token": "default-token-used-in-server-side"
+  },
+  "log": {
+    "level": "info",
+    "file": "logs/saltstack.log",
+    "archive_max_size": 64,
+    "archive_max_backup": 10,
+    "archive_max_day": 15,
+    "compress": true
+  },
+  "default_language": "en",
+  "install_minion_timeout": 300,
+  "exec_remote_command_timeout": 300
+}

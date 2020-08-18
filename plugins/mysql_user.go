@@ -3,7 +3,7 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var MysqlDatabaseUserPluginActions = make(map[string]Action)
@@ -26,8 +26,7 @@ func (plugin *MysqlUserPlugin) GetActionByName(actionName string) (Action, error
 }
 
 //------------AddMysqlDatabaseUserAction--------------
-type AddMysqlDatabaseUserAction struct {
-}
+type AddMysqlDatabaseUserAction struct {  Language string  }
 
 type AddMysqlDatabaseUserInputs struct {
 	Inputs []AddMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -62,6 +61,10 @@ type AddMysqlDatabaseUserOutput struct {
 	DatabaseUserPassword string `json:"databaseUserPassword,omitempty"`
 }
 
+func (action *AddMysqlDatabaseUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *AddMysqlDatabaseUserAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs AddMysqlDatabaseUserInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -72,19 +75,19 @@ func (action *AddMysqlDatabaseUserAction) ReadParam(param interface{}) (interfac
 
 func (action *AddMysqlDatabaseUserAction) checkAddMysqlDatabaseUser(input *AddMysqlDatabaseUserInput) error {
 	if input.Guid == "" {
-		return fmt.Errorf("empty guid")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return fmt.Errorf("empty seed")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.Password == "" {
-		return fmt.Errorf("empty password")
+		return getParamEmptyError(action.Language, "password")
 	}
 	if input.DatabaseUserName == "" {
-		return fmt.Errorf("empty databaseUserName")
+		return getParamEmptyError(action.Language, "databaseUserName")
 	}
 	if input.DatabaseUserGuid == "" {
-		return fmt.Errorf("empty databaseUserGuid")
+		return getParamEmptyError(action.Language, "databaseUserGuid")
 	}
 	return nil
 }
@@ -108,19 +111,17 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	//get root password
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
-		logrus.Errorf("AesDePassword meet error(%v)", err)
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName)
+	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName, action.Language)
 	if err != nil {
-		logrus.Errorf("checking user exist or not meet error=%v", err)
 		return output, err
 	}
 	if isExist == true {
-		logrus.Errorf("database user[%v] exsit", input.DatabaseUserName)
-		err = fmt.Errorf("database user[%v] exsit", input.DatabaseUserName)
+		err = getMysqlCreateUserError(action.Language, input.DatabaseUserName, "user already exist")
 		return output, err
 	}
 
@@ -132,6 +133,7 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 
 	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, userPassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
@@ -140,6 +142,7 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 		permission := "ALL PRIVILEGES"
 		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 			return output, err
 		}
 	}
@@ -147,7 +150,7 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	// create encrypt password
 	encryptPassword, err := AesEnPassword(input.Guid, input.Seed, userPassword, DEFALT_CIPHER)
 	if err != nil {
-		logrus.Errorf("AesEnPassword meet error(%v)", err)
+		err = getPasswordEncodeError(action.Language, err)
 		return output, err
 	}
 	output.DatabaseUserPassword = encryptPassword
@@ -162,6 +165,7 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 	for _, input := range inputs.Inputs {
 		output, err := action.createUserForExistedDatabase(&input)
 		if err != nil {
+			log.Logger.Error("Add mysql user action", log.Error(err))
 			finalErr = err
 		}
 
@@ -170,8 +174,7 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 	return outputs, finalErr
 }
 
-type DeleteMysqlDatabaseUserAction struct {
-}
+type DeleteMysqlDatabaseUserAction struct { Language string }
 
 type DeleteMysqlDatabaseUserInputs struct {
 	Inputs []DeleteMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -201,6 +204,10 @@ type DeleteMysqlDatabaseUserOutput struct {
 	DatabaseUserGuid string `json:"databaseUserGuid,omitempty"`
 }
 
+func (action *DeleteMysqlDatabaseUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
 func (action *DeleteMysqlDatabaseUserAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs DeleteMysqlDatabaseUserInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
@@ -211,19 +218,19 @@ func (action *DeleteMysqlDatabaseUserAction) ReadParam(param interface{}) (inter
 
 func (action DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUserCheckParam(input *DeleteMysqlDatabaseUserInput) error {
 	if input.Guid == "" {
-		return fmt.Errorf("empty guid")
+		return getParamEmptyError(action.Language, "guid")
 	}
 	if input.Seed == "" {
-		return fmt.Errorf("empty seed")
+		return getParamEmptyError(action.Language, "seed")
 	}
 	if input.Password == "" {
-		return fmt.Errorf("empty password")
+		return getParamEmptyError(action.Language, "password")
 	}
 	if input.DatabaseUserName == "" {
-		return fmt.Errorf("empty databaseUserName")
+		return getParamEmptyError(action.Language, "databaseUserName")
 	}
 	if input.DatabaseUserGuid == "" {
-		return fmt.Errorf("empty databaseUserGuid")
+		return getParamEmptyError(action.Language, "databaseUserGuid")
 	}
 	return nil
 }
@@ -246,12 +253,12 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
+		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 
-	dbs, err := getAllDBByUser(input.Host, input.Port, input.UserName, password, input.DatabaseUserName)
+	dbs, err := getAllDBByUser(input.Host, input.Port, input.UserName, password, input.DatabaseUserName, action.Language)
 	if err != nil {
-		logrus.Errorf("getting dbs by user[%v] meet error=%v", input.DatabaseUserName, err)
 		return output, err
 	}
 
@@ -260,6 +267,7 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 		permission := "ALL PRIVILEGES"
 		cmd := fmt.Sprintf("REVOKE %s ON %s.* FROM %s ", permission, db, input.DatabaseUserName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 			return output, err
 		}
 	}
@@ -267,6 +275,7 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 	// delete user
 	cmd := fmt.Sprintf("DROP USER %s", input.DatabaseUserName)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
 	}
 
@@ -281,6 +290,7 @@ func (action *DeleteMysqlDatabaseUserAction) Do(input interface{}) (interface{},
 	for _, input := range inputs.Inputs {
 		output, err := action.deleteMysqlDatabaseUser(&input)
 		if err != nil {
+			log.Logger.Error("Delete mysql user action", log.Error(err))
 			finalErr = err
 		}
 		outputs.Outputs = append(outputs.Outputs, output)

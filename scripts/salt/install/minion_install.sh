@@ -22,23 +22,23 @@ mkdir -p /tmp/salt
 cd /tmp/salt/
 if [ "$3" = "yum" ]
 then
-  yum install -y salt-minion
+  sudo yum install -y salt-minion
 else
   curl -O http://$master_ip:9099/salt-minion/minion_install_pkg.tar.gz
   tar zxf minion_install_pkg.tar.gz
-  cd minion_install_pkg && ./install_minion.sh
+  cd minion_install_pkg && sudo ./install_minion.sh
 fi
 cd /tmp/salt/
 curl -O http://$master_ip:9099/salt-minion/conf/minion
 sed -i "s~{{ minion_id }}~$minion_ip~g" /tmp/salt/minion
-mv /tmp/salt/minion /etc/salt/minion
-systemctl enable salt-minion
+sudo mv /tmp/salt/minion /etc/salt/minion
+sudo systemctl enable salt-minion
 psout=`ps aux|grep salt-minion|grep -v 'grep'`
 if [ -n "$psout" ]
 then
-  systemctl restart salt-minion
+  sudo systemctl restart salt-minion
 else
-  systemctl start salt-minion
+  sudo systemctl start salt-minion
 fi
 sleep 1
 is_success=`systemctl status salt-minion|grep running|wc -l`
