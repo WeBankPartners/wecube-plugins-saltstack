@@ -216,10 +216,9 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 						}
 
 						configKey.Line = n
+						configKey.Key = s[1]
 						if showPrefix {
-							configKey.Key = param
-						}else {
-							configKey.Key = s[1]
+							configKey.Type = specialFlag
 						}
 						variableList = append(variableList, configKey)
 					}
