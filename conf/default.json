@@ -4,7 +4,7 @@
     "token": "default-token-used-in-server-side"
   },
   "log": {
-    "level": "info",
+    "level": "{{SALTSTACK_LOG_LEVEL}}",
     "file": "logs/saltstack.log",
     "archive_max_size": 64,
     "archive_max_backup": 10,
