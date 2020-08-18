@@ -259,20 +259,20 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 		return nil
 	}
 
-	fileVarList := []string{}
-	for _, v := range fileVarMap {
-		fileVarList = append(fileVarList, v.Key)
-	}
+	//fileVarList := []string{}
+	//for _, v := range fileVarMap {
+	//	fileVarList = append(fileVarList, v.Key)
+	//}
 
 	keyMap, err := GetInputVariableMap(variablelist, seed, tmpSpecialReplaceList)
 	if err != nil {
 		return err
 	}
 
-	err = CheckVariableIsAllReady(keyMap, fileVarList)
-	if err != nil {
-		return err
-	}
+	//err = CheckVariableIsAllReady(keyMap, fileVarList)
+	//if err != nil {
+	//	return err
+	//}
 
 	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, decompressDirName, tmpSpecialReplaceList, prefix, fileReplacePrefix)
 	if err != nil {
@@ -508,6 +508,9 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 							continue
 						}
 						toLowerKey := strings.ToLower(s[1])
+						if _,b := keyMap[toLowerKey]; !b {
+							continue
+						}
 						oldStr := "[" + key + "]"
 						variableValue, err := getVariableValue(key, keyMap[toLowerKey], publicKey, privateKey, prefix)
 						if err != nil {
