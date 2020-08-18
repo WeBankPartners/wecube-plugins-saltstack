@@ -33,6 +33,7 @@ if [ ! -f $runReplaceOkFile ];then
 fi
 
 cd /home/app/wecube-plugins-saltstack
+sed -i "s/{{SALTSTACK_LOG_LEVEL}}/$SALTSTACK_LOG_LEVEL/g" conf/default.json
 mkdir -p logs
 ./wecube-plugins-saltstack&
 /usr/bin/salt-master&
