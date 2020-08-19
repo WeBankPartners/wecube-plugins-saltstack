@@ -193,8 +193,8 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	}
 
 	//compress file
-	nowTime := time.Now().Format("200601021504")
-	newPackageName := fmt.Sprintf("%s-%v%s", getPackageNameWithoutSuffix(packageName), nowTime, suffix)
+	//nowTime := time.Now().Format("20060102150405.999999999")
+	newPackageName := fmt.Sprintf("%s-%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405.999999999"), suffix)
 	if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
 		os.RemoveAll(decompressDirName)
 		return output, fmt.Errorf("After replace variable,try to compress %s fail,%s ", newPackageName, err.Error())
