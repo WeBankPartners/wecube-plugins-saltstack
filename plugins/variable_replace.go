@@ -297,7 +297,7 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	if err != nil {
 		log.Logger.Error("GetRawKey fail,decode password error", log.Error(err))
 	}
-	return key, afterDecode, fmt.Errorf("GetRawKeyValue decode value fail,value:%s guid:%s error:%s", values[0], values[1], err.Error())
+	return key, afterDecode, err
 }
 
 func GetInputVariableMap(variable string, seed string, specialList []string) (map[string]string, error) {
