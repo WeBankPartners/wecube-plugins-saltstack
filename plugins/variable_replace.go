@@ -235,8 +235,8 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	seed := input.Seed
 	publicKey := input.AppPublicKey
 	privateKey := input.SysPrivateKey
-	prefix := strings.Split(input.EncryptVariblePrefix, ",")
-	fileReplacePrefix := strings.Split(input.FileReplacePrefix, ",")
+	prefix := DefaultEncryptReplaceList
+	fileReplacePrefix := DefaultFileReplaceList
 
 	index := strings.LastIndexAny(filepath, "/")
 	if index == -1 {
