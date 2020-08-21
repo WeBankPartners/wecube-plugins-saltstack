@@ -1,5 +1,6 @@
 FROM  ccr.ccs.tencentyun.com/webankpartners/wecube-saltstack:v1.2
 
+ENV LANG=en_US.utf8
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
 ENV DEFAULT_S3_KEY=access_key
 ENV DEFAULT_S3_PASSWORD=secret_key
