@@ -57,7 +57,7 @@ func init() {
 	registerPlugin("mysql-user", new(MysqlUserPlugin))
 	registerPlugin("released-package", new(ReleasedPackagePlugin))
 	registerPlugin("text-processor", new(TextProcessorPlugin))
-	registerPlugin("log", new(LogPlugin))
+	//registerPlugin("log", new(LogPlugin))
 	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
 	registerPlugin("web-console", new(WebConsolePlugin))
 	registerPlugin("password", new(PasswordPlugin))
