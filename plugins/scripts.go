@@ -507,11 +507,20 @@ func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
 	if input.Target == "" {
 		return getParamEmptyError(action.Language, "target")
 	}
+	if checkIllegalParam(input.Target) {
+		return getParamValidateError(action.Language, "target", "Contains illegal character")
+	}
 	if input.RunAs == "" {
 		return getParamEmptyError(action.Language, "runAs")
 	}
+	if checkIllegalParam(input.RunAs) {
+		return getParamValidateError(action.Language, "runAs", "Contains illegal character")
+	}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
+	}
+	if checkIllegalParam(input.Password) {
+		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
 	return nil
 }

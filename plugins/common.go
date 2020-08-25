@@ -434,3 +434,16 @@ func InitEnvParam() {
 		log.Logger.Warn("Core url is empty")
 	}
 }
+
+func checkIllegalParam(input string) bool {
+	if strings.Contains(input, "'") {
+		return true
+	}
+	if strings.Contains(input, "\"") {
+		return true
+	}
+	if strings.Contains(input, "`") {
+		return true
+	}
+	return false
+}
