@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 OPENSSL="/usr/bin/openssl"
-TMPDIR="/tmp/`whoami`"
+TMPDIR="/tmp/`whoami`/$6"
 mkdir -p ${TMPDIR}
 
 TMP=${TMPDIR}/RSA_TMP_ENC

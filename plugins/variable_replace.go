@@ -405,13 +405,14 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 	if err = writeStringToFile(rawData, rawDataFile); err != nil {
 		return "", err
 	}
-
+	tmpWorkspace := fmt.Sprintf("enc-%d", time.Now().UnixNano())
 	args := []string{
 		"enc",
 		publicKeyFile,
 		privateKeyFile,
 		rawDataFile,
 		encrpyDataFile,
+		tmpWorkspace,
 	}
 	out, err := runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsautil.sh", args)
 	if err != nil {
