@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"strconv"
 )
 
 var MysqlScriptPluginActions = make(map[string]Action)
@@ -76,6 +77,9 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if input.Host == "" {
 		return getParamEmptyError(action.Language, "host")
 	}
+	if checkIllegalParam(input.Host) {
+		return getParamValidateError(action.Language, "host", "Contains illegal character")
+	}
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
@@ -85,8 +89,14 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if input.UserName == "" {
 		return getParamEmptyError(action.Language, "userName")
 	}
+	if checkIllegalParam(input.UserName) {
+		return getParamValidateError(action.Language, "userName", "Contains illegal character")
+	}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
+	}
+	if checkIllegalParam(input.Password) {
+		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
 	if input.EndPoint == "" {
 		return getParamEmptyError(action.Language, "endpoint")
@@ -94,6 +104,11 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 
 	if input.Port == "" {
 		input.Port = "3306"
+	}else{
+		_,err := strconv.Atoi(input.Port)
+		if err != nil {
+			return getParamValidateError(action.Language, "port", "Port is not num")
+		}
 	}
 
 	return nil
