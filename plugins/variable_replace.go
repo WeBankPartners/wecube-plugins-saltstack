@@ -163,7 +163,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	if err = decompressFile(compressedFileFullPath, decompressDirName); err != nil {
+	if err = bashDecompressFunc(compressedFileFullPath, decompressDirName); err != nil {
 		err = getUnpackFileError(action.Language, compressedFileFullPath, err)
 		os.RemoveAll(compressedFileFullPath)
 		return output, err
