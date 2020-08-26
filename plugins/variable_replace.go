@@ -580,7 +580,8 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 		sh = "cd " + decompressDirName + " && " + "zip -r " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
 	}
 	if suffix == ".tgz" || suffix == ".tar.gz" {
-		sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
+		//sh = "cd " + decompressDirName + " && " + "tar czf  " + UPLOADS3FILE_DIR + newPackageName + " * .[^.]*"
+		sh = "cd " + decompressDirName + " && " + "tar -c * .[^.]* | gzip -n > " + UPLOADS3FILE_DIR + newPackageName
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", sh)
