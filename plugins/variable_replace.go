@@ -138,6 +138,11 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
+	if input.FilePath == "" || input.VariableList == "" {
+		output.NewS3PkgPath = input.EndPoint
+		return output,err
+	}
+
 	suffix, err := getCompressFileSuffix(input.EndPoint)
 	if err != nil {
 		err = getDecompressSuffixError(action.Language, input.EndPoint)
