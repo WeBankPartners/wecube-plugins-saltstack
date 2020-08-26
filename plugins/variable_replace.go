@@ -195,7 +195,8 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	//compress file
 	//nowTime := time.Now().Format("20060102150405.999999999")
 	newPackageName := fmt.Sprintf("%s-%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405.999999999"), suffix)
-	if err = compressDir(decompressDirName, suffix, newPackageName); err != nil {
+	err,newPackageName = compressDir(decompressDirName, suffix, newPackageName)
+	if err != nil {
 		os.RemoveAll(decompressDirName)
 		return output, fmt.Errorf("After replace variable,try to compress %s fail,%s ", newPackageName, err.Error())
 	}
@@ -569,10 +570,10 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	return nil
 }
 
-func compressDir(decompressDirName string, suffix string, newPackageName string) error {
+func compressDir(decompressDirName string, suffix string, newPackageName string) (error,string) {
 	sh := ""
 	if suffix != ".zip" && suffix != ".tgz" && suffix != ".tar.gz" {
-		return fmt.Errorf("%s is invalid suffix", suffix)
+		return fmt.Errorf("%s is invalid suffix", suffix),newPackageName
 	}
 
 	if suffix == ".zip" {
@@ -586,18 +587,34 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Logger.Error("Can not obtain stdout pipe", log.String("command", sh), log.Error(err))
-		return err
+		return err,newPackageName
 	}
 	if err := cmd.Start(); err != nil {
 		log.Logger.Error("Command start error", log.Error(err))
-		return err
+		return err,newPackageName
 	}
 	_, err = LogReadLine(cmd, stdout)
 	if err != nil {
-		return err
+		return err,newPackageName
+	}
+	newPackagePath := UPLOADS3FILE_DIR + newPackageName
+	md5Value,err := GetFileMD5Value(newPackagePath)
+	if err != nil {
+		return err,newPackageName
+	}
+	if strings.Contains(newPackageName, "_") {
+		tmpOldMd5Value := strings.Split(newPackageName, "_")[0]
+		if len(tmpOldMd5Value) == 32 {
+			newPackageName = newPackageName[33:]
+		}
+	}
+	newPackageName = fmt.Sprintf("%s_%s", md5Value, newPackageName)
+	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("'mv %s %s%s'", newPackagePath, UPLOADS3FILE_DIR, newPackageName)).Output()
+	if err != nil {
+		return fmt.Errorf("Try to rename package name fail,output=%s,error=%s ", string(output), err.Error()), newPackageName
 	}
 
-	return nil
+	return nil,newPackageName
 }
 
 func CompressFile(dir string, filePath []string, pkgName string, pkgType string) error {
@@ -658,27 +675,14 @@ func LogReadLine(cmd *exec.Cmd, stdout io.ReadCloser) ([]string, error) {
 	return linelist, nil
 }
 
-func GetFileMD5Value(dir, filePath string) (string, error) {
-	sh := "cd " + dir + " && md5sum " + filePath + " |awk '{print $1}'"
-	cmd := exec.Command("/bin/sh", "-c", sh)
-	stdout, err := cmd.StdoutPipe()
+func GetFileMD5Value(filePath string) (string, error) {
+	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("'md5sum %s'", filePath)).Output()
 	if err != nil {
-		fmt.Printf("get file md5 can not obtain stdout pipe for command: %s \n", err)
-		return "", err
+		log.Logger.Error("Get md5 value fail", log.String("file", filePath), log.Error(err))
+		return "",fmt.Errorf("Try to get md5 value fail,output=%s,error=%s ", string(output), err.Error())
 	}
-	if err := cmd.Start(); err != nil {
-		fmt.Printf("get file md5 conmand start is error: %s \n", err)
-		return "", err
-	}
-	line, err := LogReadLine(cmd, stdout)
-	if err != nil {
-		return "", err
-	}
-	if len(line) == 0 {
-		return "", fmt.Errorf("get file %s md5 failed", filePath)
-	}
-
-	return line[0], nil
+	outputSplit := strings.Split(string(output), " ")
+	return outputSplit[0], nil
 }
 
 func checkIsUniqueList(aList []string) bool {
