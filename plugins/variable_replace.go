@@ -609,7 +609,7 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 		}
 	}
 	newPackageName = fmt.Sprintf("%s_%s", md5Value, newPackageName)
-	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("'mv %s %s%s'", newPackagePath, UPLOADS3FILE_DIR, newPackageName)).Output()
+	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv %s %s%s", newPackagePath, UPLOADS3FILE_DIR, newPackageName)).Output()
 	if err != nil {
 		return fmt.Errorf("Try to rename package name fail,output=%s,error=%s ", string(output), err.Error()), newPackageName
 	}
@@ -676,7 +676,7 @@ func LogReadLine(cmd *exec.Cmd, stdout io.ReadCloser) ([]string, error) {
 }
 
 func GetFileMD5Value(filePath string) (string, error) {
-	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("'md5sum %s'", filePath)).Output()
+	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("md5sum %s", filePath)).Output()
 	if err != nil {
 		log.Logger.Error("Get md5 value fail", log.String("file", filePath), log.Error(err))
 		return "",fmt.Errorf("Try to get md5 value fail,output=%s,error=%s ", string(output), err.Error())
