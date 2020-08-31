@@ -171,18 +171,24 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 
 	log.Logger.Info("Exec local script", log.String("fileName",fileName), log.String("target",target), log.String("runAs",runAs), log.String("args", execArg))
 
-	fileAbsPath := fileName[:strings.LastIndex(fileName, "/")]
+	fileScriptPath := fileName
+	scriptArgs := ""
+	if strings.Contains(fileName, " ") {
+		fileScriptPath = strings.Split(fileName, " ")[0]
+		scriptArgs = fileName[len(fileScriptPath)+1:]
+	}
+	fileAbsPath := fileScriptPath[:strings.LastIndex(fileScriptPath, "/")]
 	if fileAbsPath == "" {
 		fileAbsPath = "/"
 	}
-	fileShellName := fileName[strings.LastIndex(fileName, "/")+1:]
+	fileShellName := fileScriptPath[strings.LastIndex(fileScriptPath, "/")+1:]
 	//cmdRun := "/bin/bash " + fileName
 	fileShellName = strings.TrimSpace(fileShellName)
-	tmpFileShellBin := fileShellName
-	if strings.Contains(tmpFileShellBin, " ") {
-		tmpFileShellBin = strings.Split(tmpFileShellBin, " ")[0]
-	}
-	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s", fileAbsPath, tmpFileShellBin, fileShellName)
+	//tmpFileShellBin := fileShellName
+	//if strings.Contains(tmpFileShellBin, " ") {
+	//	tmpFileShellBin = strings.Split(tmpFileShellBin, " ")[0]
+	//}
+	cmdRun := fmt.Sprintf("/bin/bash -c 'cd %s && chmod +x %s && ./%s %s", fileAbsPath, fileShellName, fileShellName, scriptArgs)
 	if len(execArg) > 0 {
 		cmdRun = cmdRun + " " + execArg
 	}
@@ -192,7 +198,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	if len(runAs) > 0 {
 		request.Args = append(request.Args, "runas="+runAs)
 	}
-	log.Logger.Debug("Exec script", log.String("target", target), log.JsonObj("request", request))
+	log.Logger.Info("Exec script", log.String("target", target), log.StringList("args", request.Args))
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
@@ -501,11 +507,20 @@ func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
 	if input.Target == "" {
 		return getParamEmptyError(action.Language, "target")
 	}
+	if checkIllegalParam(input.Target) {
+		return getParamValidateError(action.Language, "target", "Contains illegal character")
+	}
 	if input.RunAs == "" {
 		return getParamEmptyError(action.Language, "runAs")
 	}
+	if checkIllegalParam(input.RunAs) {
+		return getParamValidateError(action.Language, "runAs", "Contains illegal character")
+	}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
+	}
+	if checkIllegalParam(input.Password) {
+		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
 	return nil
 }

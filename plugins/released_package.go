@@ -189,6 +189,7 @@ type GetConfigFileKeyOutput struct {
 type ConfigKeyInfo struct {
 	Line string `json:"line,omitempty"`
 	Key  string `json:"key,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 type GetConfigFileKeyAction struct {

@@ -10,6 +10,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"os/exec"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -176,4 +178,26 @@ func decompressFile(comporessedFileFullPath string, decompressDir string) error 
 	}
 
 	return err
+}
+
+func bashDecompressFunc(filePath,distDir string) error {
+	var bashScript string
+	if !strings.HasSuffix(distDir, "/") {
+		distDir += "/"
+	}
+	if strings.HasSuffix(filePath, ".tar.gz") || strings.HasSuffix(filePath, ".tgz") {
+		bashScript = fmt.Sprintf("tar zxf %s -C %s", filePath, distDir)
+	}
+	if strings.HasSuffix(filePath, ".zip") {
+		bashScript = fmt.Sprintf("unzip %s -d %s", filePath, distDir)
+	}
+	if bashScript == "" {
+		return fmt.Errorf("Unsupported compress type,fileName=%s ", filePath)
+	}
+	output,err := exec.Command("/bin/bash", "-c", bashScript).Output()
+	if err != nil {
+		log.Logger.Error("Try to bash decompress fail", log.String("cmd", bashScript), log.String("output", string(output)), log.Error(err))
+		return fmt.Errorf("Try to bash decompress fail,output=%s,error=%s ", string(output), err.Error())
+	}
+	return nil
 }
