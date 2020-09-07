@@ -23,6 +23,12 @@ type LogConfig struct {
 	Compress  bool  `json:"compress"`
 }
 
+type CoreJwtToken struct {
+	User    string    `json:"user"`
+	Expire  int64     `json:"expire"`
+	Roles   []string  `json:"roles"`
+}
+
 type GlobalConfig struct {
 	Http  HttpConfig  `json:"http"`
 	Log   LogConfig     `json:"log"`
@@ -33,6 +39,7 @@ type GlobalConfig struct {
 
 var (
 	Config  *GlobalConfig
+	CoreJwtKey string
 )
 
 func InitConfig(cfg string) error {
@@ -55,5 +62,6 @@ func InitConfig(cfg string) error {
 		return fmt.Errorf("parse config file %s error %v", cfg, err)
 	}
 	Config = &c
+	CoreJwtKey = os.Getenv("JWT_SIGNING_KEY")
 	return nil
 }
