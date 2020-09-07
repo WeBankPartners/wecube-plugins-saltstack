@@ -11,6 +11,11 @@ import (
 	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"io/ioutil"
+	"encoding/base64"
+	"bytes"
+	"github.com/dgrijalva/jwt-go"
+	"strconv"
 )
 
 func init() {
@@ -52,16 +57,22 @@ func initConfig()  {
 }
 
 func routeDispatcher(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	pluginRequest := parsePluginRequest(r)
-	pluginResponse, _ := plugins.Process(pluginRequest)
-	if pluginResponse.ResultCode == "1" {
-		log.Logger.Error("Handle error", log.JsonObj("response", pluginResponse))
+	if authCore(r.Header.Get("Authorization")) {
+		start := time.Now()
+		pluginRequest := parsePluginRequest(r)
+		pluginResponse, _ := plugins.Process(pluginRequest)
+		if pluginResponse.ResultCode == "1" {
+			log.Logger.Error("Handle error", log.JsonObj("response", pluginResponse))
+		} else {
+			log.Logger.Debug("Handle success", log.JsonObj("response", pluginResponse))
+		}
+		log.Logger.Info("Request end ----------------<<", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]), log.Float64("cost_second", time.Now().Sub(start).Seconds()))
+		write(w, pluginResponse)
 	}else{
-		log.Logger.Debug("Handle success", log.JsonObj("response", pluginResponse))
+		log.Logger.Info("Request token illegal ----------------!!", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]))
+		pluginResponse := plugins.PluginResponse{ResultCode:"1",ResultMsg:"Token illegal"}
+		write(w, &pluginResponse)
 	}
-	log.Logger.Info("Request end ----------------<<",log.String("url", r.RequestURI), log.String("method",r.Method), log.String("ip",strings.Split(r.RemoteAddr,":")[0]), log.Float64("cost_second",time.Now().Sub(start).Seconds()))
-	write(w, pluginResponse)
 }
 
 func write(w http.ResponseWriter, output *plugins.PluginResponse) {
@@ -81,4 +92,48 @@ func parsePluginRequest(r *http.Request) *plugins.PluginRequest {
 	}
 	pluginInput.Parameters = r.Body
 	return &pluginInput
+}
+
+func authCore(coreToken string) bool {
+	_,err := decodeCoreToken(coreToken, models.CoreJwtKey)
+	if err == nil {
+		return true
+	}
+	return false
+}
+
+func decodeCoreToken(token,key string) (result models.CoreJwtToken,err error) {
+	if strings.HasPrefix(token, "Bearer") {
+		token = token[7:]
+	}
+	if key == "" || strings.HasPrefix(key, "{{") {
+		key = "Platform+Auth+Server+Secret"
+	}
+	keyBytes,err := ioutil.ReadAll(base64.NewDecoder(base64.RawStdEncoding, bytes.NewBufferString(key)))
+	if err != nil {
+		log.Logger.Error("Decode core token fail,base64 decode error", log.Error(err))
+		return result,err
+	}
+	pToken,err := jwt.Parse(token, func(*jwt.Token) (interface{}, error) {
+		return keyBytes, nil
+	})
+	if err != nil {
+		log.Logger.Error("Decode core token fail,jwt parse error", log.Error(err))
+		return result,err
+	}
+	claimMap,ok := pToken.Claims.(jwt.MapClaims)
+	if !ok {
+		log.Logger.Error("Decode core token fail,claims to map error", log.Error(err))
+		return result,err
+	}
+	result.User = fmt.Sprintf("%s", claimMap["sub"])
+	result.Expire,err = strconv.ParseInt(fmt.Sprintf("%.0f", claimMap["exp"]), 10, 64)
+	if err != nil {
+		log.Logger.Error("Decode core token fail,parse expire to int64 error", log.Error(err))
+		return result,err
+	}
+	roleListString := fmt.Sprintf("%s", claimMap["authority"])
+	roleListString = roleListString[1:len(roleListString)-1]
+	result.Roles = strings.Split(roleListString, ",")
+	return result,nil
 }
