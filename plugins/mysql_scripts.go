@@ -240,6 +240,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
 		if err != nil {
 			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, err.Error())
+			os.RemoveAll(newDir)
 			return output, err
 		}
 	}
