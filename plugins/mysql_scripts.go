@@ -136,9 +136,14 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	cmd.Stdin = f
 
 	out, err := cmd.CombinedOutput()
+	outputString := string(out)
 	if err != nil {
-		log.Logger.Error("Exec sql script", log.String("output", string(out)), log.Error(err))
-		return "", fmt.Errorf("Exec sql fail,output=%s,err=%s ", string(out), err.Error())
+		log.Logger.Error("Exec sql script", log.String("output", outputString), log.Error(err))
+		return outputString, fmt.Errorf("Exec sql fail,output=%s,err=%s ", outputString, err.Error())
+	}
+	if strings.Contains(strings.ToLower(outputString), "error") {
+		log.Logger.Error("Exec sql script with error output", log.String("output", outputString))
+		return outputString, fmt.Errorf("Exec sql fail,output=%s ", outputString)
 	}
 
 	return string(out), nil
@@ -240,6 +245,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
 		if err != nil {
 			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, err.Error())
+			os.RemoveAll(newDir)
 			return output, err
 		}
 	}

@@ -29,6 +29,7 @@ func main() {
 	plugins.InitEnvParam()
 	plugins.SyncClusterList()
 	go plugins.StartClusterServer()
+	go plugins.StartCleanInterval()
 
 	if err := http.ListenAndServe(":"+models.Config.Http.Port, nil); err != nil {
 		log.Logger.Fatal("Start listening error", log.Error(err))

@@ -5,6 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"os/exec"
+	"strings"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 type FileNode struct {
@@ -12,6 +15,7 @@ type FileNode struct {
 	Path      string      `json:"-"`
 	FileNodes []*FileNode `json:"-"`
 	IsDir     bool        `json:"isDir"`
+	Md5       string      `json:"md5"`
 }
 
 func listCurrentDirectory(dirname string) ([]FileNode, error) {
@@ -26,11 +30,14 @@ func listCurrentDirectory(dirname string) ([]FileNode, error) {
 		fileNode := FileNode{
 			Name:  filename,
 			IsDir: false,
+			Md5:   "",
 		}
 		fpath := filepath.Join(dirname, filename)
 		fio, _ := os.Lstat(fpath)
 		if fio.IsDir() {
 			fileNode.IsDir = true
+		}else{
+			fileNode.Md5 = countMd5WithCmd(fpath)
 		}
 		fileNodes = append(fileNodes, fileNode)
 	}
@@ -93,7 +100,7 @@ func getDirTree(dir string) ([]*FileNode, error) {
 	if err := isDirExist(dir); err != nil {
 		return emptyFileNode, err
 	}
-	root := FileNode{"projects", dir, []*FileNode{}, true}
+	root := FileNode{"projects", dir, []*FileNode{}, true, ""}
 	fileInfo, _ := os.Lstat(dir)
 	walk(dir, fileInfo, &root)
 
@@ -115,4 +122,14 @@ func ensureDirExist(dir string) error {
 	}
 
 	return nil
+}
+
+func countMd5WithCmd(filePath string) string {
+	b,err := exec.Command("bash", "-c", fmt.Sprintf("md5sum %s", filePath)).Output()
+	if err != nil {
+		log.Logger.Error("count md5 value with command fail", log.String("path", filePath), log.Error(err))
+		return ""
+	}
+	md5Value := strings.Split(string(b), " ")[0]
+	return md5Value
 }
