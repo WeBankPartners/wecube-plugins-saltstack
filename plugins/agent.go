@@ -256,6 +256,11 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 		return output, err
 	}
 
+	b,tmpErr := exec.Command("bash","-c", fmt.Sprintf("find /etc/salt/pki/master/minions -name '%s'", input.Host)).Output()
+	if tmpErr != nil || string(b) != "" {
+		removeSaltKeys(input.Host)
+	}
+
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
@@ -298,10 +303,6 @@ func (action *MinionInstallAction) Do(input interface{}) (interface{}, error) {
 	outputs := AgentInstallOutputs{}
 	var finalErr error
 	for _, agent := range agents.Inputs {
-		b,tmpErr := exec.Command("bash","-c", fmt.Sprintf("find /etc/salt/pki/master/minions -name '%s'", agent.Host)).Output()
-		if tmpErr != nil || string(b) != "" {
-			removeSaltKeys(agent.Host)
-		}
 		agentInstallOutput, err := action.installMinion(&agent)
 		if err != nil {
 			log.Logger.Error("Install minion action", log.Error(err))
