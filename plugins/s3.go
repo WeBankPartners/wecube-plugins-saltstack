@@ -200,7 +200,8 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 				if false == strings.HasSuffix(param, "]") {
 					continue
 				}
-				param = param[0 : len(param)-1]
+				//param = param[0 : len(param)-1]
+				param = param[0: strings.Index(param, "]")]
 
 				for _, specialFlag := range specialList {
 					if specialFlag == "" {
