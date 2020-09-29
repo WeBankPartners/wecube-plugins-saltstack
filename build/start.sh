@@ -12,14 +12,12 @@ function replaceFiles()
         echo $file
         basename=${file##*/}
         sed -i "s/{{minion_port}}/$minion_port/g" $TEMPLATE_DIR$basename".tpl"
-        sed -i "s/{{minion_passwd}}/$minion_passwd/g" $TEMPLATE_DIR$basename".tpl"
         sed -i "s/{{minion_master_ip}}/$minion_master_ip/g" $TEMPLATE_DIR$basename".tpl"
         cp $TEMPLATE_DIR$basename".tpl"  $file
     done
 }
 
 minion_port=${minion_port-22}
-minion_passwd=${minion_passwd-Ab888888}
 
 if [ ! $minion_master_ip ];then
     echo "environment variable minion_master_ip master be set"
