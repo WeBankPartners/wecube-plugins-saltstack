@@ -22,7 +22,7 @@ func listCurrentDirectory(dirname string) ([]FileNode, error) {
 	fileNodes := []FileNode{}
 
 	if err := isDirExist(dirname); err != nil {
-		return fileNodes, err
+		return fileNodes, fmt.Errorf("exist check error:%s ", err.Error())
 	}
 
 	files := listFiles(dirname)

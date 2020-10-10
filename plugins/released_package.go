@@ -91,7 +91,11 @@ func (action *ListCurrentDirAction) listCurrentDir(input *ListFilesInput) (outpu
 		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
 		} else {
-			output.Result.Code = RESULT_CODE_ERROR
+			if strings.HasPrefix(err.Error(), "exist") {
+				output.Result.Code = "2"
+			}else {
+				output.Result.Code = RESULT_CODE_ERROR
+			}
 			output.Result.Message = err.Error()
 		}
 	}()
