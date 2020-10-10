@@ -500,7 +500,8 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				if false == strings.HasSuffix(key, "]") {
 					continue
 				}
-				key = key[0 : len(key)-1]
+				//key = key[0 : len(key)-1]
+				key = key[0: strings.Index(key, "]")]
 
 				for _, specialFlag := range specialReplaceList {
 					if specialFlag == "" {
