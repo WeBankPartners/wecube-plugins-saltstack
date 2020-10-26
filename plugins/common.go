@@ -20,6 +20,11 @@ import (
 	"time"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"encoding/base64"
+	"encoding/pem"
+	"crypto/x509"
+	"crypto/rsa"
+	crand "crypto/rand"
 )
 
 const (
@@ -387,11 +392,11 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool, langua
 func InitEnvParam() {
 	tmpKey := os.Getenv("DEFAULT_S3_KEY")
 	if tmpKey != "" {
-		DefaultS3Key = tmpKey
+		DefaultS3Key = DecryptRsa(tmpKey)
 	}
 	tmpPwd := os.Getenv("DEFAULT_S3_PASSWORD")
 	if tmpPwd != "" {
-		DefaultS3Password = tmpPwd
+		DefaultS3Password = DecryptRsa(tmpPwd)
 	}
 	log.Logger.Info("S3 config", log.String("key", DefaultS3Key))
 	log.Logger.Debug("S3 config", log.String("password", DefaultS3Password))
@@ -433,6 +438,7 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Core url is empty")
 	}
+
 }
 
 func checkIllegalParam(input string) bool {
@@ -446,4 +452,35 @@ func checkIllegalParam(input string) bool {
 		return true
 	}
 	return false
+}
+
+func DecryptRsa(inputString string) string {
+	if !strings.HasPrefix(strings.ToLower(inputString), "rsa@") {
+		return inputString
+	}
+	inputString = inputString[4:]
+	result := inputString
+	inputBytes,err := base64.StdEncoding.DecodeString(inputString)
+	if err != nil {
+		log.Logger.Error("Input string format to base64 fail", log.Error(err))
+	}
+	pemPath := "/data/certs/rsa_key"
+	fileContent,err := ioutil.ReadFile(pemPath)
+	if err != nil {
+		log.Logger.Error("Read file fail", log.String("path", pemPath), log.Error(err))
+		return result
+	}
+	block,_ := pem.Decode(fileContent)
+	privateKey,err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Logger.Error("Parse private key fail", log.Error(err))
+		return result
+	}
+	decodeBytes,err := rsa.DecryptPKCS1v15(crand.Reader, privateKey, inputBytes)
+	if err != nil {
+		log.Logger.Error("Decode fail", log.Error(err))
+		return result
+	}
+	result = string(decodeBytes)
+	return result
 }
