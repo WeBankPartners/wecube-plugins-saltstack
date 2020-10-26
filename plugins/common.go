@@ -463,6 +463,7 @@ func DecryptRsa(inputString string) string {
 	inputBytes,err := base64.StdEncoding.DecodeString(inputString)
 	if err != nil {
 		log.Logger.Error("Input string format to base64 fail", log.Error(err))
+		return inputString
 	}
 	pemPath := "/data/certs/rsa_key"
 	fileContent,err := ioutil.ReadFile(pemPath)
