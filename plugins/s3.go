@@ -187,6 +187,7 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 			break
 		}
 		if len(line) == 0 {
+			lineNumber++
 			continue
 		}
 
@@ -210,7 +211,8 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 					if strings.HasPrefix(param, specialFlag) {
 						s := strings.Split(param, specialFlag)
 						if s[1] == "" {
-							return nil, fmt.Errorf("File %s have unvaliable param %s ", filepath, param)
+							continue
+							//return nil, fmt.Errorf("File %s have unvaliable param %s ", filepath, param)
 						}
 						if strings.Contains(s[1], " ") {
 							continue
