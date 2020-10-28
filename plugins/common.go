@@ -460,7 +460,7 @@ func DecryptRsa(inputString string) string {
 	}
 	inputString = inputString[4:]
 	result := inputString
-	inputBytes,err := base64.StdEncoding.DecodeString(inputString)
+	inputBytes,err := base64.RawStdEncoding.DecodeString(inputString)
 	if err != nil {
 		log.Logger.Error("Input string format to base64 fail", log.Error(err))
 		return inputString
@@ -472,11 +472,12 @@ func DecryptRsa(inputString string) string {
 		return result
 	}
 	block,_ := pem.Decode(fileContent)
-	privateKey,err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privateKeyInterface,err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		log.Logger.Error("Parse private key fail", log.Error(err))
 		return result
 	}
+	privateKey := privateKeyInterface.(*rsa.PrivateKey)
 	decodeBytes,err := rsa.DecryptPKCS1v15(crand.Reader, privateKey, inputBytes)
 	if err != nil {
 		log.Logger.Error("Decode fail", log.Error(err))
