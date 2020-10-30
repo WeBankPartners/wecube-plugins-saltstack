@@ -214,12 +214,30 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		//sqlFiles := strings.Split(input.SqlFiles, ",")
 		sqlFiles := splitWithCustomFlag(input.SqlFiles)
 		for _, file := range sqlFiles {
-			sqlFile := newDir + "/" + strings.TrimSpace(file)
-			if !fileExist(sqlFile) {
-				err = getFileNotExistError(action.Language, sqlFile)
-				return output, err
+			file = strings.TrimSpace(file)
+			if strings.Contains(file, "*") {
+				sortOutput,tmpErr := exec.Command("/bin/bash", "-c", fmt.Sprintf("ls %s/%s | sort", newDir, file)).Output()
+				sortOutputString := string(sortOutput)
+				if tmpErr != nil || sortOutputString == "" {
+					if tmpErr == nil {
+						tmpErr = fmt.Errorf("can not fetch any file")
+					}
+					err = fmt.Errorf("Try to find %s sql file fail,%s ", file, tmpErr.Error())
+					return output,err
+				}
+				for _,vv := range strings.Split(sortOutputString, "\n") {
+					if vv != "" {
+						files = append(files, vv)
+					}
+				}
+			}else {
+				sqlFile := newDir + "/" + file
+				if !fileExist(sqlFile) {
+					err = getFileNotExistError(action.Language, sqlFile)
+					return output, err
+				}
+				files = append(files, sqlFile)
 			}
-			files = append(files, sqlFile)
 		}
 	} else {
 		for _,v := range fileNameList {
@@ -240,6 +258,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 	}
 
+	log.Logger.Info("Sql file list", log.StringList("file", files))
 	// run sql scripts foreach
 	for _, file := range files {
 		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)

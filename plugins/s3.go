@@ -77,6 +77,27 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	if randName {
 		tmpName = getWorkspaceName()
 	}
+	var path string
+	// download from http
+	if strings.HasPrefix(endPoint, CoreUrl) {
+		tmpFileName := endPoint[strings.LastIndex(endPoint, "/")+1:]
+		path = UPLOADS3FILE_DIR + tmpName + tmpFileName
+		_, err := os.Stat(path)
+		if err == nil {
+			log.Logger.Info("Download file fail,already exists", log.String("path", path))
+			return path, nil
+		}
+		curlCommand := fmt.Sprintf("mkdir -p /tmp && mkdir -p /data/minio && cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpFileName, path)
+		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
+		log.Logger.Debug("curl file ", log.String("command", curlCommand))
+		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))
+		if err != nil {
+			return "",fmt.Errorf("Curl file from core fail,output:%s,err:%s ", string(outputBytes), err.Error())
+		}else{
+			return path,nil
+		}
+	}
+
 	s := strings.Split(endPoint, "//")
 	if len(s) < 2 {
 		return "", getS3UrlValidateError(language, endPoint)
@@ -90,7 +111,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	//check dir exist
 	ensureDirExist(UPLOADS3FILE_DIR)
 
-	path := UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
+	path = UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
 	_, err := os.Stat(path)
 	if err == nil {
 		log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
@@ -187,6 +208,7 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 			break
 		}
 		if len(line) == 0 {
+			lineNumber++
 			continue
 		}
 
@@ -210,7 +232,8 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 					if strings.HasPrefix(param, specialFlag) {
 						s := strings.Split(param, specialFlag)
 						if s[1] == "" {
-							return nil, fmt.Errorf("File %s have unvaliable param %s ", filepath, param)
+							continue
+							//return nil, fmt.Errorf("File %s have unvaliable param %s ", filepath, param)
 						}
 						if strings.Contains(s[1], " ") {
 							continue

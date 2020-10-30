@@ -33,6 +33,8 @@ fi
 cd /home/app/wecube-plugins-saltstack
 sed -i "s/{{SALTSTACK_LOG_LEVEL}}/$SALTSTACK_LOG_LEVEL/g" conf/default.json
 mkdir -p logs
+mkdir -p /data/minio
+mkdir -p /tmp
 ./wecube-plugins-saltstack&
 /usr/bin/salt-master&
 /usr/bin/salt-api&

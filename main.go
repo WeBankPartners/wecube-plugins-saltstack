@@ -40,6 +40,7 @@ func main() {
 
 func initRouter() {
 	//path should be defined as "/[package]/[version]/[plugin]/[action]"
+	models.CoreJwtKey = plugins.DecryptRsa(models.CoreJwtKey)
 	http.HandleFunc("/saltstack/v1/", routeDispatcher)
 	http.HandleFunc("/v1/deploy/webconsole", plugins.WebConsoleHandler)
 	http.HandleFunc("/v1/deploy/webconsoleStaticPage", plugins.WebConsoleStaticPageHandler)
