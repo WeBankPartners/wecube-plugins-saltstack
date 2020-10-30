@@ -187,10 +187,10 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language); err != nil {
 			return output, err
 		}
-		if input.FileOwner != "" {
-			if err = action.changeDirectoryOwner(input); err != nil {
-				return output, err
-			}
+	}
+	if input.FileOwner != "" {
+		if err = action.changeDirectoryOwner(input); err != nil {
+			return output, err
 		}
 	}
 
