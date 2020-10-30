@@ -84,11 +84,12 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 		path = UPLOADS3FILE_DIR + tmpName + tmpFileName
 		_, err := os.Stat(path)
 		if err == nil {
-			log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
+			log.Logger.Info("Download file fail,already exists", log.String("path", path))
 			return path, nil
 		}
-		curlCommand := fmt.Sprintf("cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpName, path)
+		curlCommand := fmt.Sprintf("mkdir -p /tmp && cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpFileName, path)
 		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
+		log.Logger.Debug("curl file ", log.String("command", curlCommand))
 		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))
 		if err != nil {
 			return "",fmt.Errorf("Curl file from core fail,output:%s,err:%s ", string(outputBytes), err.Error())
