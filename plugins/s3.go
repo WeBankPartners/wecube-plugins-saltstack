@@ -87,7 +87,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 			log.Logger.Info("Download file fail,already exists", log.String("path", path))
 			return path, nil
 		}
-		curlCommand := fmt.Sprintf("mkdir -p /tmp && cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpFileName, path)
+		curlCommand := fmt.Sprintf("mkdir -p /tmp && mkdir -p /data/minio && cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpFileName, path)
 		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
 		log.Logger.Debug("curl file ", log.String("command", curlCommand))
 		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))
