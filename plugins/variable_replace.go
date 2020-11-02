@@ -113,6 +113,10 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 
 func getNewS3EndpointName(endpoint string, newPackageName string) string {
 	index := strings.LastIndexAny(endpoint, "/")
+	if DefaultS3TmpAddress != "" {
+		log.Logger.Info("Upload to tmp s3 address", log.String("url", DefaultS3TmpAddress + "/" + newPackageName))
+		return DefaultS3TmpAddress + "/" + newPackageName
+	}
 	return endpoint[0:index+1] + newPackageName
 }
 
