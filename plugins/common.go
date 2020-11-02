@@ -45,6 +45,7 @@ var (
 	ClusterList               []string
 	MasterHostIp              string
 	CoreUrl                   string
+	DefaultS3TmpAddress       string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -438,7 +439,16 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Core url is empty")
 	}
-
+	tmpS3Address := os.Getenv("SALTSTACK_S3_TMP")
+	if tmpS3Address != "" {
+		if strings.HasSuffix(tmpS3Address, "/") {
+			tmpS3Address = tmpS3Address[:len(tmpS3Address)-1]
+		}
+		DefaultS3TmpAddress = tmpS3Address
+		log.Logger.Info("Default s3 address", log.String("address", DefaultS3TmpAddress))
+	}else{
+		log.Logger.Warn("Default s3 address not found")
+	}
 }
 
 func checkIllegalParam(input string) bool {
