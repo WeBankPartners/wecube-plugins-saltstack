@@ -444,6 +444,9 @@ func InitEnvParam() {
 		if strings.HasSuffix(tmpS3Address, "/") {
 			tmpS3Address = tmpS3Address[:len(tmpS3Address)-1]
 		}
+		if !strings.Contains(tmpS3Address, "salt-tmp") {
+			tmpS3Address = tmpS3Address + "/salt-tmp"
+		}
 		DefaultS3TmpAddress = tmpS3Address
 		log.Logger.Info("Default s3 address", log.String("address", DefaultS3TmpAddress))
 	}else{
