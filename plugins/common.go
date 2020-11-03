@@ -439,7 +439,7 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Core url is empty")
 	}
-	tmpS3Address := os.Getenv("SALTSTACK_S3_TMP")
+	tmpS3Address := os.Getenv("S3_SERVER_URL")
 	if tmpS3Address != "" {
 		if strings.HasSuffix(tmpS3Address, "/") {
 			tmpS3Address = tmpS3Address[:len(tmpS3Address)-1]
