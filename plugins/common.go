@@ -429,10 +429,7 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Master host ip not found,default null")
 	}
-	tmpCoreUrl := os.Getenv("CORE_ADDR")
-	if tmpCoreUrl == "" {
-		tmpCoreUrl = os.Getenv("GATEWAY_URL")
-	}
+	tmpCoreUrl := os.Getenv("GATEWAY_URL")
 	if tmpCoreUrl != "" {
 		CoreUrl = tmpCoreUrl
 		log.Logger.Info("Core url", log.String("url", CoreUrl))
