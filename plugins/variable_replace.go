@@ -514,7 +514,8 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 					if strings.HasPrefix(key, specialFlag) {
 						s := strings.Split(key, specialFlag)
 						if s[1] == "" {
-							return fmt.Errorf("File %s have empty variable [%s] in line %d ", filepath, key, tmpLineCount)
+							//return fmt.Errorf("File %s have empty variable [%s] in line %d ", filepath, key, tmpLineCount)
+							continue
 						}
 						if strings.Contains(s[1], " ") {
 							continue
