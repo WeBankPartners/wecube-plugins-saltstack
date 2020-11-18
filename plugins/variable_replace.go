@@ -486,7 +486,8 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	defer f.Close()
 	fileReplaceMap := make(map[string]string)
 	tmpLineCount := 0
-	br := bufio.NewReader(bf)
+	//br := bufio.NewReader(bf)
+	br := bufio.NewReaderSize(bf, 4194304)
 	for {
 		tmpLineCount = tmpLineCount + 1
 		line, _, err := br.ReadLine()
