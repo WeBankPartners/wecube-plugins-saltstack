@@ -72,7 +72,7 @@ type ApplyNewDeploymentOutput struct {
 
 type ApplyNewDeploymentThreads struct {
 	Outputs []ApplyNewDeploymentThreadObj
-	Lock  *sync.Mutex
+	Lock  *sync.RWMutex
 }
 
 type ApplyNewDeploymentThreadObj struct {
@@ -81,10 +81,18 @@ type ApplyNewDeploymentThreadObj struct {
 	Index int
 }
 
-func (app ApplyNewDeploymentThreads)AddOutput(input *ApplyNewDeploymentThreadObj)  {
+func (app ApplyNewDeploymentThreads)AddOutput(input ApplyNewDeploymentThreadObj)  {
 	app.Lock.Lock()
-	app.Outputs = append(app.Outputs, *input)
+	app.Outputs = append(app.Outputs, input)
 	app.Lock.Unlock()
+}
+
+func (app ApplyNewDeploymentThreads)GetOutput() []ApplyNewDeploymentThreadObj {
+	var result []ApplyNewDeploymentThreadObj
+	app.Lock.RLock()
+	result = append(result, app.Outputs...)
+	app.Lock.RUnlock()
+	return result
 }
 
 type ApplyNewDeploymentAction struct {
@@ -123,7 +131,7 @@ func (action *ApplyNewDeploymentAction) CheckParam(input ApplyNewDeploymentInput
 	return nil
 }
 
-func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploymentInput) (output ApplyNewDeploymentOutput, err error) {
+func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploymentInput) (output ApplyNewDeploymentOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -137,7 +145,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		}
 	}()
 
-	err = action.CheckParam(*input)
+	err = action.CheckParam(input)
 	if err != nil {
 		return output, err
 	}
@@ -254,7 +262,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
 	threadsOutputs := ApplyNewDeploymentThreads{}
-	threadsOutputs.Lock = new(sync.Mutex)
+	threadsOutputs.Lock = new(sync.RWMutex)
 
 	//for _, input := range inputs.Inputs {
 	//	output, err := action.applyNewDeployment(&input)
@@ -267,15 +275,17 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	wg := sync.WaitGroup{}
 	for i,input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyNewDeploymentInput,index int) {
-			output, err := action.applyNewDeployment(&input)
-			threadsOutputs.AddOutput(&ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
+		go func(tmpInput ApplyNewDeploymentInput,index int,to ApplyNewDeploymentThreads) {
+			output, err := action.applyNewDeployment(input)
+			to.AddOutput(ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
 			wg.Done()
-		}(input,i)
+		}(input,i,threadsOutputs)
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
 	wg.Wait()
-	for _,v := range threadsOutputs.Outputs {
+	tmpOutputList := threadsOutputs.GetOutput()
+	log.Logger.Info("output length", log.Int("length", len(tmpOutputList)))
+	for _,v := range tmpOutputList {
 		if v.Err != nil {
 			log.Logger.Error("App new deploy action", log.Error(v.Err))
 			finalErr = v.Err
