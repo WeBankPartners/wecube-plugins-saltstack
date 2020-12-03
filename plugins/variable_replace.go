@@ -157,8 +157,10 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err != nil {
 		return output, err
 	}
-
+	workRandGuid := getRandString()
+	// add random sub path
 	decompressDirName := getDecompressDirName(packageName)
+	decompressDirName = decompressDirName + "_" + workRandGuid
 	if err = isDirExist(decompressDirName); err == nil {
 		os.RemoveAll(decompressDirName)
 	}
@@ -167,7 +169,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 	if err != nil {
 		return output, err
 	}
@@ -203,7 +205,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	//compress file
 	//nowTime := time.Now().Format("20060102150405.999999999")
-	newPackageName := fmt.Sprintf("%s-%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405.999999999"), suffix)
+	newPackageName := fmt.Sprintf("%s_%s_%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405"), workRandGuid, suffix)
 	err,newPackageName = compressDir(decompressDirName, suffix, newPackageName)
 	if err != nil {
 		os.RemoveAll(decompressDirName)
