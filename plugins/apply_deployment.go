@@ -6,7 +6,6 @@ import (
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"sync"
-	"time"
 )
 
 var ApplyDeploymentActions = make(map[string]Action)
@@ -265,7 +264,6 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	//	}
 	//	outputs.Outputs = append(outputs.Outputs, output)
 	//}
-	startTime := time.Now()
 	wg := sync.WaitGroup{}
 	for i,input := range inputs.Inputs {
 		wg.Add(1)
@@ -277,7 +275,6 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
 	wg.Wait()
-	log.Logger.Info("app deploy use time", log.Int64("used_time(sec)", time.Now().Sub(startTime).Microseconds()))
 	for _,v := range threadsOutputs.Outputs {
 		if v.Err != nil {
 			log.Logger.Error("App new deploy action", log.Error(v.Err))
