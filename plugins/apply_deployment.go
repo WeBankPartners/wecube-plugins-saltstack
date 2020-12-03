@@ -70,29 +70,10 @@ type ApplyNewDeploymentOutput struct {
 	Password        string `json:"password,omitempty"`
 }
 
-type ApplyNewDeploymentThreads struct {
-	Outputs []ApplyNewDeploymentThreadObj
-	Lock  *sync.RWMutex
-}
-
 type ApplyNewDeploymentThreadObj struct {
 	Data  ApplyNewDeploymentOutput
 	Err   error
 	Index int
-}
-
-func (app ApplyNewDeploymentThreads)AddOutput(input ApplyNewDeploymentThreadObj)  {
-	app.Lock.Lock()
-	app.Outputs = append(app.Outputs, input)
-	app.Lock.Unlock()
-}
-
-func (app ApplyNewDeploymentThreads)GetOutput() []ApplyNewDeploymentThreadObj {
-	var result []ApplyNewDeploymentThreadObj
-	app.Lock.RLock()
-	result = append(result, app.Outputs...)
-	app.Lock.RUnlock()
-	return result
 }
 
 type ApplyNewDeploymentAction struct {
@@ -261,17 +242,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
-	//threadsOutputs := ApplyNewDeploymentThreads{}
-	//threadsOutputs.Lock = new(sync.RWMutex)
 	outputChan := make(chan ApplyNewDeploymentThreadObj, len(inputs.Inputs))
-	//for _, input := range inputs.Inputs {
-	//	output, err := action.applyNewDeployment(&input)
-	//	if err != nil {
-	//		log.Logger.Error("App new deploy action", log.Error(err))
-	//		finalErr = err
-	//	}
-	//	outputs.Outputs = append(outputs.Outputs, output)
-	//}
 	wg := sync.WaitGroup{}
 	for i,input := range inputs.Inputs {
 		wg.Add(1)
@@ -291,16 +262,13 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		tmpOutput := <- outputChan
 		tmpOutputList = append(tmpOutputList, tmpOutput)
 	}
-	log.Logger.Info("output length", log.Int("length", len(tmpOutputList)))
 	for _,v := range tmpOutputList {
 		if v.Err != nil {
 			log.Logger.Error("App new deploy action", log.Error(v.Err))
 			finalErr = v.Err
 		}
-		log.Logger.Info("output", log.Int("index", v.Index), log.JsonObj("data", v.Data))
 		outputs.Outputs[v.Index] = v.Data
 	}
-
 	return &outputs, finalErr
 }
 
