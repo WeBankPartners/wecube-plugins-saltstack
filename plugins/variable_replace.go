@@ -121,6 +121,13 @@ func getNewS3EndpointName(endpoint string, newPackageName string) string {
 }
 
 func getPackageNameWithoutSuffix(packageName string) string {
+	validExts := []string{".zip", ".tgz", ".tar.gz"}
+	for _,v := range validExts {
+		if strings.HasSuffix(packageName, v) {
+			packageName = packageName[:len(packageName)-len(v)]
+			return packageName
+		}
+	}
 	index := strings.LastIndexAny(packageName, ".")
 	return packageName[0:index]
 }
