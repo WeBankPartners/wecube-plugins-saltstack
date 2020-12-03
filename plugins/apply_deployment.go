@@ -81,9 +81,9 @@ type ApplyNewDeploymentThreadObj struct {
 	Index int
 }
 
-func (app ApplyNewDeploymentThreads)AddOutput(input ApplyNewDeploymentThreadObj)  {
+func (app ApplyNewDeploymentThreads)AddOutput(input *ApplyNewDeploymentThreadObj)  {
 	app.Lock.Lock()
-	app.Outputs = append(app.Outputs, input)
+	app.Outputs = append(app.Outputs, *input)
 	app.Lock.Unlock()
 }
 
@@ -269,7 +269,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		wg.Add(1)
 		go func(tmpInput ApplyNewDeploymentInput,index int) {
 			output, err := action.applyNewDeployment(&input)
-			threadsOutputs.AddOutput(ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
+			threadsOutputs.AddOutput(&ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
 			wg.Done()
 		}(input,i)
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
@@ -280,6 +280,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 			log.Logger.Error("App new deploy action", log.Error(v.Err))
 			finalErr = v.Err
 		}
+		log.Logger.Info("output", log.Int("index", v.Index), log.JsonObj("data", v.Data))
 		outputs.Outputs[v.Index] = v.Data
 	}
 
