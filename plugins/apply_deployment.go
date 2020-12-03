@@ -261,9 +261,9 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
-	threadsOutputs := ApplyNewDeploymentThreads{}
-	threadsOutputs.Lock = new(sync.RWMutex)
-
+	//threadsOutputs := ApplyNewDeploymentThreads{}
+	//threadsOutputs.Lock = new(sync.RWMutex)
+	outputChan := make(chan ApplyNewDeploymentThreadObj, len(inputs.Inputs))
 	//for _, input := range inputs.Inputs {
 	//	output, err := action.applyNewDeployment(&input)
 	//	if err != nil {
@@ -275,15 +275,22 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	wg := sync.WaitGroup{}
 	for i,input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyNewDeploymentInput,index int,to ApplyNewDeploymentThreads) {
-			output, err := action.applyNewDeployment(input)
-			to.AddOutput(ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
+		go func(tmpInput ApplyNewDeploymentInput,index int) {
+			output, err := action.applyNewDeployment(tmpInput)
+			outputChan <- ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index}
 			wg.Done()
-		}(input,i,threadsOutputs)
+		}(input,i)
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
 	wg.Wait()
-	tmpOutputList := threadsOutputs.GetOutput()
+	var tmpOutputList []ApplyNewDeploymentThreadObj
+	for {
+		if len(outputChan) == 0 {
+			break
+		}
+		tmpOutput := <- outputChan
+		tmpOutputList = append(tmpOutputList, tmpOutput)
+	}
 	log.Logger.Info("output length", log.Int("length", len(tmpOutputList)))
 	for _,v := range tmpOutputList {
 		if v.Err != nil {
