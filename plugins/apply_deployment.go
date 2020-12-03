@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"sync"
+	"time"
 )
 
 var ApplyDeploymentActions = make(map[string]Action)
@@ -67,6 +69,23 @@ type ApplyNewDeploymentOutput struct {
 	RetCode         int    `json:"retCode,omitempty"`
 	RunScriptDetail string `json:"runScriptDetail,omitempty"`
 	Password        string `json:"password,omitempty"`
+}
+
+type ApplyNewDeploymentThreads struct {
+	Outputs []ApplyNewDeploymentThreadObj
+	Lock  *sync.Mutex
+}
+
+type ApplyNewDeploymentThreadObj struct {
+	Data  ApplyNewDeploymentOutput
+	Err   error
+	Index int
+}
+
+func (app ApplyNewDeploymentThreads)AddOutput(input ApplyNewDeploymentThreadObj)  {
+	app.Lock.Lock()
+	app.Outputs = append(app.Outputs, input)
+	app.Lock.Unlock()
 }
 
 type ApplyNewDeploymentAction struct {
@@ -235,15 +254,38 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
+	threadsOutputs := ApplyNewDeploymentThreads{}
+	threadsOutputs.Lock = new(sync.Mutex)
 
-	for _, input := range inputs.Inputs {
-		output, err := action.applyNewDeployment(&input)
-		if err != nil {
-			log.Logger.Error("App new deploy action", log.Error(err))
-			finalErr = err
-		}
-		outputs.Outputs = append(outputs.Outputs, output)
+	//for _, input := range inputs.Inputs {
+	//	output, err := action.applyNewDeployment(&input)
+	//	if err != nil {
+	//		log.Logger.Error("App new deploy action", log.Error(err))
+	//		finalErr = err
+	//	}
+	//	outputs.Outputs = append(outputs.Outputs, output)
+	//}
+	startTime := time.Now()
+	wg := sync.WaitGroup{}
+	for i,input := range inputs.Inputs {
+		wg.Add(1)
+		go func(tmpInput ApplyNewDeploymentInput,index int) {
+			output, err := action.applyNewDeployment(&input)
+			threadsOutputs.AddOutput(ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index})
+			wg.Done()
+		}(input,i)
+		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
+	wg.Wait()
+	log.Logger.Info("app deploy use time", log.Int64("used_time(sec)", time.Now().Sub(startTime).Microseconds()))
+	for _,v := range threadsOutputs.Outputs {
+		if v.Err != nil {
+			log.Logger.Error("App new deploy action", log.Error(v.Err))
+			finalErr = v.Err
+		}
+		outputs.Outputs[v.Index] = v.Data
+	}
+
 	return &outputs, finalErr
 }
 
