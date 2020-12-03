@@ -66,6 +66,7 @@ func uploadS3File(endPoint, accessKey, secretKey, language string) (string, erro
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	err = cmd.Run()
+	os.Remove(s3ConfigFile)
 	if err != nil {
 		return "", getS3UploadError(language, endPoint, fmt.Sprintf("exec s3cmd to upload fail,output:%s, error:%s", stderr.String(), err.Error()))
 	}
@@ -136,12 +137,14 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
 		os.Remove(path)
+		os.Remove(s3ConfigFile)
 		tmpErrorMsg := fmt.Sprint(err) + ": " + stderr.String()
 		if strings.Contains(tmpErrorMsg, "404") {
 			return "", getS3FileNotFoundError(language, storagePath)
 		}
 		return "", getS3DownloadError(language, endPoint, tmpErrorMsg)
 	}
+	os.Remove(s3ConfigFile)
 	log.Logger.Debug("Download s3 file result", log.String("output", stderr.String()))
 	return path, nil
 }
