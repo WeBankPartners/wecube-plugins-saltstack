@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"sync"
 )
 
 var ApplyDeploymentActions = make(map[string]Action)
@@ -69,6 +70,12 @@ type ApplyNewDeploymentOutput struct {
 	Password        string `json:"password,omitempty"`
 }
 
+type ApplyNewDeploymentThreadObj struct {
+	Data  ApplyNewDeploymentOutput
+	Err   error
+	Index int
+}
+
 type ApplyNewDeploymentAction struct {
 	Language string
 }
@@ -105,7 +112,7 @@ func (action *ApplyNewDeploymentAction) CheckParam(input ApplyNewDeploymentInput
 	return nil
 }
 
-func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploymentInput) (output ApplyNewDeploymentOutput, err error) {
+func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploymentInput) (output ApplyNewDeploymentOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -119,7 +126,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 		}
 	}()
 
-	err = action.CheckParam(*input)
+	err = action.CheckParam(input)
 	if err != nil {
 		return output, err
 	}
@@ -232,17 +239,30 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input *ApplyNewDeploy
 
 func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, error) {
 	inputs := input.(ApplyNewDeploymentInputs)
-
 	outputs := ApplyNewDeploymentOutputs{}
 	var finalErr error
-
-	for _, input := range inputs.Inputs {
-		output, err := action.applyNewDeployment(&input)
-		if err != nil {
-			log.Logger.Error("App new deploy action", log.Error(err))
-			finalErr = err
+	outputChan := make(chan ApplyNewDeploymentThreadObj, len(inputs.Inputs))
+	wg := sync.WaitGroup{}
+	for i,input := range inputs.Inputs {
+		wg.Add(1)
+		go func(tmpInput ApplyNewDeploymentInput,index int) {
+			output, err := action.applyNewDeployment(tmpInput)
+			outputChan <- ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index}
+			wg.Done()
+		}(input,i)
+		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-		outputs.Outputs = append(outputs.Outputs, output)
+		tmpOutput := <- outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("App new deploy action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 	return &outputs, finalErr
 }
@@ -290,6 +310,12 @@ type ApplyUpdateDeploymentAction struct {
 	Language string
 }
 
+type ApplyUpdateDeploymentThreadObj struct {
+	Data  ApplyUpdateDeploymentOutput
+	Err   error
+	Index int
+}
+
 func (action *ApplyUpdateDeploymentAction) SetAcceptLanguage(language string) {
 	action.Language = language
 }
@@ -325,7 +351,7 @@ func (action *ApplyUpdateDeploymentAction) CheckParam(input ApplyUpdateDeploymen
 	return nil
 }
 
-func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpdateDeploymentInput) (output ApplyUpdateDeploymentOutput, err error) {
+func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpdateDeploymentInput) (output ApplyUpdateDeploymentOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -339,7 +365,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input *ApplyUpd
 		}
 	}()
 
-	err = action.CheckParam(*input)
+	err = action.CheckParam(input)
 	if err != nil {
 		return output, err
 	}
@@ -446,14 +472,28 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 	inputs := input.(ApplyUpdateDeploymentInputs)
 	outputs := ApplyUpdateDeploymentOutputs{}
 	var finalErr error
-
-	for _, input := range inputs.Inputs {
-		output, err := action.applyUpdateDeployment(&input)
-		if err != nil {
-			log.Logger.Error("App update action", log.Error(err))
-			finalErr = err
+	outputChan := make(chan ApplyUpdateDeploymentThreadObj, len(inputs.Inputs))
+	wg := sync.WaitGroup{}
+	for i,input := range inputs.Inputs {
+		wg.Add(1)
+		go func(tmpInput ApplyUpdateDeploymentInput,index int) {
+			output, err := action.applyUpdateDeployment(tmpInput)
+			outputChan <- ApplyUpdateDeploymentThreadObj{Data:output,Err:err,Index:index}
+			wg.Done()
+		}(input,i)
+		outputs.Outputs = append(outputs.Outputs, ApplyUpdateDeploymentOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-		outputs.Outputs = append(outputs.Outputs, output)
+		tmpOutput := <- outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("App update deploy action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 	return &outputs, finalErr
 }
