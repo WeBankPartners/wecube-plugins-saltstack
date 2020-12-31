@@ -278,7 +278,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 			return output, err
 		}
 	}
-	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:models.Config.InstallMinionTimeout,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh | bash /dev/stdin %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
+	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:models.Config.InstallMinionTimeout,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh > /tmp/minion_install.sh && bash /tmp/minion_install.sh %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
 	execRemoteWithTimeout(&execParam)
 	outString := execParam.Output
 	err = execParam.Err

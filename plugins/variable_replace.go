@@ -113,10 +113,21 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 
 func getNewS3EndpointName(endpoint string, newPackageName string) string {
 	index := strings.LastIndexAny(endpoint, "/")
+	if DefaultS3TmpAddress != "" {
+		log.Logger.Info("Upload to tmp s3 address", log.String("url", DefaultS3TmpAddress + "/" + newPackageName))
+		return DefaultS3TmpAddress + "/" + newPackageName
+	}
 	return endpoint[0:index+1] + newPackageName
 }
 
 func getPackageNameWithoutSuffix(packageName string) string {
+	validExts := []string{".zip", ".tgz", ".tar.gz"}
+	for _,v := range validExts {
+		if strings.HasSuffix(packageName, v) {
+			packageName = packageName[:len(packageName)-len(v)]
+			return packageName
+		}
+	}
 	index := strings.LastIndexAny(packageName, ".")
 	return packageName[0:index]
 }
@@ -153,8 +164,10 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err != nil {
 		return output, err
 	}
-
+	workRandGuid := getRandString()
+	// add random sub path
 	decompressDirName := getDecompressDirName(packageName)
+	decompressDirName = decompressDirName + "_" + workRandGuid
 	if err = isDirExist(decompressDirName); err == nil {
 		os.RemoveAll(decompressDirName)
 	}
@@ -163,7 +176,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
+	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 	if err != nil {
 		return output, err
 	}
@@ -199,7 +212,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	//compress file
 	//nowTime := time.Now().Format("20060102150405.999999999")
-	newPackageName := fmt.Sprintf("%s-%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405.999999999"), suffix)
+	newPackageName := fmt.Sprintf("%s_%s_%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405"), workRandGuid, suffix)
 	err,newPackageName = compressDir(decompressDirName, suffix, newPackageName)
 	if err != nil {
 		os.RemoveAll(decompressDirName)
@@ -482,7 +495,9 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	defer f.Close()
 	fileReplaceMap := make(map[string]string)
 	tmpLineCount := 0
-	br := bufio.NewReader(bf)
+	//br := bufio.NewReader(bf)
+	// 4M 4194304  10M 10485760
+	br := bufio.NewReaderSize(bf, 10485760)
 	for {
 		tmpLineCount = tmpLineCount + 1
 		line, _, err := br.ReadLine()
@@ -510,7 +525,8 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 					if strings.HasPrefix(key, specialFlag) {
 						s := strings.Split(key, specialFlag)
 						if s[1] == "" {
-							return fmt.Errorf("File %s have empty variable [%s] in line %d ", filepath, key, tmpLineCount)
+							//return fmt.Errorf("File %s have empty variable [%s] in line %d ", filepath, key, tmpLineCount)
+							continue
 						}
 						if strings.Contains(s[1], " ") {
 							continue

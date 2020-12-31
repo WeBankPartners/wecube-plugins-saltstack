@@ -13,8 +13,8 @@ import (
 	"text/template"
 
 	"sync"
-	"time"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"math/rand"
 )
 
 func uploadS3File(endPoint, accessKey, secretKey, language string) (string, error) {
@@ -54,18 +54,19 @@ func uploadS3File(endPoint, accessKey, secretKey, language string) (string, erro
 		return path, nil
 	}
 
-	err = fileReplace(endPoint, accessKey, secretKey)
+	err,s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, "")
 	if err != nil {
 		return "", getS3UploadError(language, endPoint, fmt.Sprintf("Prepare s3 template file error: %s ", err))
 	}
 
-	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf put "
+	sh := "s3cmd -c "+s3ConfigFile+" put "
 	sh += UPLOADS3FILE_DIR + Info[len(Info)-1] + " s3:/" + minioStoragePath
 	cmd := exec.Command("/bin/sh", "-c", sh)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	err = cmd.Run()
+	os.Remove(s3ConfigFile)
 	if err != nil {
 		return "", getS3UploadError(language, endPoint, fmt.Sprintf("exec s3cmd to upload fail,output:%s, error:%s", stderr.String(), err.Error()))
 	}
@@ -73,9 +74,10 @@ func uploadS3File(endPoint, accessKey, secretKey, language string) (string, erro
 }
 
 func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language string) (string, error) {
-	var tmpName string
+	var tmpName,randString string
 	if randName {
-		tmpName = getWorkspaceName()
+		randString = getRandString()
+		tmpName = randString + "_"
 	}
 	var path string
 	// download from http
@@ -87,7 +89,11 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 			log.Logger.Info("Download file fail,already exists", log.String("path", path))
 			return path, nil
 		}
-		curlCommand := fmt.Sprintf("mkdir -p /tmp && mkdir -p /data/minio && cd /tmp && curl -H \"Authorization: %s\" -O %s && mv /tmp/%s %s", TmpCoreToken, endPoint, tmpFileName, path)
+		tmpFileDir := "/tmp"
+		if randString != "" {
+			tmpFileDir = "/tmp/"+randString
+		}
+		curlCommand := fmt.Sprintf("mkdir -p %s && mkdir -p /data/minio && cd %s && curl -H \"Authorization: %s\" -O %s && mv %s/%s %s", tmpFileDir, tmpFileDir, TmpCoreToken, endPoint, tmpFileDir, tmpFileName, path)
 		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
 		log.Logger.Debug("curl file ", log.String("command", curlCommand))
 		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))
@@ -118,7 +124,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 		return path, nil
 	}
 	//config s3,need to change different workspace TODO
-	err = fileReplace(endPoint, accessKey, secretKey)
+	err,s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, randString)
 	if err != nil {
 		return "", getS3DownloadError(language, endPoint, fmt.Sprintf("s3 template config error: %s", err.Error()))
 	}
@@ -127,7 +133,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	for i := 1; i < len(Info); i++ {
 		storagePath += "/" + Info[i]
 	}
-	sh := "s3cmd -c /home/app/wecube-plugins-saltstack/minioconf get --force "
+	sh := "s3cmd -c "+s3ConfigFile+" get --force "
 	sh += " s3:/" + storagePath + " " + path
 	log.Logger.Debug("S3 command", log.String("command", sh))
 	cmd := exec.Command("/bin/sh", "-c", sh)
@@ -135,12 +141,14 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
 		os.Remove(path)
+		os.Remove(s3ConfigFile)
 		tmpErrorMsg := fmt.Sprint(err) + ": " + stderr.String()
 		if strings.Contains(tmpErrorMsg, "404") {
 			return "", getS3FileNotFoundError(language, storagePath)
 		}
 		return "", getS3DownloadError(language, endPoint, tmpErrorMsg)
 	}
+	os.Remove(s3ConfigFile)
 	log.Logger.Debug("Download s3 file result", log.String("output", stderr.String()))
 	return path, nil
 }
@@ -153,7 +161,11 @@ type MinioConf struct {
 	SecretKey string
 }
 
-func fileReplace(endPoint, accessKey, secretKey string) error {
+func fileReplace(endPoint, accessKey, secretKey, randString string) (err error,configPath string) {
+	if randString == "" {
+		randString = getRandString()
+	}
+	configPath = S3CONFIG_DIR + randString
 	funcMap := template.FuncMap{}
 
 	s := strings.Split(endPoint, "//")
@@ -168,20 +180,20 @@ func fileReplace(endPoint, accessKey, secretKey string) error {
 
 	tmpl, err := template.New("s3conf").Funcs(funcMap).ParseFiles("/conf/s3conf")
 	if err != nil {
-		return fmt.Errorf("parsing error: %s", err)
+		return fmt.Errorf("parsing error: %s", err),configPath
 	}
 
-	f, err := os.OpenFile("/home/app/wecube-plugins-saltstack/minioconf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return fmt.Errorf("open file error: %s", err)
+		return fmt.Errorf("open file error: %s", err),configPath
 	}
 	defer f.Close()
 
 	err = tmpl.Execute(f, test)
 	if err != nil {
-		return fmt.Errorf("execution error: %s", err)
+		return fmt.Errorf("execution error: %s", err),configPath
 	}
-	return nil
+	return nil,configPath
 }
 
 //GetVariable .
@@ -255,11 +267,15 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 	return variableList, nil
 }
 
-var getNameLock = new(sync.RWMutex)
+var randLock = new(sync.Mutex)
+var randByteList = []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 
-func getWorkspaceName() (name string) {
-	getNameLock.Lock()
-	name = fmt.Sprintf("%d-", time.Now().UnixNano())
-	getNameLock.Unlock()
-	return name
+func getRandString() (name string) {
+	var randFlag []byte
+	randLock.Lock()
+	for i:=0;i<4;i++ {
+		randFlag = append(randFlag, randByteList[rand.Intn(36)])
+	}
+	randLock.Unlock()
+	return string(randFlag)
 }

@@ -17,6 +17,7 @@ import (
 const (
 	UNCOMPRESSED_DIR = "/data/decompressed/"
 	UPLOADS3FILE_DIR = "/data/minio/"
+	S3CONFIG_DIR = "/home/app/wecube-plugins-saltstack/minio-conf/"
 )
 
 type decompressFunc func(comporessedFileFullPath string, uncompressDir string) error
