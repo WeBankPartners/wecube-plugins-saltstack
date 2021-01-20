@@ -34,6 +34,8 @@ const (
 	PASSWORD_LEN        = 12
 	DEFALT_CIPHER       = "CIPHER_A"
 	ASCII_CODE_LF       = 10
+	SystemRole          = `SUB_SYSTEM`
+	PlatformUser        = `SYS_PLATFORM`
 )
 
 var (
