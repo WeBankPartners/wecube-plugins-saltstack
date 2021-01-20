@@ -9,13 +9,18 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const ClusterDeletePath = `/salt/cluster/delete`
 
 var (
+	coreRefreshToken string
+	coreRefreshTokenExpTime time.Time
 	coreRequestToken string
+	coreRequestTokenExpTime time.Time
 	requestCoreNonce = "salt"
 )
 
@@ -40,9 +45,9 @@ func SyncClusterList() {
 		log.Logger.Warn("Sync cluster list fail,subSystemCore or subSystemKey is empty", log.String("SubSystemCode", SubSystemCode), log.String("SubSystemKey", SubSystemKey))
 		return
 	}
-	err := initCoreToken(SubSystemKey)
-	if err != nil || coreRequestToken == "" {
-		log.Logger.Warn("Sync cluster list fail,init core token fail", log.Error(err))
+	InitCoreToken()
+	if coreRequestToken == "" {
+		log.Logger.Warn("Sync cluster list fail,init core token fail")
 		return
 	}
 	request, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/platform/v1/available-container-hosts", CoreUrl), strings.NewReader(""))
@@ -188,6 +193,40 @@ type responseCoreDataObj struct {
 	TokenType  string  `json:"tokenType"`
 }
 
+func refreshToken() error {
+	req,err := http.NewRequest(http.MethodGet, CoreUrl + "/auth/v1/api/token", strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("http new request fail,%s ", err.Error())
+	}
+	req.Header.Set("Authorization", coreRefreshToken)
+	resp,err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("http response fail,%s ", err.Error())
+	}
+	var respObj responseCoreObj
+	bodyBytes,_ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	err = json.Unmarshal(bodyBytes, &respObj)
+	if err != nil {
+		return fmt.Errorf("http response body json unmarshal fail,%s ", err.Error())
+	}
+	for _,v := range respObj.Data {
+		if len(v.Expiration) > 10 {
+			v.Expiration = v.Expiration[:10]
+		}
+		expInt,_ := strconv.ParseInt(v.Expiration, 10, 64)
+		if v.TokenType == "refreshToken" {
+			coreRefreshToken = "Bearer " + v.Token
+			coreRefreshTokenExpTime = time.Unix(expInt, 0)
+		}
+		if v.TokenType == "accessToken" {
+			coreRequestToken = "Bearer " + v.Token
+			coreRequestTokenExpTime = time.Unix(expInt, 0)
+		}
+	}
+	return nil
+}
+
 func initCoreToken(rsaKey string) error {
 	encryptBytes,err := RSAEncryptByPrivate([]byte(fmt.Sprintf("%s:%s", SubSystemCode, requestCoreNonce)), rsaKey)
 	encryptString := base64.StdEncoding.EncodeToString(encryptBytes)
@@ -213,9 +252,49 @@ func initCoreToken(rsaKey string) error {
 		return fmt.Errorf("http response body read fail,%s ", err.Error())
 	}
 	for _,v := range respObj.Data {
+		if len(v.Expiration) > 10 {
+			v.Expiration = v.Expiration[:10]
+		}
+		expInt,_ := strconv.ParseInt(v.Expiration, 10, 64)
+		if v.TokenType == "refreshToken" {
+			coreRefreshToken = "Bearer " + v.Token
+			coreRefreshTokenExpTime = time.Unix(expInt, 0)
+		}
 		if v.TokenType == "accessToken" {
-			coreRequestToken = v.Token
+			coreRequestToken = "Bearer " + v.Token
+			coreRequestTokenExpTime = time.Unix(expInt, 0)
 		}
 	}
 	return nil
+}
+
+func InitCoreToken()  {
+	err := initCoreToken(SubSystemKey)
+	if err != nil {
+		log.Logger.Error("Init core token fail,error", log.Error(err))
+	}else{
+		log.Logger.Info("Init core token success")
+	}
+}
+
+func GetCoreToken() string {
+	if CoreUrl == "" {
+		return ""
+	}
+	if coreRequestTokenExpTime.Unix() > time.Now().Unix() && coreRequestToken != "" {
+		return coreRequestToken
+	}
+	if coreRefreshTokenExpTime.Unix() > time.Now().Unix() && coreRefreshToken != "" {
+		err := refreshToken()
+		if err != nil {
+			log.Logger.Error("Refresh token fail", log.Error(err))
+		}else{
+			return coreRequestToken
+		}
+	}
+	err := initCoreToken(SubSystemKey)
+	if err != nil {
+		log.Logger.Error("Try to init core token fail", log.Error(err))
+	}
+	return coreRefreshToken
 }
