@@ -93,7 +93,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 		if randString != "" {
 			tmpFileDir = "/tmp/"+randString
 		}
-		curlCommand := fmt.Sprintf("mkdir -p %s && mkdir -p /data/minio && cd %s && curl -H \"Authorization: %s\" -O %s && mv %s/%s %s", tmpFileDir, tmpFileDir, TmpCoreToken, endPoint, tmpFileDir, tmpFileName, path)
+		curlCommand := fmt.Sprintf("mkdir -p %s && mkdir -p /data/minio && cd %s && curl -H \"Authorization: %s\" -O %s && mv %s/%s %s", tmpFileDir, tmpFileDir, GetCoreToken(), endPoint, tmpFileDir, tmpFileName, path)
 		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
 		log.Logger.Debug("curl file ", log.String("command", curlCommand))
 		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))

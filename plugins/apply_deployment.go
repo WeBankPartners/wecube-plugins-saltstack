@@ -138,6 +138,16 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	if !strings.Contains(input.UserName, ":") {
 		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
 	}
+	if !strings.HasPrefix(input.StartScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		if strings.HasPrefix(input.StartScriptPath, "/") {
+			input.StartScriptPath = input.DestinationPath + input.StartScriptPath[1:]
+		}else{
+			input.StartScriptPath = input.DestinationPath + input.StartScriptPath
+		}
+	}
 	//create apply deployment user
 	addUserRequest := AddUserInputs{
 		Inputs: []AddUserInput{
@@ -372,6 +382,16 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 
 	if !strings.Contains(input.UserName, ":") {
 		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
+	}
+	if !strings.HasPrefix(input.StartScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		if strings.HasPrefix(input.StartScriptPath, "/") {
+			input.StartScriptPath = input.DestinationPath + input.StartScriptPath[1:]
+		}else{
+			input.StartScriptPath = input.DestinationPath + input.StartScriptPath
+		}
 	}
 	// stop apply script
 	runStopScriptRequest := RunScriptInputs{
@@ -620,7 +640,16 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 	if err = action.deleteDeploymentCheckParam(*input); err != nil {
 		return output, err
 	}
-
+	if !strings.HasPrefix(input.StopScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		if strings.HasPrefix(input.StopScriptPath, "/") {
+			input.StopScriptPath = input.DestinationPath + input.StopScriptPath[1:]
+		}else{
+			input.StopScriptPath = input.DestinationPath + input.StopScriptPath
+		}
+	}
 	// stop apply script
 	runStopScriptRequest := RunScriptInputs{
 		Inputs: []RunScriptInput{

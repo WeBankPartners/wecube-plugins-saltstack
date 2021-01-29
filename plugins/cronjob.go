@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"os/exec"
+	"strings"
 	"time"
 	"io/ioutil"
 	"os"
@@ -9,8 +11,15 @@ import (
 )
 
 func StartCleanInterval()  {
+	cmdOut,_ := exec.Command("/bin/sh", "-c", "date|awk '{print $5}'").Output()
+	cmdOutString := strings.TrimSpace(string(cmdOut))
+	localTimeZone := "CST"
+	log.Logger.Info("timezone", log.String("out", cmdOutString))
+	if cmdOutString != "" && len(cmdOutString) <= 5 {
+		localTimeZone = cmdOutString
+	}
 	intervalSecond := 86400
-	timeStartValue,_ := time.Parse("2006-01-02 15:04:05 MST", fmt.Sprintf("%s 00:00:00 CST", time.Now().Format("2006-01-02")))
+	timeStartValue,_ := time.Parse("2006-01-02 15:04:05 MST", fmt.Sprintf("%s 00:00:00 "+localTimeZone, time.Now().Format("2006-01-02")))
 	time.Sleep(time.Duration(timeStartValue.Unix()+86400-time.Now().Unix())*time.Second)
 	t := time.NewTicker(time.Duration(intervalSecond)*time.Second).C
 	for {

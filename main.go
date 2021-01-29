@@ -97,9 +97,18 @@ func parsePluginRequest(r *http.Request) *plugins.PluginRequest {
 }
 
 func authCore(coreToken string) bool {
-	_,err := decodeCoreToken(coreToken, models.CoreJwtKey)
+	tokenObj,err := decodeCoreToken(coreToken, models.CoreJwtKey)
 	if err == nil {
-		return true
+		isSystemCall := false
+		for _,v := range tokenObj.Roles {
+			if v == plugins.SystemRole {
+				if tokenObj.User == plugins.PlatformUser {
+					isSystemCall = true
+				}
+				break
+			}
+		}
+		return isSystemCall
 	}
 	return false
 }
