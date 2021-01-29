@@ -1,17 +1,28 @@
 package plugins
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"os/exec"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"strconv"
+	"strings"
+	"time"
 )
 
-const TmpCoreToken = `Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJTWVNfU0FMVFNUQUNLIiwiaWF0IjoxNTkwMTE4MjYxLCJ0eXBlIjoiYWNjZXNzVG9rZW4iLCJjbGllbnRUeXBlIjoiU1VCX1NZU1RFTSIsImV4cCI6MTc0NTYzODI2MSwiYXV0aG9yaXR5IjoiW1NVQl9TWVNURU1dIn0.N2sD9F4TKh1yaatRfr-sqRqlP7fiSqZ1znmr7AtQanr2ZmbldZt2ICeuUnIUcpGGK3YZKKqOPic2JNeECblgnw`
 const ClusterDeletePath = `/salt/cluster/delete`
+
+var (
+	coreRefreshToken string
+	coreRefreshTokenExpTime time.Time
+	coreRequestToken string
+	coreRequestTokenExpTime time.Time
+	requestCoreNonce = "salt"
+)
 
 type coreHostDto struct {
 	Status  string   `json:"status"`
@@ -27,11 +38,20 @@ func SyncClusterList() {
 		}
 	}()
 	if CoreUrl == "" || MasterHostIp == "" {
-		log.Logger.Info("sync cluster quit,core url or master ip is empty \n")
+		log.Logger.Warn("sync cluster quit,core url or master ip is empty \n")
+		return
+	}
+	if SubSystemCode == "" || SubSystemKey == "" {
+		log.Logger.Warn("Sync cluster list fail,subSystemCore or subSystemKey is empty", log.String("SubSystemCode", SubSystemCode), log.String("SubSystemKey", SubSystemKey))
+		return
+	}
+	InitCoreToken()
+	if coreRequestToken == "" {
+		log.Logger.Warn("Sync cluster list fail,init core token fail")
 		return
 	}
 	request, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/platform/v1/available-container-hosts", CoreUrl), strings.NewReader(""))
-	request.Header.Set("Authorization", TmpCoreToken)
+	request.Header.Set("Authorization", coreRequestToken)
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Logger.Error(fmt.Sprintf("sync cluster list,get response error %v \n", err))
@@ -152,4 +172,129 @@ func SendHostDelete(hosts []string) {
 			resp.Body.Close()
 		}
 	}
+}
+
+type requestCoreToken struct {
+	Password  string  `json:"password"`
+	Username  string  `json:"username"`
+	Nonce     string  `json:"nonce"`
+	ClientType string  `json:"clientType"`
+}
+
+type responseCoreObj struct {
+	Status  string  `json:"status"`
+	Message  string  `json:"message"`
+	Data  []*responseCoreDataObj  `json:"data"`
+}
+
+type responseCoreDataObj struct {
+	Expiration  string  `json:"expiration"`
+	Token  string  `json:"token"`
+	TokenType  string  `json:"tokenType"`
+}
+
+func refreshToken() error {
+	req,err := http.NewRequest(http.MethodGet, CoreUrl + "/auth/v1/api/token", strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("http new request fail,%s ", err.Error())
+	}
+	req.Header.Set("Authorization", coreRefreshToken)
+	resp,err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("http response fail,%s ", err.Error())
+	}
+	var respObj responseCoreObj
+	bodyBytes,_ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	err = json.Unmarshal(bodyBytes, &respObj)
+	if err != nil {
+		return fmt.Errorf("http response body json unmarshal fail,%s ", err.Error())
+	}
+	for _,v := range respObj.Data {
+		if len(v.Expiration) > 10 {
+			v.Expiration = v.Expiration[:10]
+		}
+		expInt,_ := strconv.ParseInt(v.Expiration, 10, 64)
+		if v.TokenType == "refreshToken" {
+			coreRefreshToken = "Bearer " + v.Token
+			coreRefreshTokenExpTime = time.Unix(expInt, 0)
+		}
+		if v.TokenType == "accessToken" {
+			coreRequestToken = "Bearer " + v.Token
+			coreRequestTokenExpTime = time.Unix(expInt, 0)
+		}
+	}
+	return nil
+}
+
+func initCoreToken(rsaKey string) error {
+	encryptBytes,err := RSAEncryptByPrivate([]byte(fmt.Sprintf("%s:%s", SubSystemCode, requestCoreNonce)), rsaKey)
+	encryptString := base64.StdEncoding.EncodeToString(encryptBytes)
+	if err != nil {
+		return err
+	}
+	postParam := requestCoreToken{Username: SubSystemCode, Nonce: requestCoreNonce, ClientType: "SUB_SYSTEM", Password: encryptString}
+	postBytes,_ := json.Marshal(postParam)
+	fmt.Printf("param: %s \n", string(postBytes))
+	req,err := http.NewRequest(http.MethodPost, CoreUrl + "/auth/v1/api/login", bytes.NewReader(postBytes))
+	if err != nil {
+		return fmt.Errorf("http new request fail,%s ", err.Error())
+	}
+	resp,err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("http response fail, %s ", err.Error())
+	}
+	var respObj responseCoreObj
+	bodyBytes,_ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	err = json.Unmarshal(bodyBytes, &respObj)
+	if err != nil {
+		return fmt.Errorf("http response body read fail,%s ", err.Error())
+	}
+	for _,v := range respObj.Data {
+		if len(v.Expiration) > 10 {
+			v.Expiration = v.Expiration[:10]
+		}
+		expInt,_ := strconv.ParseInt(v.Expiration, 10, 64)
+		if v.TokenType == "refreshToken" {
+			coreRefreshToken = "Bearer " + v.Token
+			coreRefreshTokenExpTime = time.Unix(expInt, 0)
+		}
+		if v.TokenType == "accessToken" {
+			coreRequestToken = "Bearer " + v.Token
+			coreRequestTokenExpTime = time.Unix(expInt, 0)
+		}
+	}
+	return nil
+}
+
+func InitCoreToken()  {
+	err := initCoreToken(SubSystemKey)
+	if err != nil {
+		log.Logger.Error("Init core token fail,error", log.Error(err))
+	}else{
+		log.Logger.Info("Init core token success")
+	}
+}
+
+func GetCoreToken() string {
+	if CoreUrl == "" {
+		return ""
+	}
+	if coreRequestTokenExpTime.Unix() > time.Now().Unix() && coreRequestToken != "" {
+		return coreRequestToken
+	}
+	if coreRefreshTokenExpTime.Unix() > time.Now().Unix() && coreRefreshToken != "" {
+		err := refreshToken()
+		if err != nil {
+			log.Logger.Error("Refresh token fail", log.Error(err))
+		}else{
+			return coreRequestToken
+		}
+	}
+	err := initCoreToken(SubSystemKey)
+	if err != nil {
+		log.Logger.Error("Try to init core token fail", log.Error(err))
+	}
+	return coreRefreshToken
 }
