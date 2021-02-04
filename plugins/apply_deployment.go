@@ -142,11 +142,15 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 		if !strings.HasSuffix(input.DestinationPath, "/") {
 			input.DestinationPath = input.DestinationPath + "/"
 		}
-		if strings.HasPrefix(input.StartScriptPath, "/") {
-			input.StartScriptPath = input.DestinationPath + input.StartScriptPath[1:]
-		}else{
-			input.StartScriptPath = input.DestinationPath + input.StartScriptPath
+		var newScriptPathList []string
+		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
+			}else{
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
+			}
 		}
+		input.StartScriptPath = strings.Join(newScriptPathList, ",")
 	}
 	//create apply deployment user
 	addUserRequest := AddUserInputs{
@@ -387,11 +391,29 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		if !strings.HasSuffix(input.DestinationPath, "/") {
 			input.DestinationPath = input.DestinationPath + "/"
 		}
-		if strings.HasPrefix(input.StartScriptPath, "/") {
-			input.StartScriptPath = input.DestinationPath + input.StartScriptPath[1:]
-		}else{
-			input.StartScriptPath = input.DestinationPath + input.StartScriptPath
+		var newScriptPathList []string
+		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
+			}else{
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
+			}
 		}
+		input.StartScriptPath = strings.Join(newScriptPathList, ",")
+	}
+	if !strings.HasPrefix(input.StopScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		var newStopPathList []string
+		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
+			}else{
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
+			}
+		}
+		input.StopScriptPath = strings.Join(newStopPathList, ",")
 	}
 	// stop apply script
 	runStopScriptRequest := RunScriptInputs{
@@ -644,11 +666,15 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 		if !strings.HasSuffix(input.DestinationPath, "/") {
 			input.DestinationPath = input.DestinationPath + "/"
 		}
-		if strings.HasPrefix(input.StopScriptPath, "/") {
-			input.StopScriptPath = input.DestinationPath + input.StopScriptPath[1:]
-		}else{
-			input.StopScriptPath = input.DestinationPath + input.StopScriptPath
+		var newStopPathList []string
+		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
+			}else{
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
+			}
 		}
+		input.StopScriptPath = strings.Join(newStopPathList, ",")
 	}
 	// stop apply script
 	runStopScriptRequest := RunScriptInputs{
