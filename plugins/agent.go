@@ -2,14 +2,14 @@ package plugins
 
 import (
 	"fmt"
-	"net"
-	gossh "golang.org/x/crypto/ssh"
-	"strings"
-	"os/exec"
-	"time"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
+	gossh "golang.org/x/crypto/ssh"
+	"net"
+	"os/exec"
 	"strconv"
+	"strings"
+	"time"
 )
 
 var AgentActions = make(map[string]Action)
@@ -66,7 +66,6 @@ type Roster struct {
 	Sudo   string
 }
 
-
 func runBashScript(shellPath string, args []string) (string, error) {
 	cmd := exec.Command(shellPath, args...)
 	out, err := cmd.CombinedOutput()
@@ -83,7 +82,6 @@ func removeSaltKeys(host string) {
 	runBashScript("./scripts/salt/remove_master_unused_key.sh", []string{host})
 	return
 }
-
 
 type AgentUninstallInputs struct {
 	Inputs []AgentUninstallInput `json:"inputs,omitempty"`
@@ -110,35 +108,36 @@ type AgentUninstallOutput struct {
 }
 
 type ExecRemoteParam struct {
-	User  string
-	Password  string
-	Host  string
-	Port  string
+	User     string
+	Password string
+	Host     string
+	Port     string
 	Command  string
-	Output  string
-	Err  error
+	Output   string
+	Err      error
 	Timeout  int
-	DoneChan  chan int
+	DoneChan chan int
 }
 
-func execRemoteWithTimeout(param *ExecRemoteParam)  {
+func execRemoteWithTimeout(param *ExecRemoteParam) {
 	param.DoneChan = make(chan int)
 	go func(gParam *ExecRemoteParam) {
-		tmpOutput,tmpError := execRemote(gParam.User,gParam.Password,gParam.Host,gParam.Command,gParam.Port)
+		tmpOutput, tmpError := execRemote(gParam.User, gParam.Password, gParam.Host, gParam.Command, gParam.Port)
 		gParam.Output = string(tmpOutput)
 		gParam.Err = tmpError
 		gParam.DoneChan <- 1
 	}(param)
 	select {
-	case <-param.DoneChan: log.Logger.Debug("Exec remote bash done ", log.String("host", param.Host))
-	case <-time.After(time.Duration(param.Timeout)*time.Second):
+	case <-param.DoneChan:
+		log.Logger.Debug("Exec remote bash done ", log.String("host", param.Host))
+	case <-time.After(time.Duration(param.Timeout) * time.Second):
 		param.Err = fmt.Errorf("exec remote command timeout %d seconds", param.Timeout)
 	}
 }
 
-func execRemote(user,password,host,command,port string) (output []byte,err error) {
-	var(
-		client *gossh.Client
+func execRemote(user, password, host, command, port string) (output []byte, err error) {
+	var (
+		client  *gossh.Client
 		session *gossh.Session
 	)
 	if port == "" {
@@ -153,24 +152,24 @@ func execRemote(user,password,host,command,port string) (output []byte,err error
 			return nil
 		},
 	}
-	if client,err = gossh.Dial("tcp", fmt.Sprintf("%s:%s", host, port), clientConfig); err != nil {
-		return output,fmt.Errorf("ssh dial error:%s", err.Error())
+	if client, err = gossh.Dial("tcp", fmt.Sprintf("%s:%s", host, port), clientConfig); err != nil {
+		return output, fmt.Errorf("ssh dial error:%s", err.Error())
 	}
-	session,err = client.NewSession()
+	session, err = client.NewSession()
 	if err != nil {
-		return output,fmt.Errorf("ssh client new session error:%s", err.Error())
+		return output, fmt.Errorf("ssh client new session error:%s", err.Error())
 	}
-	output,err = session.Output(command)
+	output, err = session.Output(command)
 	if err != nil {
 		err = fmt.Errorf("ssh run command error:%s", err.Error())
 	}
 	session.Close()
-	return output,err
+	return output, err
 }
 
-type MinionInstallAction struct { Language string }
+type MinionInstallAction struct{ Language string }
 
-type MinionUninstallAction struct { Language string }
+type MinionUninstallAction struct{ Language string }
 
 func (action *MinionInstallAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs AgentInstallInputs
@@ -206,7 +205,7 @@ func (action *MinionInstallAction) CheckParam(input AgentInstallInput) error {
 		return getParamValidateError(action.Language, "host", "Contains illegal character")
 	}
 	if input.Port != "" {
-		_,err := strconv.Atoi(input.Port)
+		_, err := strconv.Atoi(input.Port)
 		if err != nil {
 			return getParamValidateError(action.Language, "port", "Port is not num")
 		}
@@ -256,7 +255,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 		return output, err
 	}
 
-	b,tmpErr := exec.Command("bash","-c", fmt.Sprintf("find /etc/salt/pki/master/minions -name '%s'", input.Host)).Output()
+	b, tmpErr := exec.Command("bash", "-c", fmt.Sprintf("find /etc/salt/pki/master/minions -name '%s'", input.Host)).Output()
 	if tmpErr != nil || string(b) != "" {
 		removeSaltKeys(input.Host)
 	}
@@ -268,7 +267,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	}
 
 	if input.Command != "" {
-		tmpParam := ExecRemoteParam{User:input.User,Password:input.Password,Host:input.Host,Port:input.Port,Command:input.Command,Timeout:models.Config.ExecRemoteCommandTimeout}
+		tmpParam := ExecRemoteParam{User: input.User, Password: input.Password, Host: input.Host, Port: input.Port, Command: input.Command, Timeout: models.Config.ExecRemoteCommandTimeout}
 		execRemoteWithTimeout(&tmpParam)
 		cmdOutString := tmpParam.Output
 		err = tmpParam.Err
@@ -278,7 +277,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 			return output, err
 		}
 	}
-	execParam := ExecRemoteParam{User:input.User,Password:password,Host:input.Host,Timeout:models.Config.InstallMinionTimeout,Command:fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh > /tmp/minion_install.sh && bash /tmp/minion_install.sh %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
+	execParam := ExecRemoteParam{User: input.User, Password: password, Host: input.Host, Port: input.Port, Timeout: models.Config.InstallMinionTimeout, Command: fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh > /tmp/minion_install.sh && bash /tmp/minion_install.sh %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
 	execRemoteWithTimeout(&execParam)
 	outString := execParam.Output
 	err = execParam.Err
@@ -358,7 +357,7 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 	}
 
 	var cmdOut []byte
-	cmdOut,err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp), input.Port)
+	cmdOut, err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp), input.Port)
 	log.Logger.Debug("Uninstall minion", log.String("host", input.Host), log.String("output", string(cmdOut)))
 	if err != nil {
 		err = getUninstallMinionError(action.Language, input.Host, string(cmdOut), err)
