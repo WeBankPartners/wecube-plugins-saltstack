@@ -567,9 +567,9 @@ func (action *GetWebConsoleUrlAction) CheckParam(input interface{}) error {
 		if input.HostIp == "" {
 			return errors.New("host_ip is empty")
 		}
-		if input.Seed == "" {
-			return errors.New("seed is empty")
-		}
+		//if input.Seed == "" {
+		//	return errors.New("seed is empty")
+		//}
 		if input.Password == "" {
 			return errors.New("password is empty")
 		}
