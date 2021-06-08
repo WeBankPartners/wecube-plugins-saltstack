@@ -361,6 +361,7 @@ type inputVariableObj struct {
 }
 
 func GetInputVariableMapNew(variable string, seed string, specialList []string) (map[string]string, error) {
+	log.Logger.Info("New json variable map handle", log.String("variableList", variable))
 	var kvList []*inputVariableObj
 	err := json.Unmarshal([]byte(variable), &kvList)
 	if err != nil {
