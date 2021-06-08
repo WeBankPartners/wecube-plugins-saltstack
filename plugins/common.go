@@ -255,6 +255,9 @@ func createRandomPassword() string {
 }
 
 func AesEnPassword(guid, seed, password, cipher string) (string, error) {
+	if seed == "" {
+		return password,nil
+	}
 	for _, _cipher := range CIPHER_MAP {
 		if strings.HasPrefix(password, _cipher) {
 			return password,nil
