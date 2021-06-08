@@ -103,11 +103,11 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 	if input.EndPoint == "" {
 		return getParamEmptyError(action.Language, "endpoint")
 	}
-	if input.VariableList != "" {
-		if !strings.Contains(input.VariableList, "=") {
-			return getParamValidateError(action.Language, "variableList", "can not find '=' in the content,variable should be k=v")
-		}
-	}
+	//if input.VariableList != "" {
+	//	if !strings.Contains(input.VariableList, "=") {
+	//		return getParamValidateError(action.Language, "variableList", "can not find '=' in the content,variable should be k=v")
+	//	}
+	//}
 
 	return nil
 }
