@@ -213,9 +213,9 @@ func (action *MinionInstallAction) CheckParam(input AgentInstallInput) error {
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 
 	if input.User == "" {
 		return getParamEmptyError(action.Language, "user")
@@ -320,9 +320,9 @@ func (action *MinionUninstallAction) agentUninstallCheckParam(input AgentUninsta
 	if input.Host == "" {
 		return getParamEmptyError(action.Language, "host")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.User == "" {
 		return getParamEmptyError(action.Language, "user")
 	}
