@@ -77,9 +77,9 @@ func (action *AddMysqlDatabaseUserAction) checkAddMysqlDatabaseUser(input *AddMy
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
 	}
@@ -220,9 +220,9 @@ func (action DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUserCheckParam(in
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.Password == "" {
 		return getParamEmptyError(action.Language, "password")
 	}

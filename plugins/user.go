@@ -92,9 +92,9 @@ func (action *AddUserAction) CheckParam(input AddUserInput) error {
 		return getParamEmptyError(action.Language, "guid")
 	}
 
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 
 	return nil
 }
@@ -381,9 +381,9 @@ func (action *ChangeUserPasswordAction) CheckParam(input ChangeUserPasswordInput
 		return getParamEmptyError(action.Language, "guid")
 	}
 
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 
 	return nil
 }
