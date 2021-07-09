@@ -83,9 +83,9 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.UserName == "" {
 		return getParamEmptyError(action.Language, "userName")
 	}

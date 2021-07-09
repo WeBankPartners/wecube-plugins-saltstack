@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -102,11 +103,11 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 	if input.EndPoint == "" {
 		return getParamEmptyError(action.Language, "endpoint")
 	}
-	if input.VariableList != "" {
-		if !strings.Contains(input.VariableList, "=") {
-			return getParamValidateError(action.Language, "variableList", "can not find '=' in the content,variable should be k=v")
-		}
-	}
+	//if input.VariableList != "" {
+	//	if !strings.Contains(input.VariableList, "=") {
+	//		return getParamValidateError(action.Language, "variableList", "can not find '=' in the content,variable should be k=v")
+	//	}
+	//}
 
 	return nil
 }
@@ -320,6 +321,10 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 }
 
 func GetInputVariableMap(variable string, seed string, specialList []string) (map[string]string, error) {
+	if !strings.Contains(variable, VARIABLE_KEY_SEPERATOR) {
+		resultMap,err := GetInputVariableMapNew(variable, seed, specialList)
+		return resultMap,err
+	}
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
 	if len(kvs) != 2 {
@@ -348,6 +353,37 @@ func GetInputVariableMap(variable string, seed string, specialList []string) (ma
 		inputMap[key] = value
 	}
 	return inputMap, nil
+}
+
+type inputVariableObj struct {
+	Key  string  `json:"key"`
+	Value string `json:"value"`
+}
+
+func GetInputVariableMapNew(variable string, seed string, specialList []string) (map[string]string, error) {
+	log.Logger.Info("New json variable map handle", log.String("variableList", variable))
+	var kvList []*inputVariableObj
+	err := json.Unmarshal([]byte(variable), &kvList)
+	if err != nil {
+		return nil,fmt.Errorf("variableList json unmarshal fail,%s ", err.Error())
+	}
+	resultMap := make(map[string]string)
+	for _,kvObj := range kvList {
+		key, value, tmpErr := getRawKeyValue(kvObj.Key, kvObj.Value, seed)
+		if tmpErr != nil {
+			err = fmt.Errorf("Try to get decode value fail,%s ", tmpErr.Error())
+			break
+		}
+		for _,v := range specialList {
+			if strings.HasPrefix(key, v) {
+				key = key[len(v):]
+				break
+			}
+		}
+		key = strings.ToLower(key)
+		resultMap[key] = value
+	}
+	return resultMap,err
 }
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {

@@ -81,9 +81,9 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseCheckParam(input *AddMysql
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.UserName == "" {
 		return getParamEmptyError(action.Language, "userName")
 	}
@@ -254,9 +254,9 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input Del
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
 	}
-	if input.Seed == "" {
-		return getParamEmptyError(action.Language, "seed")
-	}
+	//if input.Seed == "" {
+	//	return getParamEmptyError(action.Language, "seed")
+	//}
 	if input.UserName == "" {
 		return getParamEmptyError(action.Language, "userName")
 	}
