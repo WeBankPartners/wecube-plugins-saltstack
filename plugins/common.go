@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"crypto/x509"
-	"crypto/rsa"
-	crand "crypto/rand"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -51,6 +51,7 @@ var (
 	DefaultS3TmpAddress       string
 	SubSystemCode             string
 	SubSystemKey              string
+	SaltResetEnv              bool
 )
 
 var CIPHER_MAP = map[string]string{
@@ -256,11 +257,11 @@ func createRandomPassword() string {
 
 func AesEnPassword(guid, seed, password, cipher string) (string, error) {
 	if seed == "" {
-		return password,nil
+		return password, nil
 	}
 	for _, _cipher := range CIPHER_MAP {
 		if strings.HasPrefix(password, _cipher) {
-			return password,nil
+			return password, nil
 		}
 	}
 	if cipher == "" {
@@ -420,14 +421,14 @@ func InitEnvParam() {
 	if tmpEncryptReplace != "" {
 		DefaultEncryptReplaceList = strings.Split(tmpEncryptReplace, ",")
 		log.Logger.Info("Variable encrypt", log.StringList("special", DefaultEncryptReplaceList))
-	}else{
+	} else {
 		log.Logger.Warn("Variable encrypt replace without any param")
 	}
 	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
 	if tmpFileReplace != "" {
 		DefaultFileReplaceList = strings.Split(tmpFileReplace, ",")
 		log.Logger.Info("Variable file", log.StringList("special", DefaultFileReplaceList))
-	}else{
+	} else {
 		log.Logger.Warn("Variable file replace without any param")
 	}
 	tmpHostIp := os.Getenv("minion_master_ip")
@@ -454,7 +455,7 @@ func InitEnvParam() {
 		}
 		DefaultS3TmpAddress = tmpS3Address
 		log.Logger.Info("Default s3 address", log.String("address", DefaultS3TmpAddress))
-	}else{
+	} else {
 		log.Logger.Warn("Default s3 address not found")
 	}
 	SubSystemCode = os.Getenv("SUB_SYSTEM_CODE")
@@ -464,6 +465,12 @@ func InitEnvParam() {
 	}
 	if SubSystemKey == "" {
 		log.Logger.Warn("Env SUB_SYSTEM_KEY is empty")
+	}
+	saltResetEnvString := strings.ToLower(os.Getenv("SALTSTACK_RESET_ENV"))
+	if saltResetEnvString == "y" || saltResetEnvString == "yes" || saltResetEnvString == "true" || saltResetEnvString == "" {
+		SaltResetEnv = true
+	} else {
+		SaltResetEnv = false
 	}
 }
 
@@ -486,25 +493,25 @@ func DecryptRsa(inputString string) string {
 	}
 	inputString = inputString[4:]
 	result := inputString
-	inputBytes,err := base64.StdEncoding.DecodeString(inputString)
+	inputBytes, err := base64.StdEncoding.DecodeString(inputString)
 	if err != nil {
 		log.Logger.Error("Input string format to base64 fail", log.Error(err))
 		return inputString
 	}
 	pemPath := "/data/certs/rsa_key"
-	fileContent,err := ioutil.ReadFile(pemPath)
+	fileContent, err := ioutil.ReadFile(pemPath)
 	if err != nil {
 		log.Logger.Error("Read file fail", log.String("path", pemPath), log.Error(err))
 		return result
 	}
-	block,_ := pem.Decode(fileContent)
-	privateKeyInterface,err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	block, _ := pem.Decode(fileContent)
+	privateKeyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		log.Logger.Error("Parse private key fail", log.Error(err))
 		return result
 	}
 	privateKey := privateKeyInterface.(*rsa.PrivateKey)
-	decodeBytes,err := rsa.DecryptPKCS1v15(crand.Reader, privateKey, inputBytes)
+	decodeBytes, err := rsa.DecryptPKCS1v15(crand.Reader, privateKey, inputBytes)
 	if err != nil {
 		log.Logger.Error("Decode fail", log.Error(err))
 		return result
@@ -513,7 +520,7 @@ func DecryptRsa(inputString string) string {
 	return result
 }
 
-func RSAEncryptByPrivate(orgidata []byte,privatekey string) ([]byte, error) {
+func RSAEncryptByPrivate(orgidata []byte, privatekey string) ([]byte, error) {
 	decodeBytes, err := base64.StdEncoding.DecodeString(privatekey)
 	if err != nil {
 		return nil, fmt.Errorf("RSASign private key is bad")
