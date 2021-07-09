@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"os/exec"
-	"time"
-	"strings"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"os/exec"
+	"strings"
+	"time"
 )
 
 const (
@@ -91,7 +91,7 @@ func (action *RunScriptAction) ReadParam(param interface{}) (interface{}, error)
 
 func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
 	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 && input.EndPointType != END_POINT_TYPE_USER_PARAM {
-		return getParamValidateError(action.Language, "endpointType", fmt.Sprintf("must in (%s,%s,%s)",END_POINT_TYPE_LOCAL,END_POINT_TYPE_S3,END_POINT_TYPE_USER_PARAM))
+		return getParamValidateError(action.Language, "endpointType", fmt.Sprintf("must in (%s,%s,%s)", END_POINT_TYPE_LOCAL, END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM))
 	}
 	if input.EndPoint == "" && input.EndPointType == END_POINT_TYPE_S3 {
 		return getParamValidateError(action.Language, "endpoint", "endpoint cat not empty when endpointType="+END_POINT_TYPE_S3)
@@ -152,6 +152,9 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 	if len(runAs) > 0 {
 		request.Args = append(request.Args, "runas="+runAs)
 	}
+	if !SaltResetEnv {
+		request.Args = append(request.Args, "reset_system_locale=False")
+	}
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
@@ -169,7 +172,7 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	request.Function = "cmd.run"
 	request.FullReturn = true
 
-	log.Logger.Info("Exec local script", log.String("fileName",fileName), log.String("target",target), log.String("runAs",runAs), log.String("args", execArg))
+	log.Logger.Info("Exec local script", log.String("fileName", fileName), log.String("target", target), log.String("runAs", runAs), log.String("args", execArg))
 
 	fileScriptPath := fileName
 	scriptArgs := ""
@@ -198,6 +201,9 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	if len(runAs) > 0 {
 		request.Args = append(request.Args, "runas="+runAs)
 	}
+	if !SaltResetEnv {
+		request.Args = append(request.Args, "reset_system_locale=False")
+	}
 	log.Logger.Info("Exec script", log.String("target", target), log.StringList("args", request.Args))
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
@@ -208,20 +214,20 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 	return result, nil
 }
 
-func checkRunUserIsExists(target,userGroup,language string) (exist bool,output string) {
+func checkRunUserIsExists(target, userGroup, language string) (exist bool, output string) {
 	if userGroup == "" {
-		return false,"user is empty"
+		return false, "user is empty"
 	}
 	exist = false
-	var user,group string
+	var user, group string
 	if strings.Contains(userGroup, ":") {
 		tmpList := strings.Split(userGroup, ":")
 		user = tmpList[0]
 		group = tmpList[1]
-	}else{
+	} else {
 		user = userGroup
 	}
-	log.Logger.Info("Check user group if exist", log.String("user", user), log.String("group",group))
+	log.Logger.Info("Check user group if exist", log.String("user", user), log.String("group", group))
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
@@ -233,12 +239,12 @@ func checkRunUserIsExists(target,userGroup,language string) (exist bool,output s
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
 		log.Logger.Error("Check user exists,call salt api error", log.Error(err))
-		return false,fmt.Sprintf("check user exists,call salt api error,%s", err.Error())
+		return false, fmt.Sprintf("check user exists,call salt api error,%s", err.Error())
 	}
 	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
 	if err != nil {
 		log.Logger.Error("check user exists,parse salt api result error", log.Error(err))
-		return false,fmt.Sprintf("check user exists,parse salt api result error,%s", err.Error())
+		return false, fmt.Sprintf("check user exists,parse salt api result error,%s", err.Error())
 	}
 	for _, v := range saltApiResult.Results[0] {
 		if strings.Contains(v.RetDetail, user) {
@@ -246,7 +252,7 @@ func checkRunUserIsExists(target,userGroup,language string) (exist bool,output s
 		}
 	}
 	if !exist {
-		return false,fmt.Sprintf("user %s not exist", user)
+		return false, fmt.Sprintf("user %s not exist", user)
 	}
 	if group != "" {
 		exist = false
@@ -261,12 +267,12 @@ func checkRunUserIsExists(target,userGroup,language string) (exist bool,output s
 		result, err := CallSaltApi("https://127.0.0.1:8080", groupRequest, language)
 		if err != nil {
 			log.Logger.Error("check group exists,call salt api error", log.Error(err))
-			return false,fmt.Sprintf("check group exists,call salt api error,%s", err.Error())
+			return false, fmt.Sprintf("check group exists,call salt api error,%s", err.Error())
 		}
 		saltApiResult, err := parseSaltApiCmdRunCallResult(result)
 		if err != nil {
 			log.Logger.Error("check group exists,parse salt api result error", log.Error(err))
-			return false,fmt.Sprintf("check group exists,parse salt api result error,%s", err.Error())
+			return false, fmt.Sprintf("check group exists,parse salt api result error,%s", err.Error())
 		}
 		for _, v := range saltApiResult.Results[0] {
 			if strings.Contains(v.RetDetail, group) {
@@ -274,10 +280,10 @@ func checkRunUserIsExists(target,userGroup,language string) (exist bool,output s
 			}
 		}
 		if !exist {
-			return false,fmt.Sprintf("group %s not exist", group)
+			return false, fmt.Sprintf("group %s not exist", group)
 		}
 	}
-	return true,""
+	return true, ""
 }
 
 func downloadFile(url string) ([]byte, error) {
@@ -299,7 +305,7 @@ func downloadFile(url string) ([]byte, error) {
 
 func downLoadScript(input RunScriptInput, language string) ([]string, error) {
 	var result []string
-	for _,v := range splitWithCustomFlag(input.EndPoint) {
+	for _, v := range splitWithCustomFlag(input.EndPoint) {
 		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, language)
 		if err != nil {
 			return result, err
@@ -377,7 +383,7 @@ func writeScriptContentToTempFile(content string) (fileName string, err error) {
 	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
 	if err != nil {
 		err = fmt.Errorf("New tmp file error,%s ", err.Error())
-		return fileName,err
+		return fileName, err
 	}
 
 	defer func() {
@@ -388,16 +394,16 @@ func writeScriptContentToTempFile(content string) (fileName string, err error) {
 
 	if _, err = tmpFile.Write([]byte(content)); err != nil {
 		err = fmt.Errorf("Write script content to tmp file error,%s ", err.Error())
-		return fileName,err
+		return fileName, err
 	}
 
 	if err = tmpFile.Close(); err != nil {
 		err = fmt.Errorf("Tmp file close fail,%s ", err.Error())
-		return fileName,err
+		return fileName, err
 	}
 
 	fileName = tmpFile.Name()
-	return fileName,err
+	return fileName, err
 }
 
 func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
@@ -424,10 +430,10 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		if strings.Contains(input.RunAs, ":") {
 			input.RunAs = strings.Split(input.RunAs, ":")[0]
 		}
-		userExist,errOut := checkRunUserIsExists(input.Target, input.RunAs, action.Language)
+		userExist, errOut := checkRunUserIsExists(input.Target, input.RunAs, action.Language)
 		if !userExist {
 			err = fmt.Errorf(errOut)
-			return output,err
+			return output, err
 		}
 	}
 
@@ -450,7 +456,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	}
 
 	var stdOut string
-	for i,v := range scriptPathList {
+	for i, v := range scriptPathList {
 		stdOut, err = runScript(v, *input, action.Language)
 		stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
 		if i < len(scriptPathList)-1 {
@@ -482,7 +488,7 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
-type SSHRunScriptAction struct { Language string }
+type SSHRunScriptAction struct{ Language string }
 
 func (action *SSHRunScriptAction) SetAcceptLanguage(language string) {
 	action.Language = language
@@ -499,7 +505,7 @@ func (action *SSHRunScriptAction) ReadParam(param interface{}) (interface{}, err
 
 func (action *SSHRunScriptAction) CheckParam(input RunScriptInput) error {
 	if input.EndPointType != END_POINT_TYPE_LOCAL && input.EndPointType != END_POINT_TYPE_S3 && input.EndPointType != END_POINT_TYPE_USER_PARAM {
-		return getParamValidateError(action.Language, "endpointType", fmt.Sprintf("must in (%s,%s,%s)",END_POINT_TYPE_LOCAL,END_POINT_TYPE_S3,END_POINT_TYPE_USER_PARAM))
+		return getParamValidateError(action.Language, "endpointType", fmt.Sprintf("must in (%s,%s,%s)", END_POINT_TYPE_LOCAL, END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM))
 	}
 	if input.EndPoint == "" && input.EndPointType == END_POINT_TYPE_S3 {
 		return getParamValidateError(action.Language, "endpoint", "endpoint cat not empty when endpointType="+END_POINT_TYPE_S3)
@@ -532,7 +538,7 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 	if strings.Contains(input.RunAs, ":") {
 		input.RunAs = strings.Split(input.RunAs, ":")[0]
 	}
-	remoteParam := ExecRemoteParam{User:input.RunAs,Password:input.Password,Host:input.Target,Timeout:1800}
+	remoteParam := ExecRemoteParam{User: input.RunAs, Password: input.Password, Host: input.Target, Timeout: 1800}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
 		localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
@@ -553,17 +559,17 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 		execRemoteWithTimeout(&remoteParam)
 		err = remoteParam.Err
 		output = remoteParam.Output
-		log.Logger.Debug("SSH run script", log.String("type",input.EndPointType), log.String("command", remoteParam.Command), log.String("target",input.Target), log.String("output", output), log.Error(err))
+		log.Logger.Debug("SSH run script", log.String("type", input.EndPointType), log.String("command", remoteParam.Command), log.String("target", input.Target), log.String("output", output), log.Error(err))
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, output, err)
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
 		newScriptName := fmt.Sprintf("ssh-script-%s-%d", strings.Replace(input.Target, ".", "-", -1), time.Now().Unix())
-		tmpOut,err := exec.Command("/bin/cp", "-f", scriptPath, fmt.Sprintf("/var/www/html/tmp/%s", newScriptName)).Output()
+		tmpOut, err := exec.Command("/bin/cp", "-f", scriptPath, fmt.Sprintf("/var/www/html/tmp/%s", newScriptName)).Output()
 		if err != nil {
 			return fmt.Sprintf("exec ssh script,cp %s %s meet error output=%s,err=%s", scriptPath, newScriptName, string(tmpOut), err.Error()), err
 		}
-		tmpOut,err = exec.Command("bash", "-c", fmt.Sprintf("chmod 666 /var/www/html/tmp/%s", newScriptName)).Output()
+		tmpOut, err = exec.Command("bash", "-c", fmt.Sprintf("chmod 666 /var/www/html/tmp/%s", newScriptName)).Output()
 		if err != nil {
 			return fmt.Sprintf("exec ssh script,chmod to %s meet output=%s,err=%s", newScriptName, string(tmpOut), err.Error()), err
 		}
@@ -573,7 +579,7 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 		os.Remove(scriptPath)
 		os.Remove(fmt.Sprintf("/var/www/html/tmp/%s", newScriptName))
 		output = remoteParam.Output
-		log.Logger.Debug("SSH run script", log.String("type",input.EndPointType), log.String("script", newScriptName), log.String("target",input.Target), log.String("output", output), log.Error(err))
+		log.Logger.Debug("SSH run script", log.String("type", input.EndPointType), log.String("script", newScriptName), log.String("target", input.Target), log.String("output", output), log.Error(err))
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, output, err)
 		}
@@ -623,14 +629,14 @@ func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunSc
 		scriptPathList = []string{scriptPath}
 	}
 
-	input.Password,err = AesDePassword(input.Guid, input.Seed, input.Password)
+	input.Password, err = AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
-		return output,err
+		return output, err
 	}
 
 	var stdOut string
-	for i,v := range scriptPathList {
+	for i, v := range scriptPathList {
 		stdOut, err = sshRunScript(v, *input, action.Language)
 		stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
 		output.Detail += stdOut
