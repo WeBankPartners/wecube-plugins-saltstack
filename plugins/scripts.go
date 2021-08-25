@@ -55,6 +55,7 @@ type RunScriptInput struct {
 	Guid          string `json:"guid,omitempty"`
 	Password      string `json:"password,omitempty"`
 	Seed          string `json:"seed,omitempty"`
+	WorkDir       string `json:"workDir,omitempty"`
 	// AccessKey string `json:"accessKey,omitempty"`
 	// SecretKey string `json:"secretKey,omitempty"`
 }
@@ -332,6 +333,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 	}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
+		scriptPath = input.WorkDir + scriptPath
 		result, err = executeLocalScript(scriptPath, input.Target, input.RunAs, input.ExecArg, language)
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, result, err)
