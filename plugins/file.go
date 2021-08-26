@@ -52,7 +52,7 @@ type FileCopyOutput struct {
 	Detail string `json:"detail,omitempty"`
 }
 
-type FileCopyAction struct { Language string }
+type FileCopyAction struct{ Language string }
 
 func (action *FileCopyAction) ReadParam(param interface{}) (interface{}, error) {
 	var inputs FileCopyInputs
@@ -106,8 +106,8 @@ func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
 	}
 
-	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
-	cmdRun := "chown -R " + input.FileOwner + "  " + directory
+	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	cmdRun := "chown -R " + input.FileOwner + "  " + input.DestinationPath
 	request.Args = append(request.Args, cmdRun)
 
 	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
@@ -140,10 +140,10 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 	}
 
 	if input.FileOwner != "" {
-		userExist,errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language)
+		userExist, errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language)
 		if !userExist {
 			err = fmt.Errorf(errOut)
-			return output,err
+			return output, err
 		}
 	}
 
