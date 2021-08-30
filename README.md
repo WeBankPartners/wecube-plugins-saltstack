@@ -64,8 +64,13 @@ make image
 
 ![saltstack_image](docs/compile/images/saltstack_image.png)
 
-4. Run plugin container. Please replace variable `{$HOST_IP}` with your host ip, replace variable `{$IMAGE_TAG}` with your image tag, and execute the following command.
-
+4. Run plugin container. Please replace variable `{$HOST_IP}` with your host ip, replace variable `{$IMAGE_TAG}` with your image tag, and execute the following command.  
+| port | comment                          |
+| ---- | ----------------------------- |
+| 9099 | salt-minion install port     |
+| 4505 | salt-master pub port       |
+| 4506 | salt-master ret port |
+| 4507 | salt plugin instances connect port     |
 ```shell script
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
 ```
