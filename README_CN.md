@@ -45,7 +45,13 @@ SaltStack插件依赖salt-master,salt-api和httpd等服务，基于这些服务�
 
 执行以下命令运行SaltStack插件容器,其中变量`{$HOST_IP}`需要替换为容器所在主机ip，该ip在执行主机安装salt-minion时使用，变量`{$TAG_NUM}`对应代码最后一次提交的commit号。
 
-插件运行需要占用主机9090、4505、4606和8082四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。
+插件运行需要占用主机9099、4505、4606和4507四个端口，请使用netstat或者ss命令确认这4个端口未被其他程序占用。  
+| 端口 | 说明                          |
+| ---- | ----------------------------- |
+| 9099 | salt-minion安装请求的端口     |
+| 4505 | salt-master任务订阅端口       |
+| 4506 | salt-master认证、结果收集端口 |
+| 4507 | 双实例salt插件通信端口        |
 
 ```
 docker run -d  --restart=unless-stopped -v /etc/localtime:/etc/localtime -e minion_master_ip={$HOST_IP} -e minion_port=22 -p 9099:80 -p 9090:8080 -p 4505:4505 -p 4506:4506 -p 8082:8082 --privileged=true  -v /home/app/data/minions_pki:/etc/salt/pki/master/minions -v /home/app/wecube-plugins-saltstack/logs:/home/app/wecube-plugins-saltstack/logs -v /home/app/data:/home/app/data wecube-plugins-saltstack:{$TAG_NUM}
