@@ -106,8 +106,8 @@ func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
 	}
 
-	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
-	cmdRun := "chown -R " + input.FileOwner + "  " + input.DestinationPath
+	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	cmdRun := "chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
 	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
