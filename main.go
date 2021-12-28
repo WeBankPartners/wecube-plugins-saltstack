@@ -1,21 +1,21 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
-	"net/http"
-	"os"
-	"strings"
 	"flag"
 	"fmt"
-	"time"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
-	"io/ioutil"
-	"encoding/base64"
-	"bytes"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
 	"github.com/dgrijalva/jwt-go"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func init() {
@@ -33,7 +33,7 @@ func main() {
 
 	if err := http.ListenAndServe(":"+models.Config.Http.Port, nil); err != nil {
 		log.Logger.Fatal("Start listening error", log.Error(err))
-	}else{
+	} else {
 		log.Logger.Info(fmt.Sprintf("Listening %s ...", models.Config.Http.Port))
 	}
 }
@@ -48,7 +48,7 @@ func initRouter() {
 	http.Handle("/", fs)
 }
 
-func initConfig()  {
+func initConfig() {
 	cfgFile := flag.String("c", "conf/default.json", "config file")
 	flag.Parse()
 	err := models.InitConfig(*cfgFile)
@@ -70,9 +70,9 @@ func routeDispatcher(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Logger.Info("Request end ----------------<<", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]), log.Float64("cost_second", time.Now().Sub(start).Seconds()))
 		write(w, pluginResponse)
-	}else{
+	} else {
 		log.Logger.Info("Request token illegal ----------------!!", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]))
-		pluginResponse := plugins.PluginResponse{ResultCode:"1",ResultMsg:"Token illegal"}
+		pluginResponse := plugins.PluginResponse{ResultCode: "1", ResultMsg: "Token illegal"}
 		write(w, &pluginResponse)
 	}
 }
@@ -97,54 +97,55 @@ func parsePluginRequest(r *http.Request) *plugins.PluginRequest {
 }
 
 func authCore(coreToken string) bool {
-	tokenObj,err := decodeCoreToken(coreToken, models.CoreJwtKey)
+	tokenObj, err := decodeCoreToken(coreToken, models.CoreJwtKey)
 	if err == nil {
 		isSystemCall := false
-		for _,v := range tokenObj.Roles {
+		for _, v := range tokenObj.Roles {
 			if v == plugins.SystemRole {
-				if tokenObj.User == plugins.PlatformUser {
-					isSystemCall = true
-				}
+				isSystemCall = true
 				break
 			}
+		}
+		if !isSystemCall {
+			log.Logger.Warn("token illegal", log.JsonObj("token", tokenObj))
 		}
 		return isSystemCall
 	}
 	return false
 }
 
-func decodeCoreToken(token,key string) (result models.CoreJwtToken,err error) {
+func decodeCoreToken(token, key string) (result models.CoreJwtToken, err error) {
 	if strings.HasPrefix(token, "Bearer") {
 		token = token[7:]
 	}
 	if key == "" || strings.HasPrefix(key, "{{") {
 		key = "Platform+Auth+Server+Secret"
 	}
-	keyBytes,err := ioutil.ReadAll(base64.NewDecoder(base64.RawStdEncoding, bytes.NewBufferString(key)))
+	keyBytes, err := ioutil.ReadAll(base64.NewDecoder(base64.RawStdEncoding, bytes.NewBufferString(key)))
 	if err != nil {
 		log.Logger.Error("Decode core token fail,base64 decode error", log.Error(err))
-		return result,err
+		return result, err
 	}
-	pToken,err := jwt.Parse(token, func(*jwt.Token) (interface{}, error) {
+	pToken, err := jwt.Parse(token, func(*jwt.Token) (interface{}, error) {
 		return keyBytes, nil
 	})
 	if err != nil {
 		log.Logger.Error("Decode core token fail,jwt parse error", log.Error(err))
-		return result,err
+		return result, err
 	}
-	claimMap,ok := pToken.Claims.(jwt.MapClaims)
+	claimMap, ok := pToken.Claims.(jwt.MapClaims)
 	if !ok {
 		log.Logger.Error("Decode core token fail,claims to map error", log.Error(err))
-		return result,err
+		return result, err
 	}
 	result.User = fmt.Sprintf("%s", claimMap["sub"])
-	result.Expire,err = strconv.ParseInt(fmt.Sprintf("%.0f", claimMap["exp"]), 10, 64)
+	result.Expire, err = strconv.ParseInt(fmt.Sprintf("%.0f", claimMap["exp"]), 10, 64)
 	if err != nil {
 		log.Logger.Error("Decode core token fail,parse expire to int64 error", log.Error(err))
-		return result,err
+		return result, err
 	}
 	roleListString := fmt.Sprintf("%s", claimMap["authority"])
-	roleListString = roleListString[1:len(roleListString)-1]
+	roleListString = roleListString[1 : len(roleListString)-1]
 	result.Roles = strings.Split(roleListString, ",")
-	return result,nil
+	return result, nil
 }
