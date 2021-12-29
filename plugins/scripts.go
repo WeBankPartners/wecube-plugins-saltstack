@@ -240,12 +240,12 @@ func checkRunUserIsExists(target, userGroup, language string) (exist bool, outpu
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
 		log.Logger.Error("Check user exists,call salt api error", log.Error(err))
-		return false, fmt.Sprintf("check user exists,call salt api error,%s", err.Error())
+		return false, fmt.Sprintf("call salt api error,%s", err.Error())
 	}
 	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
 	if err != nil {
 		log.Logger.Error("check user exists,parse salt api result error", log.Error(err))
-		return false, fmt.Sprintf("check user exists,parse salt api result error,%s", err.Error())
+		return false, fmt.Sprintf("parse salt api result error,%s", err.Error())
 	}
 	for _, v := range saltApiResult.Results[0] {
 		if strings.Contains(v.RetDetail, user) {
