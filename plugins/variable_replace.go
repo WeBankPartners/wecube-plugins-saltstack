@@ -115,7 +115,7 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 func getNewS3EndpointName(endpoint string, newPackageName string) string {
 	index := strings.LastIndexAny(endpoint, "/")
 	if DefaultS3TmpAddress != "" {
-		log.Logger.Info("Upload to tmp s3 address", log.String("url", DefaultS3TmpAddress + "/" + newPackageName))
+		log.Logger.Info("Upload to tmp s3 address", log.String("url", DefaultS3TmpAddress+"/"+newPackageName))
 		return DefaultS3TmpAddress + "/" + newPackageName
 	}
 	return endpoint[0:index+1] + newPackageName
@@ -123,7 +123,7 @@ func getNewS3EndpointName(endpoint string, newPackageName string) string {
 
 func getPackageNameWithoutSuffix(packageName string) string {
 	validExts := []string{".zip", ".tgz", ".tar.gz"}
-	for _,v := range validExts {
+	for _, v := range validExts {
 		if strings.HasSuffix(packageName, v) {
 			packageName = packageName[:len(packageName)-len(v)]
 			return packageName
@@ -152,7 +152,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 
 	if input.FilePath == "" || input.VariableList == "" {
 		output.NewS3PkgPath = input.EndPoint
-		return output,err
+		return output, err
 	}
 
 	suffix, err := getCompressFileSuffix(input.EndPoint)
@@ -203,7 +203,6 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 				confFilePath = decompressDirName + "/" + filePath
 			}
 
-
 			if err = ReplaceFileVar(confFilePath, input, decompressDirName); err != nil {
 				os.RemoveAll(decompressDirName)
 				return output, err
@@ -214,7 +213,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	//compress file
 	//nowTime := time.Now().Format("20060102150405.999999999")
 	newPackageName := fmt.Sprintf("%s_%s_%s%s", getPackageNameWithoutSuffix(packageName), time.Now().Format("20060102150405"), workRandGuid, suffix)
-	err,newPackageName = compressDir(decompressDirName, suffix, newPackageName)
+	err, newPackageName = compressDir(decompressDirName, suffix, newPackageName)
 	if err != nil {
 		os.RemoveAll(decompressDirName)
 		return output, fmt.Errorf("After replace variable,try to compress %s fail,%s ", newPackageName, err.Error())
@@ -293,7 +292,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	//if err != nil {
 	//	return err
 	//}
-
+	//log.Logger.Debug("replaceFileVar", log.JsonObj("keyMap", keyMap), log.String("filePath", filepath), log.StringList("tmpSpecialReplaceList", tmpSpecialReplaceList), log.StringList("prefix", prefix))
 	err = replaceFileVar(keyMap, filepath, seed, publicKey, privateKey, decompressDirName, tmpSpecialReplaceList, prefix, fileReplacePrefix)
 	if err != nil {
 		return err
@@ -322,8 +321,8 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 
 func GetInputVariableMap(variable string, seed string, specialList []string) (map[string]string, error) {
 	if !strings.Contains(variable, VARIABLE_KEY_SEPERATOR) {
-		resultMap,err := GetInputVariableMapNew(variable, seed, specialList)
-		return resultMap,err
+		resultMap, err := GetInputVariableMapNew(variable, seed, specialList)
+		return resultMap, err
 	}
 	inputMap := make(map[string]string)
 	kvs := strings.Split(variable, VARIABLE_KEY_SEPERATOR)
@@ -343,7 +342,7 @@ func GetInputVariableMap(variable string, seed string, specialList []string) (ma
 		if err != nil {
 			return inputMap, err
 		}
-		for _,v := range specialList {
+		for _, v := range specialList {
 			if strings.HasPrefix(key, v) {
 				key = key[len(v):]
 				break
@@ -356,7 +355,7 @@ func GetInputVariableMap(variable string, seed string, specialList []string) (ma
 }
 
 type inputVariableObj struct {
-	Key  string  `json:"key"`
+	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
@@ -365,16 +364,16 @@ func GetInputVariableMapNew(variable string, seed string, specialList []string) 
 	var kvList []*inputVariableObj
 	err := json.Unmarshal([]byte(variable), &kvList)
 	if err != nil {
-		return nil,fmt.Errorf("variableList json unmarshal fail,%s ", err.Error())
+		return nil, fmt.Errorf("variableList json unmarshal fail,%s ", err.Error())
 	}
 	resultMap := make(map[string]string)
-	for _,kvObj := range kvList {
+	for _, kvObj := range kvList {
 		key, value, tmpErr := getRawKeyValue(kvObj.Key, kvObj.Value, seed)
 		if tmpErr != nil {
 			err = fmt.Errorf("Try to get decode value fail,%s ", tmpErr.Error())
 			break
 		}
-		for _,v := range specialList {
+		for _, v := range specialList {
 			if strings.HasPrefix(key, v) {
 				key = key[len(v):]
 				break
@@ -383,7 +382,7 @@ func GetInputVariableMapNew(variable string, seed string, specialList []string) 
 		key = strings.ToLower(key)
 		resultMap[key] = value
 	}
-	return resultMap,err
+	return resultMap, err
 }
 
 func CheckVariableIsAllReady(input map[string]string, variablelist []string) (err error) {
@@ -401,7 +400,7 @@ func PathExists(path string) (bool, error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			return false,fmt.Errorf("path:%s is dir", path)
+			return false, fmt.Errorf("path:%s is dir", path)
 		}
 		return true, nil
 	}
@@ -413,7 +412,7 @@ func PathExists(path string) (bool, error) {
 
 func isKeyNeedEncrypt(key string, prefix []string) bool {
 	isNeed := false
-	for _,v := range prefix {
+	for _, v := range prefix {
 		if v == "" {
 			continue
 		}
@@ -499,14 +498,14 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	publicKey = replaceLF(publicKey)
 	privateKey = replaceLF(privateKey)
 
-	encryptValue,err := encrpytSenstiveData(value, publicKey, privateKey)
+	encryptValue, err := encrpytSenstiveData(value, publicKey, privateKey)
 	if err != nil {
 		err = fmt.Errorf("Try to encrypt key %s fail,%s ", key, err.Error())
 	}
-	return encryptValue,err
+	return encryptValue, err
 }
 
-func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, decompressDirName string,specialReplaceList, prefix, fileReplacePrefix []string) error {
+func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, decompressDirName string, specialReplaceList, prefix, fileReplacePrefix []string) error {
 	bf, err := os.Open(filepath)
 	if err != nil {
 		return fmt.Errorf("Open file %s fail,%s ", filepath, err.Error())
@@ -552,7 +551,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 					continue
 				}
 				//key = key[0 : len(key)-1]
-				key = key[0: strings.Index(key, "]")]
+				key = key[0:strings.Index(key, "]")]
 
 				for _, specialFlag := range specialReplaceList {
 					if specialFlag == "" {
@@ -568,7 +567,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 							continue
 						}
 						toLowerKey := strings.ToLower(s[1])
-						if _,b := keyMap[toLowerKey]; !b {
+						if _, b := keyMap[toLowerKey]; !b {
 							continue
 						}
 						oldStr := "[" + key + "]"
@@ -577,7 +576,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 							return err
 						}
 						isFileReplaceFlag := false
-						for _,frPrefix := range fileReplacePrefix {
+						for _, frPrefix := range fileReplacePrefix {
 							if specialFlag == frPrefix {
 								isFileReplaceFlag = true
 								break
@@ -585,7 +584,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 						}
 						if isFileReplaceFlag {
 							fileReplaceMap[key[len(specialFlag):]] = variableValue
-						}else {
+						} else {
 							newLine = strings.Replace(newLine, oldStr, variableValue, -1)
 						}
 					}
@@ -603,7 +602,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	}
 	if len(fileReplaceMap) > 0 {
 		var tmpOut []byte
-		for k,v := range fileReplaceMap {
+		for k, v := range fileReplaceMap {
 			if k == "" || v == "" {
 				continue
 			}
@@ -617,7 +616,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				moveCmd = fmt.Sprintf("mv -f %s %s%s", sourceFile, decompressDirName, k)
 			}
 			log.Logger.Debug(fmt.Sprintf("File replace ,source: %s -> dist: %s command: %s \n", sourceFile, k, moveCmd))
-			tmpOut,err = exec.Command("/bin/bash", "-c", moveCmd).Output()
+			tmpOut, err = exec.Command("/bin/bash", "-c", moveCmd).Output()
 			if err != nil {
 				log.Logger.Error("File replace fail", log.String("command", moveCmd), log.String("output", string(tmpOut)), log.Error(err))
 				return fmt.Errorf("Try to replace file fail,output:%s,error:%s ", string(tmpOut), err.Error())
@@ -628,10 +627,10 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 	return nil
 }
 
-func compressDir(decompressDirName string, suffix string, newPackageName string) (error,string) {
+func compressDir(decompressDirName string, suffix string, newPackageName string) (error, string) {
 	sh := ""
 	if suffix != ".zip" && suffix != ".tgz" && suffix != ".tar.gz" {
-		return fmt.Errorf("%s is invalid suffix", suffix),newPackageName
+		return fmt.Errorf("%s is invalid suffix", suffix), newPackageName
 	}
 
 	if suffix == ".zip" {
@@ -646,20 +645,20 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Logger.Error("Can not obtain stdout pipe", log.String("command", sh), log.Error(err))
-		return err,newPackageName
+		return err, newPackageName
 	}
 	if err := cmd.Start(); err != nil {
 		log.Logger.Error("Command start error", log.Error(err))
-		return err,newPackageName
+		return err, newPackageName
 	}
 	_, err = LogReadLine(cmd, stdout)
 	if err != nil {
-		return err,newPackageName
+		return err, newPackageName
 	}
 	newPackagePath := UPLOADS3FILE_DIR + newPackageName
-	md5Value,err := GetFileMD5Value(newPackagePath)
+	md5Value, err := GetFileMD5Value(newPackagePath)
 	if err != nil {
-		return err,newPackageName
+		return err, newPackageName
 	}
 	if strings.Contains(newPackageName, "_") {
 		tmpOldMd5Value := strings.Split(newPackageName, "_")[0]
@@ -668,12 +667,12 @@ func compressDir(decompressDirName string, suffix string, newPackageName string)
 		}
 	}
 	newPackageName = fmt.Sprintf("%s_%s", md5Value, newPackageName)
-	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv %s %s%s", newPackagePath, UPLOADS3FILE_DIR, newPackageName)).Output()
+	output, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv %s %s%s", newPackagePath, UPLOADS3FILE_DIR, newPackageName)).Output()
 	if err != nil {
 		return fmt.Errorf("Try to rename package name fail,output=%s,error=%s ", string(output), err.Error()), newPackageName
 	}
 
-	return nil,newPackageName
+	return nil, newPackageName
 }
 
 func CompressFile(dir string, filePath []string, pkgName string, pkgType string) error {
@@ -735,10 +734,10 @@ func LogReadLine(cmd *exec.Cmd, stdout io.ReadCloser) ([]string, error) {
 }
 
 func GetFileMD5Value(filePath string) (string, error) {
-	output,err := exec.Command("/bin/bash", "-c", fmt.Sprintf("md5sum %s", filePath)).Output()
+	output, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("md5sum %s", filePath)).Output()
 	if err != nil {
 		log.Logger.Error("Get md5 value fail", log.String("file", filePath), log.Error(err))
-		return "",fmt.Errorf("Try to get md5 value fail,output=%s,error=%s ", string(output), err.Error())
+		return "", fmt.Errorf("Try to get md5 value fail,output=%s,error=%s ", string(output), err.Error())
 	}
 	outputSplit := strings.Split(string(output), " ")
 	return outputSplit[0], nil
@@ -746,8 +745,8 @@ func GetFileMD5Value(filePath string) (string, error) {
 
 func checkIsUniqueList(aList []string) bool {
 	tmpMap := make(map[string]int)
-	for _,v := range aList {
-		if _,b:=tmpMap[v];b {
+	for _, v := range aList {
+		if _, b := tmpMap[v]; b {
 			return false
 		}
 		tmpMap[v] = 1
