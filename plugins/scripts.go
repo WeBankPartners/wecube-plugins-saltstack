@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"os/exec"
@@ -71,6 +72,12 @@ type RunScriptOutput struct {
 	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
 	Guid    string `json:"guid,omitempty"`
+}
+
+type RunScriptThreadObj struct {
+	Data  RunScriptOutput
+	Err   error
+	Index int
 }
 
 type RunScriptAction struct {
@@ -478,13 +485,31 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
 	var finalErr error
-	for _, input := range inputs.Inputs {
-		output, err := action.runScript(&input)
-		if err != nil {
-			log.Logger.Error("Run script action", log.Error(err))
-			finalErr = err
+	outputChan := make(chan RunScriptThreadObj, len(inputs.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, inputObj := range inputs.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput RunScriptInput, index int) {
+			output, err := action.runScript(&tmpInput)
+			outputChan <- RunScriptThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+			<-concurrentChan
+		}(inputObj, i)
+		outputs.Outputs = append(outputs.Outputs, RunScriptOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-		outputs.Outputs = append(outputs.Outputs, output)
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("Run script action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 
 	return &outputs, finalErr

@@ -12,9 +12,9 @@ import (
 	"strings"
 	"text/template"
 
-	"sync"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"math/rand"
+	"sync"
 )
 
 func uploadS3File(endPoint, accessKey, secretKey, language string) (string, error) {
@@ -54,12 +54,12 @@ func uploadS3File(endPoint, accessKey, secretKey, language string) (string, erro
 		return path, nil
 	}
 
-	err,s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, "")
+	err, s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, "")
 	if err != nil {
 		return "", getS3UploadError(language, endPoint, fmt.Sprintf("Prepare s3 template file error: %s ", err))
 	}
 
-	sh := "s3cmd -c "+s3ConfigFile+" put "
+	sh := "s3cmd -c " + s3ConfigFile + " put "
 	sh += UPLOADS3FILE_DIR + Info[len(Info)-1] + " s3:/" + minioStoragePath
 	cmd := exec.Command("/bin/sh", "-c", sh)
 
@@ -73,8 +73,8 @@ func uploadS3File(endPoint, accessKey, secretKey, language string) (string, erro
 	return path, nil
 }
 
-func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language string) (string, error) {
-	var tmpName,randString string
+func downloadS3File(endPoint, accessKey, secretKey string, randName bool, language string) (string, error) {
+	var tmpName, randString string
 	if randName {
 		randString = getRandString()
 		tmpName = randString + "_"
@@ -84,23 +84,27 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	if strings.HasPrefix(endPoint, CoreUrl) {
 		tmpFileName := endPoint[strings.LastIndex(endPoint, "/")+1:]
 		path = UPLOADS3FILE_DIR + tmpName + tmpFileName
-		_, err := os.Stat(path)
-		if err == nil {
-			log.Logger.Info("Download file fail,already exists", log.String("path", path))
-			return path, nil
+		_, statErr := os.Stat(path)
+		if statErr == nil {
+			if rmErr := os.RemoveAll(path); rmErr != nil {
+				return path, fmt.Errorf("try to remove exists file %s fail,%s", path, rmErr.Error())
+			}
+			log.Logger.Info("Download s3 file,check exists,do clear", log.String("path", path))
+			//log.Logger.Info("Download file fail,already exists", log.String("path", path))
+			//return path, nil
 		}
 		tmpFileDir := "/tmp"
 		if randString != "" {
-			tmpFileDir = "/tmp/"+randString
+			tmpFileDir = "/tmp/" + randString
 		}
 		curlCommand := fmt.Sprintf("mkdir -p %s && mkdir -p /data/minio && cd %s && curl -H \"Authorization: %s\" -O %s && mv %s/%s %s", tmpFileDir, tmpFileDir, GetCoreToken(), endPoint, tmpFileDir, tmpFileName, path)
-		outputBytes,err := exec.Command("/bin/sh", "-c", curlCommand).Output()
+		outputBytes, err := exec.Command("/bin/sh", "-c", curlCommand).Output()
 		log.Logger.Debug("curl file ", log.String("command", curlCommand))
 		log.Logger.Info("curl file output", log.String("output", string(outputBytes)))
 		if err != nil {
-			return "",fmt.Errorf("Curl file from core fail,output:%s,err:%s ", string(outputBytes), err.Error())
-		}else{
-			return path,nil
+			return "", fmt.Errorf("Curl file from core fail,output:%s,err:%s ", string(outputBytes), err.Error())
+		} else {
+			return path, nil
 		}
 	}
 
@@ -118,13 +122,17 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	ensureDirExist(UPLOADS3FILE_DIR)
 
 	path = UPLOADS3FILE_DIR + tmpName + Info[len(Info)-1]
-	_, err := os.Stat(path)
-	if err == nil {
-		log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
-		return path, nil
+	_, statErr := os.Stat(path)
+	if statErr == nil {
+		if rmErr := os.RemoveAll(path); rmErr != nil {
+			return path, fmt.Errorf("try to remove exists file %s fail,%s", path, rmErr.Error())
+		}
+		log.Logger.Info("replace s3 file value,check exists,do clear", log.String("path", path))
+		//log.Logger.Info("Download s3 file stop,already exists", log.String("path", path))
+		//return path, nil
 	}
 	//config s3,need to change different workspace TODO
-	err,s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, randString)
+	err, s3ConfigFile := fileReplace(endPoint, accessKey, secretKey, randString)
 	if err != nil {
 		return "", getS3DownloadError(language, endPoint, fmt.Sprintf("s3 template config error: %s", err.Error()))
 	}
@@ -133,7 +141,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	for i := 1; i < len(Info); i++ {
 		storagePath += "/" + Info[i]
 	}
-	sh := "s3cmd -c "+s3ConfigFile+" get --force "
+	sh := "s3cmd -c " + s3ConfigFile + " get --force "
 	sh += " s3:/" + storagePath + " " + path
 	log.Logger.Debug("S3 command", log.String("command", sh))
 	cmd := exec.Command("/bin/sh", "-c", sh)
@@ -153,7 +161,7 @@ func downloadS3File(endPoint, accessKey, secretKey string,randName bool,language
 	return path, nil
 }
 
-//MinioConf .
+// MinioConf .
 type MinioConf struct {
 	AccessKey string
 	MinioURL  string
@@ -161,7 +169,7 @@ type MinioConf struct {
 	SecretKey string
 }
 
-func fileReplace(endPoint, accessKey, secretKey, randString string) (err error,configPath string) {
+func fileReplace(endPoint, accessKey, secretKey, randString string) (err error, configPath string) {
 	if randString == "" {
 		randString = getRandString()
 	}
@@ -180,24 +188,24 @@ func fileReplace(endPoint, accessKey, secretKey, randString string) (err error,c
 
 	tmpl, err := template.New("s3conf").Funcs(funcMap).ParseFiles("/conf/s3conf")
 	if err != nil {
-		return fmt.Errorf("parsing error: %s", err),configPath
+		return fmt.Errorf("parsing error: %s", err), configPath
 	}
 
 	f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return fmt.Errorf("open file error: %s", err),configPath
+		return fmt.Errorf("open file error: %s", err), configPath
 	}
 	defer f.Close()
 
 	err = tmpl.Execute(f, test)
 	if err != nil {
-		return fmt.Errorf("execution error: %s", err),configPath
+		return fmt.Errorf("execution error: %s", err), configPath
 	}
-	return nil,configPath
+	return nil, configPath
 }
 
-//GetVariable .
-func GetVariable(filepath string,specialList []string,showPrefix bool) ([]ConfigKeyInfo, error) {
+// GetVariable .
+func GetVariable(filepath string, specialList []string, showPrefix bool) ([]ConfigKeyInfo, error) {
 	_, err := PathExists(filepath)
 	if err != nil {
 		log.Logger.Error("Get variable error", log.Error(err))
@@ -235,7 +243,7 @@ func GetVariable(filepath string,specialList []string,showPrefix bool) ([]Config
 					continue
 				}
 				//param = param[0 : len(param)-1]
-				param = param[0: strings.Index(param, "]")]
+				param = param[0:strings.Index(param, "]")]
 
 				for _, specialFlag := range specialList {
 					if specialFlag == "" {
@@ -273,7 +281,7 @@ var randByteList = []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 func getRandString() (name string) {
 	var randFlag []byte
 	randLock.Lock()
-	for i:=0;i<4;i++ {
+	for i := 0; i < 4; i++ {
 		randFlag = append(randFlag, randByteList[rand.Intn(36)])
 	}
 	randLock.Unlock()
