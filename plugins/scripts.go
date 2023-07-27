@@ -363,7 +363,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg, language)
-		os.Remove(scriptPath)
+		//os.Remove(scriptPath)
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, result, err)
 		}
@@ -474,7 +474,12 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		output.Detail += stdOut
 		if err != nil {
 			log.Logger.Error("Run script fail", log.String("output", stdOut), log.Error(err))
-			return output, err
+			break
+		}
+	}
+	if input.EndPointType == END_POINT_TYPE_S3 || input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		for _, v := range scriptPathList {
+			os.Remove(v)
 		}
 	}
 
