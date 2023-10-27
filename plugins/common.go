@@ -364,7 +364,11 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool, langua
 	lowerFilepath := strings.ToLower(filePath)
 	unpackToDirPath := ""
 	if desDirPath == "" {
-		unpackToDirPath = filePath[0:strings.LastIndex(filePath, "/")]
+		if lastIndex := strings.LastIndex(filePath, "/"); lastIndex >= 0 {
+			unpackToDirPath = filePath[0:lastIndex]
+		} else {
+			return fmt.Errorf("filePath:%s illegal with absolute path check ", filePath)
+		}
 	} else {
 		unpackToDirPath = desDirPath
 	}

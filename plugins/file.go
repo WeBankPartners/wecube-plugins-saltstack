@@ -112,8 +112,13 @@ func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 	if !strings.Contains(input.FileOwner, ":") {
 		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
 	}
-
-	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	directory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		directory = input.DestinationPath[0:lastIndex]
+	} else {
+		return fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
 	cmdRun := "chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
@@ -248,7 +253,13 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 	request.Target = input.Target
 
 	lowerFilepath := strings.ToLower(input.DestinationPath)
-	currentDirectory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	currentDirectory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		currentDirectory = input.DestinationPath[0:lastIndex]
+	} else {
+		return &request, fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//currentDirectory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
 
 	if strings.HasSuffix(lowerFilepath, ".zip") {
 		request.Function = "archive.cmd_unzip"
