@@ -188,7 +188,13 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 		fileScriptPath = strings.Split(fileName, " ")[0]
 		scriptArgs = fileName[len(fileScriptPath)+1:]
 	}
-	fileAbsPath := fileScriptPath[:strings.LastIndex(fileScriptPath, "/")]
+	var fileAbsPath string
+	if lastIndex := strings.LastIndex(fileScriptPath, "/"); lastIndex >= 0 {
+		fileAbsPath = fileScriptPath[:lastIndex]
+	} else {
+		return "", fmt.Errorf("script:%s illegal with absolute path check ", fileScriptPath)
+	}
+	//fileAbsPath := fileScriptPath[:strings.LastIndex(fileScriptPath, "/")]
 	if fileAbsPath == "" {
 		fileAbsPath = "/"
 	}
@@ -573,7 +579,13 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 	remoteParam := ExecRemoteParam{User: input.RunAs, Password: input.Password, Host: input.Target, Timeout: 1800}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
-		localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
+		localAbsPath := ""
+		if lastIndex := strings.LastIndex(scriptPath, "/"); lastIndex >= 0 {
+			localAbsPath = scriptPath[:lastIndex]
+		} else {
+			return "", fmt.Errorf("scriptPath:%s illegal with absolute path check ", scriptPath)
+		}
+		//localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
 		if localAbsPath == "" {
 			localAbsPath = "/"
 		}
