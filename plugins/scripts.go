@@ -360,7 +360,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 				err = fmt.Errorf("Script run ip[%s] is not a available target[%s] ", k, input.Target)
 				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
 			}
-			if v.RetCode != 0 || strings.Contains(v.RetDetail, "ERROR") {
+			if v.RetCode != 0 {
 				err = fmt.Errorf("Script run ip[%s] meet error = %v ", k, v.RetDetail)
 				return k + ": " + v.RetDetail, err
 			}
