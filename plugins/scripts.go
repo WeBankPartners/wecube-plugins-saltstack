@@ -75,9 +75,10 @@ type RunScriptOutput struct {
 }
 
 type RunScriptThreadObj struct {
-	Data  RunScriptOutput
-	Err   error
-	Index int
+	Data              RunScriptOutput
+	Err               error
+	Index             int
+	TmpScriptPathList []string
 }
 
 type RunScriptAction struct {
@@ -421,7 +422,7 @@ func writeScriptContentToTempFile(content string) (fileName string, err error) {
 	return fileName, err
 }
 
-func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
+func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, tmpScriptPathList []string, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -438,7 +439,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 
 	err = action.CheckParam(*input)
 	if err != nil {
-		return output, err
+		return output, tmpScriptPathList, err
 	}
 
 	if input.RunAs != "" {
@@ -448,7 +449,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		userExist, errOut := checkRunUserIsExists(input.Target, input.RunAs, action.Language)
 		if !userExist {
 			err = fmt.Errorf(errOut)
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 	}
 
@@ -457,7 +458,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	if input.EndPointType == END_POINT_TYPE_S3 {
 		scriptPathList, err = downLoadScript(*input, action.Language)
 		if err != nil {
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 	}
 
@@ -465,7 +466,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		var scriptPath string
 		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 		scriptPathList = []string{scriptPath}
 	}
@@ -484,12 +485,13 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		}
 	}
 	if input.EndPointType == END_POINT_TYPE_S3 || input.EndPointType == END_POINT_TYPE_USER_PARAM {
-		for _, v := range scriptPathList {
-			os.Remove(v)
-		}
+		tmpScriptPathList = scriptPathList
+		//for _, v := range scriptPathList {
+		//	os.Remove(v)
+		//}
 	}
 
-	return output, err
+	return output, tmpScriptPathList, err
 }
 
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
@@ -503,8 +505,8 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 		concurrentChan <- 1
 		wg.Add(1)
 		go func(tmpInput RunScriptInput, index int) {
-			output, err := action.runScript(&tmpInput)
-			outputChan <- RunScriptThreadObj{Data: output, Err: err, Index: index}
+			output, tmpScriptPathList, err := action.runScript(&tmpInput)
+			outputChan <- RunScriptThreadObj{Data: output, Err: err, Index: index, TmpScriptPathList: tmpScriptPathList}
 			wg.Done()
 			<-concurrentChan
 		}(inputObj, i)
@@ -521,6 +523,9 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+		for _, tmpScriptPath := range tmpOutput.TmpScriptPathList {
+			os.Remove(tmpScriptPath)
+		}
 	}
 
 	return &outputs, finalErr
