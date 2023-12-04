@@ -321,7 +321,7 @@ func downloadFile(url string) ([]byte, error) {
 func downLoadScript(input RunScriptInput, language string) ([]string, error) {
 	var result []string
 	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, language)
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, language)
 		if err != nil {
 			return result, err
 		}
