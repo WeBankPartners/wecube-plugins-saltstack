@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
@@ -50,6 +51,12 @@ type FileCopyOutput struct {
 	Result
 	Guid   string `json:"guid,omitempty"`
 	Detail string `json:"detail,omitempty"`
+}
+
+type FileCopyThreadObj struct {
+	Data  FileCopyOutput
+	Err   error
+	Index int
 }
 
 type FileCopyAction struct{ Language string }
@@ -105,8 +112,13 @@ func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 	if !strings.Contains(input.FileOwner, ":") {
 		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
 	}
-
-	directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	directory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		directory = input.DestinationPath[0:lastIndex]
+	} else {
+		return fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
 	cmdRun := "chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
@@ -147,7 +159,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		}
 	}
 
-	fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false, action.Language)
+	fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
 	if tmpErr != nil {
 		log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
 		err = tmpErr
@@ -183,7 +195,15 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 		if err != nil {
 			return output, err
 		}
-
+		unpackOutput, unpackErr := CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language)
+		if unpackErr != nil {
+			err = unpackErr
+			return output, err
+		}
+		if strings.Contains(unpackOutput, "'archive.cmd_unzip' not found") || strings.Contains(unpackOutput, "'archive.tar' not found") {
+			err = fmt.Errorf("can not find unzip or tar command in target host")
+			return output, err
+		}
 		if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language); err != nil {
 			return output, err
 		}
@@ -233,7 +253,13 @@ func (action *FileCopyAction) deriveUnpackRequest(input *FileCopyInput) (*SaltAp
 	request.Target = input.Target
 
 	lowerFilepath := strings.ToLower(input.DestinationPath)
-	currentDirectory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	currentDirectory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		currentDirectory = input.DestinationPath[0:lastIndex]
+	} else {
+		return &request, fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//currentDirectory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
 
 	if strings.HasSuffix(lowerFilepath, ".zip") {
 		request.Function = "archive.cmd_unzip"
@@ -257,14 +283,31 @@ func (action *FileCopyAction) Do(input interface{}) (interface{}, error) {
 	files, _ := input.(FileCopyInputs)
 	outputs := FileCopyOutputs{}
 	var finalErr error
-	for _, file := range files.Inputs {
-		fileCopyOutput, err := action.copyFile(&file)
-		if err != nil {
-			log.Logger.Error("File copy action", log.JsonObj("param", file), log.Error(err))
-			finalErr = err
+	outputChan := make(chan FileCopyThreadObj, len(files.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, file := range files.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput FileCopyInput, index int) {
+			output, err := action.copyFile(&tmpInput)
+			outputChan <- FileCopyThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+			<-concurrentChan
+		}(file, i)
+		outputs.Outputs = append(outputs.Outputs, FileCopyOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-
-		outputs.Outputs = append(outputs.Outputs, fileCopyOutput)
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("File copy action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 
 	return &outputs, finalErr

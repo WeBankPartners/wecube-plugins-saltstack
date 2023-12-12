@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +53,7 @@ var (
 	SubSystemCode             string
 	SubSystemKey              string
 	SaltResetEnv              bool
+	ApiConcurrentNum          int
 )
 
 var CIPHER_MAP = map[string]string{
@@ -223,8 +225,8 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (st
 	if len(apiResult.Results) == 0 || len(apiResult.Results[0]) == 0 {
 		return "", getSaltApiTargetError(language, request.Target)
 	}
-	for _, result := range apiResult.Results {
-		for k, v := range result {
+	for _, resultObj := range apiResult.Results {
+		for k, v := range resultObj {
 			switch v.(type) {
 			case bool:
 				if v.(bool) == false {
@@ -362,7 +364,11 @@ func deriveUnpackfile(filePath string, desDirPath string, overwrite bool, langua
 	lowerFilepath := strings.ToLower(filePath)
 	unpackToDirPath := ""
 	if desDirPath == "" {
-		unpackToDirPath = filePath[0:strings.LastIndex(filePath, "/")]
+		if lastIndex := strings.LastIndex(filePath, "/"); lastIndex >= 0 {
+			unpackToDirPath = filePath[0:lastIndex]
+		} else {
+			return fmt.Errorf("filePath:%s illegal with absolute path check ", filePath)
+		}
 	} else {
 		unpackToDirPath = desDirPath
 	}
@@ -472,6 +478,11 @@ func InitEnvParam() {
 	} else {
 		SaltResetEnv = false
 	}
+	ApiConcurrentNum, _ = strconv.Atoi(os.Getenv("API_CONCURRENT_NUM"))
+	if ApiConcurrentNum <= 0 {
+		ApiConcurrentNum = 5
+	}
+	log.Logger.Info("API_CONCURRENT_NUM", log.Int("num", ApiConcurrentNum))
 }
 
 func checkIllegalParam(input string) bool {

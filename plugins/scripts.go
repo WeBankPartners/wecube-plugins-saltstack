@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"os/exec"
@@ -71,6 +72,13 @@ type RunScriptOutput struct {
 	RetCode int    `json:"retCode"`
 	Detail  string `json:"detail"`
 	Guid    string `json:"guid,omitempty"`
+}
+
+type RunScriptThreadObj struct {
+	Data              RunScriptOutput
+	Err               error
+	Index             int
+	TmpScriptPathList []string
 }
 
 type RunScriptAction struct {
@@ -181,7 +189,13 @@ func executeLocalScript(fileName string, target string, runAs string, execArg st
 		fileScriptPath = strings.Split(fileName, " ")[0]
 		scriptArgs = fileName[len(fileScriptPath)+1:]
 	}
-	fileAbsPath := fileScriptPath[:strings.LastIndex(fileScriptPath, "/")]
+	var fileAbsPath string
+	if lastIndex := strings.LastIndex(fileScriptPath, "/"); lastIndex >= 0 {
+		fileAbsPath = fileScriptPath[:lastIndex]
+	} else {
+		return "", fmt.Errorf("script:%s illegal with absolute path check ", fileScriptPath)
+	}
+	//fileAbsPath := fileScriptPath[:strings.LastIndex(fileScriptPath, "/")]
 	if fileAbsPath == "" {
 		fileAbsPath = "/"
 	}
@@ -307,7 +321,7 @@ func downloadFile(url string) ([]byte, error) {
 func downLoadScript(input RunScriptInput, language string) ([]string, error) {
 	var result []string
 	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, language)
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, language)
 		if err != nil {
 			return result, err
 		}
@@ -347,7 +361,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 				err = fmt.Errorf("Script run ip[%s] is not a available target[%s] ", k, input.Target)
 				return fmt.Sprintf("parseSaltApiCmdRunCallResult meet error=%v", err), err
 			}
-			if v.RetCode != 0 || strings.Contains(v.RetDetail, "ERROR") {
+			if v.RetCode != 0 {
 				err = fmt.Errorf("Script run ip[%s] meet error = %v ", k, v.RetDetail)
 				return k + ": " + v.RetDetail, err
 			}
@@ -356,7 +370,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg, language)
-		os.Remove(scriptPath)
+		//os.Remove(scriptPath)
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, result, err)
 		}
@@ -408,7 +422,7 @@ func writeScriptContentToTempFile(content string) (fileName string, err error) {
 	return fileName, err
 }
 
-func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, err error) {
+func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScriptOutput, tmpScriptPathList []string, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.Target = input.Target
@@ -425,7 +439,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 
 	err = action.CheckParam(*input)
 	if err != nil {
-		return output, err
+		return output, tmpScriptPathList, err
 	}
 
 	if input.RunAs != "" {
@@ -435,7 +449,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		userExist, errOut := checkRunUserIsExists(input.Target, input.RunAs, action.Language)
 		if !userExist {
 			err = fmt.Errorf(errOut)
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 	}
 
@@ -444,7 +458,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	if input.EndPointType == END_POINT_TYPE_S3 {
 		scriptPathList, err = downLoadScript(*input, action.Language)
 		if err != nil {
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 	}
 
@@ -452,7 +466,7 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		var scriptPath string
 		scriptPath, err = writeScriptContentToTempFile(input.ScriptContent)
 		if err != nil {
-			return output, err
+			return output, tmpScriptPathList, err
 		}
 		scriptPathList = []string{scriptPath}
 	}
@@ -467,24 +481,51 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 		output.Detail += stdOut
 		if err != nil {
 			log.Logger.Error("Run script fail", log.String("output", stdOut), log.Error(err))
-			return output, err
+			break
 		}
 	}
+	if input.EndPointType == END_POINT_TYPE_S3 || input.EndPointType == END_POINT_TYPE_USER_PARAM {
+		tmpScriptPathList = scriptPathList
+		//for _, v := range scriptPathList {
+		//	os.Remove(v)
+		//}
+	}
 
-	return output, err
+	return output, tmpScriptPathList, err
 }
 
 func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 	inputs, _ := input.(RunScriptInputs)
 	outputs := RunScriptOutputs{}
 	var finalErr error
-	for _, input := range inputs.Inputs {
-		output, err := action.runScript(&input)
-		if err != nil {
-			log.Logger.Error("Run script action", log.Error(err))
-			finalErr = err
+	outputChan := make(chan RunScriptThreadObj, len(inputs.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, inputObj := range inputs.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput RunScriptInput, index int) {
+			output, tmpScriptPathList, err := action.runScript(&tmpInput)
+			outputChan <- RunScriptThreadObj{Data: output, Err: err, Index: index, TmpScriptPathList: tmpScriptPathList}
+			wg.Done()
+			<-concurrentChan
+		}(inputObj, i)
+		outputs.Outputs = append(outputs.Outputs, RunScriptOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-		outputs.Outputs = append(outputs.Outputs, output)
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("Run script action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+		for _, tmpScriptPath := range tmpOutput.TmpScriptPathList {
+			os.Remove(tmpScriptPath)
+		}
 	}
 
 	return &outputs, finalErr
@@ -543,7 +584,13 @@ func sshRunScript(scriptPath string, input RunScriptInput, language string) (str
 	remoteParam := ExecRemoteParam{User: input.RunAs, Password: input.Password, Host: input.Target, Timeout: 1800}
 	switch input.EndPointType {
 	case END_POINT_TYPE_LOCAL:
-		localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
+		localAbsPath := ""
+		if lastIndex := strings.LastIndex(scriptPath, "/"); lastIndex >= 0 {
+			localAbsPath = scriptPath[:lastIndex]
+		} else {
+			return "", fmt.Errorf("scriptPath:%s illegal with absolute path check ", scriptPath)
+		}
+		//localAbsPath := scriptPath[:strings.LastIndex(scriptPath, "/")]
 		if localAbsPath == "" {
 			localAbsPath = "/"
 		}
