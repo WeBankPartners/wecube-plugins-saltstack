@@ -24,6 +24,7 @@ var (
 	VARIABLE_VARIABLE_SEPERATOR = "," + SEPERATOR
 	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
 	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
+	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
 )
 
 func init() {
@@ -338,6 +339,13 @@ func GetInputVariableMap(variable string, seed string, specialList []string) (ma
 	}
 
 	for i, _ := range keys {
+		if values[i] == NULL_VALUE_FLAG {
+			if VariableNullCheck {
+				return inputMap, fmt.Errorf("Variable %s value is NULL ", keys[i])
+			} else {
+				values[i] = ""
+			}
+		}
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
 			return inputMap, err
