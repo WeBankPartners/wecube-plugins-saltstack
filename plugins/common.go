@@ -54,6 +54,7 @@ var (
 	SubSystemKey              string
 	SaltResetEnv              bool
 	ApiConcurrentNum          int
+	VariableNullCheck         bool
 )
 
 var CIPHER_MAP = map[string]string{
@@ -483,6 +484,12 @@ func InitEnvParam() {
 		ApiConcurrentNum = 5
 	}
 	log.Logger.Info("API_CONCURRENT_NUM", log.Int("num", ApiConcurrentNum))
+	variableNullCheckEnvString := strings.ToLower(os.Getenv("SALTSTACK_VARIABLE_NULL_CHECK"))
+	if variableNullCheckEnvString == "y" || variableNullCheckEnvString == "yes" || variableNullCheckEnvString == "true" {
+		VariableNullCheck = true
+	} else {
+		VariableNullCheck = false
+	}
 }
 
 func checkIllegalParam(input string) bool {

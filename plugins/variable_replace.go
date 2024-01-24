@@ -15,7 +15,7 @@ import (
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
-//VariableActions .
+// VariableActions .
 var VariableActions = make(map[string]Action)
 
 var (
@@ -24,17 +24,18 @@ var (
 	VARIABLE_VARIABLE_SEPERATOR = "," + SEPERATOR
 	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
 	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
+	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
 )
 
 func init() {
 	VariableActions["replace"] = new(VariableReplaceAction)
 }
 
-//VariablePlugin .
+// VariablePlugin .
 type VariablePlugin struct {
 }
 
-//GetActionByName .
+// GetActionByName .
 func (plugin *VariablePlugin) GetActionByName(actionName string) (Action, error) {
 	action, found := VariableActions[actionName]
 	if !found {
@@ -44,12 +45,12 @@ func (plugin *VariablePlugin) GetActionByName(actionName string) (Action, error)
 	return action, nil
 }
 
-//VariableReplaceInputs .
+// VariableReplaceInputs .
 type VariableReplaceInputs struct {
 	Inputs []VariableReplaceInput `json:"inputs,omitempty"`
 }
 
-//VariableReplaceInput .
+// VariableReplaceInput .
 type VariableReplaceInput struct {
 	CallBackParameter
 	EndPoint     string `json:"endpoint,omitempty"`
@@ -67,12 +68,12 @@ type VariableReplaceInput struct {
 	FileReplacePrefix    string `json:"fileReplacePrefix,omitempty"`
 }
 
-//VariableReplaceOutputs .
+// VariableReplaceOutputs .
 type VariableReplaceOutputs struct {
 	Outputs []VariableReplaceOutput `json:"outputs,omitempty"`
 }
 
-//VariableReplaceOutput .
+// VariableReplaceOutput .
 type VariableReplaceOutput struct {
 	CallBackParameter
 	Result
@@ -248,7 +249,7 @@ func (action *VariableReplaceAction) Do(input interface{}) (interface{}, error) 
 	return &outputs, finalErr
 }
 
-//variablelist,seed,publicKey,privateKey string
+// variablelist,seed,publicKey,privateKey string
 func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirName string) error {
 	variablelist := input.VariableList
 	seed := input.Seed
@@ -338,6 +339,13 @@ func GetInputVariableMap(variable string, seed string, specialList []string) (ma
 	}
 
 	for i, _ := range keys {
+		if values[i] == NULL_VALUE_FLAG {
+			if VariableNullCheck {
+				return inputMap, fmt.Errorf("Variable %s value is NULL ", keys[i])
+			} else {
+				values[i] = ""
+			}
+		}
 		key, value, err := getRawKeyValue(keys[i], values[i], seed)
 		if err != nil {
 			return inputMap, err
@@ -506,9 +514,9 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 }
 
 func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, privateKey, decompressDirName string, specialReplaceList, prefix, fileReplacePrefix []string) error {
-	bf, err := os.Open(filepath)
-	if err != nil {
-		return fmt.Errorf("Open file %s fail,%s ", filepath, err.Error())
+	bf, openErr := os.Open(filepath)
+	if openErr != nil {
+		return fmt.Errorf("Open file %s fail,%s ", filepath, openErr.Error())
 	}
 	defer bf.Close()
 
@@ -591,7 +599,12 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 				}
 			}
 		}
-		_, err = f.WriteString(newLine + "\n")
+		if tmpLineCount == 1 {
+			_, err = f.WriteString(newLine)
+		} else {
+			_, err = f.WriteString("\n" + newLine)
+		}
+		//_, err = f.WriteString(newLine + "\n")
 		if err != nil {
 			return fmt.Errorf("Try to write new line to tmp file fail,%s ", err.Error())
 		}
