@@ -1,0 +1,7 @@
+[salt]
+
+name=salt repo
+baseurl=http://127.0.0.1:9099/salt-repo
+enabled=1
+gpgcheck=1
+gpgkey=http://127.0.0.1:9099/salt-repo/saltstack-signing-key
