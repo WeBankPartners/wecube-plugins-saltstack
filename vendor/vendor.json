@@ -1,0 +1,88 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "QsN57dtteQDAyZa8ssuWyi6TFsg=",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "dc14462fd58732591c7fa58cc8496d6824316a82",
+			"revisionTime": "2020-01-07T01:32:13Z"
+		},
+		{
+			"checksumSHA1": "Z7rkupTQRAZzzTCqDLiSbNR70to=",
+			"path": "github.com/konsorten/go-windows-terminal-sequences",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "RVCdFtLmioV9OqsNDZsbS8gJogw=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "162BZV7nIgqzmfYoYFqXVBLoZ/k=",
+			"path": "github.com/snowzach/rotatefilehook",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "0zu2FS8IXNQSrJKjn5eb9VgTq1E=",
+			"path": "go.uber.org/atomic",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "yMjpW1E37IpyxqZl+Cv2zHE0I0U=",
+			"path": "go.uber.org/multierr",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "0/OIshmoBSMErrRjCTDJUzit6aw=",
+			"path": "go.uber.org/zap",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "afFbYQlWVvMANwhNqMazS3uM0Dc=",
+			"path": "go.uber.org/zap/buffer",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "Y0uE8U8wxuPku0bFZyVmYLznd/o=",
+			"path": "go.uber.org/zap/internal/bufferpool",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "AA/i5mzFuQBeFcE+d9ZBLPropjU=",
+			"path": "go.uber.org/zap/internal/color",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "fjEB1pcePOWjEmayG54E92JYgWk=",
+			"path": "go.uber.org/zap/internal/exit",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "vIk6gh7RiQIjmn5p3JbT2h8/iDY=",
+			"path": "go.uber.org/zap/zapcore",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "8iDRMd1IFU/NY9TKVBq0ZmBgm0s=",
+			"path": "golang.org/x/crypto/ssh/terminal",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "GVl3dSoPekJDB2YhyTmx4AiW6wE=",
+			"path": "golang.org/x/sys/unix",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "xj0Idw5980dQirNqr2aPEMr2XrI=",
+			"path": "golang.org/x/sys/windows",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "GD/tP00KmteOc9TsOtTcrfKw3KA=",
+			"path": "gopkg.in/natefinch/lumberjack.v2",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/WeBankPartners/wecube-plugins-saltstack"
+}
