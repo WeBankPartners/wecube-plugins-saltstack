@@ -81,7 +81,7 @@ func downloadS3File(endPoint, accessKey, secretKey string, randName bool, langua
 	}
 	var path string
 	// download from http
-	if strings.HasPrefix(endPoint, CoreUrl) {
+	if strings.HasPrefix(endPoint, CoreUrl) || strings.Contains(endPoint, "/artifacts/repository/") {
 		tmpFileName := endPoint[strings.LastIndex(endPoint, "/")+1:]
 		path = UPLOADS3FILE_DIR + tmpName + tmpFileName
 		_, statErr := os.Stat(path)
