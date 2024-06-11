@@ -25,7 +25,7 @@ func (plugin *MysqlDatabasePlugin) GetActionByName(actionName string) (Action, e
 	return action, nil
 }
 
-type AddMysqlDatabaseAction struct { Language string }
+type AddMysqlDatabaseAction struct{ Language string }
 
 type AddMysqlDatabaseInputs struct {
 	Inputs []AddMysqlDatabaseInput `json:"inputs,omitempty"`
@@ -124,6 +124,13 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
+	if input.DatabaseOwnerPassword != "" {
+		input.DatabaseOwnerPassword, err = AesDePassword(input.Guid, input.Seed, input.DatabaseOwnerPassword)
+		if err != nil {
+			err = getPasswordDecodeError(action.Language, err)
+			return output, err
+		}
+	}
 
 	if input.Port == "" {
 		input.Port = "3306"
@@ -204,7 +211,7 @@ func (action *AddMysqlDatabaseAction) Do(input interface{}) (interface{}, error)
 	return outputs, finalErr
 }
 
-type DeleteMysqlDatabaseAction struct { Language string }
+type DeleteMysqlDatabaseAction struct{ Language string }
 
 type DeleteMysqlDatabaseInputs struct {
 	Inputs []DeleteMysqlDatabaseInput `json:"inputs,omitempty"`
