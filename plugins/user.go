@@ -3,8 +3,8 @@ package plugins
 import (
 	"fmt"
 
-	"strings"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"strings"
 )
 
 const (
@@ -46,7 +46,7 @@ type AddUserInput struct {
 	UserGroup string `json:"userGroup,omitempty"`
 	GroupId   string `json:"groupId,omitempty"`
 	HomeDir   string `json:"homeDir,omitempty"`
-	RwDir  string `json:"rwDir,omitempty"`
+	RwDir     string `json:"rwDir,omitempty"`
 	RwFile    string `json:"rwFile,omitempty"`
 }
 
@@ -129,7 +129,16 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		password := ""
 		execArg := fmt.Sprintf("--action add --user '%s'", input.UserName)
 		if input.Password != "" {
-			password = input.Password
+			if dePassword, deErr := AesDePassword(input.Guid, input.Seed, input.Password); deErr != nil {
+				err := fmt.Errorf("decode password error:%s ", deErr.Error())
+				output.Result.Code = RESULT_CODE_ERROR
+				output.Result.Message = err.Error()
+				finalErr = err
+				outputs.Outputs = append(outputs.Outputs, output)
+				continue
+			} else {
+				password = dePassword
+			}
 		} else {
 			password = createRandomPassword()
 		}
@@ -345,11 +354,11 @@ type ChangeUserPasswordInputs struct {
 
 type ChangeUserPasswordInput struct {
 	CallBackParameter
-	Guid      string `json:"guid,omitempty"`
-	Seed      string `json:"seed,omitempty"`
-	Target    string `json:"target,omitempty"`
-	UserName  string `json:"userName,omitempty"`
-	Password  string `json:"password,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Target   string `json:"target,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type ChangeUserPasswordOutputs struct {
@@ -420,6 +429,16 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 			input.UserName = strings.Split(input.UserName, ":")[0]
 		}
 		password := input.Password
+		if dePassword, deErr := AesDePassword(input.Guid, input.Seed, input.Password); deErr != nil {
+			err := fmt.Errorf("decode password error:%s ", deErr.Error())
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, output)
+			continue
+		} else {
+			password = dePassword
+		}
 		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
 
 		execArg += " --password '" + password + "'"
