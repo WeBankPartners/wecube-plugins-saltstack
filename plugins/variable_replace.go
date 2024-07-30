@@ -145,9 +145,17 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 			output.Result.Message = err.Error()
 		}
 	}()
-
 	err = action.CheckParam(*input)
 	if err != nil {
+		return output, err
+	}
+	input.Seed = getEncryptSeed(input.Seed)
+	if input.AppPublicKey, err = AesDePassword(input.Guid, input.Seed, input.AppPublicKey); err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("decode appPlubicKey fail,%s ", err.Error()))
+		return output, err
+	}
+	if input.SysPrivateKey, err = AesDePassword(input.Guid, input.Seed, input.SysPrivateKey); err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("decode sysPrivateKey fail,%s ", err.Error()))
 		return output, err
 	}
 

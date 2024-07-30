@@ -129,6 +129,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 		password := ""
 		execArg := fmt.Sprintf("--action add --user '%s'", input.UserName)
 		if input.Password != "" {
+			input.Seed = getEncryptSeed(input.Seed)
 			if dePassword, deErr := AesDePassword(input.Guid, input.Seed, input.Password); deErr != nil {
 				err := fmt.Errorf("decode password error:%s ", deErr.Error())
 				output.Result.Code = RESULT_CODE_ERROR
@@ -429,6 +430,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 			input.UserName = strings.Split(input.UserName, ":")[0]
 		}
 		password := input.Password
+		input.Seed = getEncryptSeed(input.Seed)
 		if dePassword, deErr := AesDePassword(input.Guid, input.Seed, input.Password); deErr != nil {
 			err := fmt.Errorf("decode password error:%s ", deErr.Error())
 			output.Result.Code = RESULT_CODE_ERROR

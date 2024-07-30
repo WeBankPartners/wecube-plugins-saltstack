@@ -49,7 +49,7 @@ type ApplyNewDeploymentInput struct {
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 	Password             string `json:"password,omitempty"`
-	RwDir             string `json:"rwDir,omitempty"`
+	RwDir                string `json:"rwDir,omitempty"`
 	RwFile               string `json:"rwFile,omitempty"`
 }
 
@@ -130,6 +130,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	if err != nil {
 		return output, err
 	}
+	input.Seed = getEncryptSeed(input.Seed)
 	userGroup := input.UserName
 	if strings.Contains(userGroup, ":") {
 		userGroup = strings.Split(userGroup, ":")[1]
@@ -143,10 +144,10 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newScriptPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -156,13 +157,13 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	addUserRequest := AddUserInputs{
 		Inputs: []AddUserInput{
 			AddUserInput{
-				Guid:     input.Guid,
-				Target:   input.Target,
-				UserName: strings.Split(input.UserName, ":")[0],
-				Password: input.Password,
-				Seed:     input.Seed,
-				RwDir:    input.RwDir,
-				RwFile:   input.RwFile,
+				Guid:      input.Guid,
+				Target:    input.Target,
+				UserName:  strings.Split(input.UserName, ":")[0],
+				Password:  input.Password,
+				Seed:      input.Seed,
+				RwDir:     input.RwDir,
+				RwFile:    input.RwFile,
 				UserGroup: userGroup,
 			},
 		},
@@ -257,13 +258,13 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	var finalErr error
 	outputChan := make(chan ApplyNewDeploymentThreadObj, len(inputs.Inputs))
 	wg := sync.WaitGroup{}
-	for i,input := range inputs.Inputs {
+	for i, input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyNewDeploymentInput,index int) {
+		go func(tmpInput ApplyNewDeploymentInput, index int) {
 			output, err := action.applyNewDeployment(tmpInput)
-			outputChan <- ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index}
+			outputChan <- ApplyNewDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
-		}(input,i)
+		}(input, i)
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
 	wg.Wait()
@@ -271,7 +272,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		if len(outputChan) == 0 {
 			break
 		}
-		tmpOutput := <- outputChan
+		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
 			log.Logger.Error("App new deploy action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
@@ -383,7 +384,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	if err != nil {
 		return output, err
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	if !strings.Contains(input.UserName, ":") {
 		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
 	}
@@ -392,10 +393,10 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newScriptPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -406,10 +407,10 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newStopPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -516,13 +517,13 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 	var finalErr error
 	outputChan := make(chan ApplyUpdateDeploymentThreadObj, len(inputs.Inputs))
 	wg := sync.WaitGroup{}
-	for i,input := range inputs.Inputs {
+	for i, input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyUpdateDeploymentInput,index int) {
+		go func(tmpInput ApplyUpdateDeploymentInput, index int) {
 			output, err := action.applyUpdateDeployment(tmpInput)
-			outputChan <- ApplyUpdateDeploymentThreadObj{Data:output,Err:err,Index:index}
+			outputChan <- ApplyUpdateDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
-		}(input,i)
+		}(input, i)
 		outputs.Outputs = append(outputs.Outputs, ApplyUpdateDeploymentOutput{})
 	}
 	wg.Wait()
@@ -530,7 +531,7 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 		if len(outputChan) == 0 {
 			break
 		}
-		tmpOutput := <- outputChan
+		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
 			log.Logger.Error("App update deploy action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
@@ -667,10 +668,10 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newStopPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
 			}
 		}
