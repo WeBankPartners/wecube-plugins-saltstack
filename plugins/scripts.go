@@ -677,7 +677,7 @@ func (action *SSHRunScriptAction) runScript(input *RunScriptInput) (output RunSc
 		}
 		scriptPathList = []string{scriptPath}
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	input.Password, err = AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)

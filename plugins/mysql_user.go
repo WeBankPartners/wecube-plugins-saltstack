@@ -25,8 +25,8 @@ func (plugin *MysqlUserPlugin) GetActionByName(actionName string) (Action, error
 	return action, nil
 }
 
-//------------AddMysqlDatabaseUserAction--------------
-type AddMysqlDatabaseUserAction struct {  Language string  }
+// ------------AddMysqlDatabaseUserAction--------------
+type AddMysqlDatabaseUserAction struct{ Language string }
 
 type AddMysqlDatabaseUserInputs struct {
 	Inputs []AddMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -109,6 +109,7 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	}
 
 	//get root password
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
@@ -174,7 +175,7 @@ func (action *AddMysqlDatabaseUserAction) Do(input interface{}) (interface{}, er
 	return outputs, finalErr
 }
 
-type DeleteMysqlDatabaseUserAction struct { Language string }
+type DeleteMysqlDatabaseUserAction struct{ Language string }
 
 type DeleteMysqlDatabaseUserInputs struct {
 	Inputs []DeleteMysqlDatabaseUserInput `json:"inputs,omitempty"`
@@ -250,7 +251,7 @@ func (action *DeleteMysqlDatabaseUserAction) deleteMysqlDatabaseUser(input *Dele
 	if err = action.deleteMysqlDatabaseUserCheckParam(input); err != nil {
 		return output, err
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)

@@ -55,6 +55,7 @@ var (
 	SaltResetEnv              bool
 	ApiConcurrentNum          int
 	VariableNullCheck         bool
+	GlobalEncryptSeed         string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -279,17 +280,17 @@ func AesEnPassword(guid, seed, password, cipher string) (string, error) {
 }
 
 func AesDePassword(guid, seed, password string) (string, error) {
-	var cipher string
+	var cipherPrefix string
 	for _, _cipher := range CIPHER_MAP {
 		if strings.HasPrefix(password, _cipher) {
-			cipher = _cipher
+			cipherPrefix = _cipher
 			break
 		}
 	}
-	if cipher == "" {
+	if cipherPrefix == "" {
 		return password, nil
 	}
-	password = password[len(cipher):]
+	password = password[len(cipherPrefix):]
 
 	md5sum := Md5Encode(guid + seed)
 	dePassword, err := AesDecode(md5sum[0:16], password)
@@ -490,6 +491,7 @@ func InitEnvParam() {
 	} else {
 		VariableNullCheck = false
 	}
+	GlobalEncryptSeed = os.Getenv("ENCRYPT_SEED")
 }
 
 func checkIllegalParam(input string) bool {
@@ -600,4 +602,24 @@ func RSAEncryptByPrivate(orgidata []byte, privatekey string) ([]byte, error) {
 		m.Mod(m, priv.N)
 	}
 	return m.Bytes(), nil
+}
+
+func getEncryptSeed(inputSeed string) string {
+	if GlobalEncryptSeed == "" {
+		return inputSeed
+	}
+	if inputSeed == "" {
+		return GlobalEncryptSeed
+	}
+	var cipherPrefix string
+	for _, _cipher := range CIPHER_MAP {
+		if strings.HasPrefix(inputSeed, _cipher) {
+			cipherPrefix = _cipher
+			break
+		}
+	}
+	if cipherPrefix == "" {
+		return inputSeed
+	}
+	return GlobalEncryptSeed
 }
