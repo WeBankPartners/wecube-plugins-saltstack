@@ -44,412 +44,407 @@
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
-    <plugins>
-        <plugin name="agent" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="install" path="/saltstack/v1/agent/install" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_AGENT_INSTALL_LOCAL" >method</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="uninstall" path="/saltstack/v1/agent/uninstall" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="package-variable" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="replace" path="/saltstack/v1/package-variable/replace" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="host-script" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="run" path="/saltstack/v1/host-script/run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="ssh-run" path="/saltstack/v1/host-script/ssh-run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="run-local" path="/saltstack/v1/host-script/run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="run-s3" path="/saltstack/v1/host-script/run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_S3">endpointType</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="run-user-param" path="/saltstack/v1/host-script/run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_USER_PARAM">endpointType</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="host-file" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">unpack</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileOwner</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="host-user" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="add" path="/saltstack/v1/host-user/add" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="constant">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userGroup</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="Y" mappingType="context">password</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="delete" path="/saltstack/v1/host-user/delete" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="password" path="/saltstack/v1/host-user/password" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="constant">password</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="Y" mappingType="context">password</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="mysql-script" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="run" path="/saltstack/v1/mysql-script/run" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">sql_files</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="mysql-database" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="add" path="/saltstack/v1/mysql-database/add" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerName</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseOwnerPassword</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
-                    <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseOwnerPassword</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="delete" path="/saltstack/v1/mysql-database/delete" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="mysql-user" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="add" path="/saltstack/v1/mysql-user/add" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserName</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
-                    <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="delete" path="/saltstack/v1/mysql-user/delete" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="apply-deployment" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="new" path="/saltstack/v1/apply-deployment/new" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">startScript</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="update" path="/saltstack/v1/apply-deployment/update" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">stopScript</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">startScript</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-            <interface action="delete" path="/saltstack/v1/apply-deployment/delete" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">stopScript</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-        <plugin name="password" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
-            <interface action="encode" path="/saltstack/v1/password/encode" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-             <interface action="decode" path="/saltstack/v1/password/decode" filterRule="">
-                <inputParameters>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
-                </inputParameters>
-                <outputParameters>
-                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
-                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
-                </outputParameters>
-            </interface>
-        </plugin>
-    </plugins>
+     <plugins>
+            <plugin name="agent" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="install" path="/saltstack/v1/agent/install" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_AGENT_INSTALL_LOCAL" >method</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="uninstall" path="/saltstack/v1/agent/uninstall" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="package-variable" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="replace" path="/saltstack/v1/package-variable/replace" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="FILE_VARIBLE_PREFIX">fileReplacePrefix</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="host-script" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="run" path="/saltstack/v1/host-script/run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="ssh-run" path="/saltstack/v1/host-script/ssh-run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="run-local" path="/saltstack/v1/host-script/run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="run-s3" path="/saltstack/v1/host-script/run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_S3">endpointType</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="run-user-param" path="/saltstack/v1/host-script/run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_USER_PARAM">endpointType</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="host-file" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="copy" path="/saltstack/v1/host-file/copy" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">unpack</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileOwner</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="host-user" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="add" path="/saltstack/v1/host-user/add" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="constant">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userGroup</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">userId</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">groupId</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">homeDir</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="Y" mappingType="context">password</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="delete" path="/saltstack/v1/host-user/delete" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="password" path="/saltstack/v1/host-user/password" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="constant">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="constant">password</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="Y" mappingType="context">password</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="mysql-script" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="run" path="/saltstack/v1/mysql-script/run" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">sql_files</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="mysql-database" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="add" path="/saltstack/v1/mysql-database/add" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerName</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseOwnerPassword</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
+                        <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseOwnerPassword</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="delete" path="/saltstack/v1/mysql-database/delete" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseOwnerGuid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="mysql-user" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="add" path="/saltstack/v1/mysql-user/add" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserName</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                        <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="delete" path="/saltstack/v1/mysql-user/delete" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="apply-deployment" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="new" path="/saltstack/v1/apply-deployment/new" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">startScript</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="update" path="/saltstack/v1/apply-deployment/update" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">confFiles</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">variableList</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">stopScript</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">startScript</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
+                        <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                <interface action="delete" path="/saltstack/v1/apply-deployment/delete" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">destinationPath</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">stopScript</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+            <plugin name="password" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                <interface action="encode" path="/saltstack/v1/password/encode" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+                 <interface action="decode" path="/saltstack/v1/password/decode" filterRule="">
+                    <inputParameters>
+                        <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                    </inputParameters>
+                    <outputParameters>
+                        <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                        <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    </outputParameters>
+                </interface>
+            </plugin>
+        </plugins>
 </package>
