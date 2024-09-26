@@ -52,6 +52,7 @@ func init() {
 	registerPlugin("package-variable", new(VariablePlugin))
 	registerPlugin("host-script", new(ScriptPlugin))
 	registerPlugin("host-user", new(UserPlugin))
+	registerPlugin("host-collector", new(HostCollectorPlugin))
 	registerPlugin("mysql-database", new(MysqlDatabasePlugin))
 	registerPlugin("mysql-script", new(MysqlScriptPlugin))
 	registerPlugin("mysql-user", new(MysqlUserPlugin))
