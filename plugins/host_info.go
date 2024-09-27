@@ -183,8 +183,8 @@ type HostInfoOutputs struct {
 type HostInfoOutput struct {
 	CallBackParameter
 	Result
-	Guid     string `json:"guid,omitempty"`
-	HostInfo `json:"detail,omitempty"`
+	Guid string `json:"guid,omitempty"`
+	HostInfo
 }
 
 type HostInfoAction struct {
