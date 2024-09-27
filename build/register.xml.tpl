@@ -201,6 +201,26 @@
                     </outputParameters>
                 </interface>
             </plugin>
+             <plugin name="host-info" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+                 <interface action="query" path="/saltstack/v1/host-info/query" filterRule="">
+                     <inputParameters>
+                         <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                         <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                     </inputParameters>
+                     <outputParameters>
+                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                         <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">numCpus</parameter>
+                         <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">memTotal</parameter>
+                         <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">diskTotal</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">Os</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">Kernel</parameter>
+                         <parameter datatype="object" multiple="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">diskMounts</parameter>
+                         <parameter datatype="object" multiple="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">hwaddrInterfaces</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                     </outputParameters>
+                 </interface>
+             </plugin>
             <plugin name="host-user" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
                 <interface action="add" path="/saltstack/v1/host-user/add" filterRule="">
                     <inputParameters>
