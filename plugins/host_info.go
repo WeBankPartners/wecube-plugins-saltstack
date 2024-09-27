@@ -292,7 +292,8 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 			}
 		}
 	}
-	//diskTotal = diskTotal / 1024 / 1024
+	// KB -> MB
+	diskTotal = diskTotal / 1024
 
 	log.Logger.Debug("build host info -> devDiskMounts", log.JsonObj("devDiskMounts", devDiskMounts))
 
