@@ -263,7 +263,7 @@ func (action *HostCollectorAction) collectHostInfo(input *HostCollectorInput) (o
 
 	// salt target grains.items by salt-api
 	var minionResults MinionDetailResults
-	minionUrl := fmt.Sprintf("https://127.0.0.1:8080/minions/%s/", input.Target)
+	minionUrl := fmt.Sprintf("https://127.0.0.1:8080/minions/%s", input.Target)
 	if result, err = CallSaltApi(minionUrl, SaltApiRequest{}, action.Language); err != nil {
 		return output, err
 	} else {
@@ -282,7 +282,7 @@ func (action *HostCollectorAction) collectHostInfo(input *HostCollectorInput) (o
 	for _, mountInfo := range diskMounts {
 		if strings.HasPrefix(mountInfo.Filesystem, "/dev") {
 			devDiskMounts = append(devDiskMounts, mountInfo)
-			if v, err := strconv.Atoi(mountInfo.KBlocks); err != nil {
+			if v, err1 := strconv.Atoi(mountInfo.KBlocks); err1 != nil {
 				diskTotal += v
 			}
 		}
