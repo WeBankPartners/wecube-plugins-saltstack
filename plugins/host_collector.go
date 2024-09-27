@@ -145,7 +145,7 @@ type DiskUsageResults struct {
 var HostCollectorActions = make(map[string]Action)
 
 func init() {
-	HostCollectorActions["query-by-ip"] = new(HostCollectorAction)
+	HostCollectorActions["query-target"] = new(HostCollectorAction)
 }
 
 type HostCollectorPlugin struct {
@@ -190,7 +190,7 @@ func (action *HostCollectorAction) SetAcceptLanguage(language string) {
 }
 
 func (action *HostCollectorAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs HostCollectorInput
+	var inputs HostCollectorInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
