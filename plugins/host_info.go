@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"strconv"
+	"strings"
 )
 
 // MountInfo object from salt disk.usage --out json
@@ -127,9 +129,13 @@ type MinionInfo struct {
 
 // HostInfo final detail info of host
 type HostInfo struct {
-	MinionInfo
-	DiskMounts MountInfo `json:"disk_mounts"`
-	DiskTotal  int       `json:"disk_total"`
+	Os               string      `json:"os"`
+	Kernel           string      `json:"kernel"`
+	NumCpus          int         `json:"num_cpus"`
+	MemTotal         int         `json:"mem_total"`
+	DiskTotal        int         `json:"disk_total"`
+	DiskMounts       []MountInfo `json:"disk_mounts"`
+	HwaddrInterfaces []string    `json:"hwaddr_interfaces"`
 }
 
 // MinionDetailResults salt-api return result
@@ -139,13 +145,13 @@ type MinionDetailResults struct {
 
 // DiskUsageResults salt-api return result
 type DiskUsageResults struct {
-	Results []map[string]MountInfo `json:"return,omitempty"`
+	Results []map[string]map[string]MountInfo `json:"return,omitempty"`
 }
 
 var HostCollectorActions = make(map[string]Action)
 
 func init() {
-	HostCollectorActions["query-target"] = new(HostCollectorAction)
+	HostCollectorActions["query"] = new(HostCollectorAction)
 }
 
 type HostCollectorPlugin struct {
@@ -177,8 +183,8 @@ type HostCollectorOutputs struct {
 type HostCollectorOutput struct {
 	CallBackParameter
 	Result
-	Guid   string   `json:"guid,omitempty"`
-	Detail HostInfo `json:"detail,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	HostInfo `json:"detail,omitempty"`
 }
 
 type HostCollectorAction struct {
@@ -198,16 +204,16 @@ func (action *HostCollectorAction) ReadParam(param interface{}) (interface{}, er
 }
 
 func (action *HostCollectorAction) Do(input interface{}) (interface{}, error) {
-	files, _ := input.(HostCollectorInputs)
+	param, _ := input.(HostCollectorInputs)
 	outputs := HostCollectorOutputs{}
 	var finalErr error
-	for _, file := range files.Inputs {
-		fileOutput, err := action.collectHostInfo(&file)
+	for _, p := range param.Inputs {
+		ret, err := action.collectHostInfo(&p)
 		if err != nil {
 			log.Logger.Error("Host collector action", log.Error(err))
 			finalErr = err
 		}
-		outputs.Outputs = append(outputs.Outputs, fileOutput)
+		outputs.Outputs = append(outputs.Outputs, ret)
 	}
 
 	return &outputs, finalErr
@@ -266,10 +272,39 @@ func (action *HostCollectorAction) collectHostInfo(input *HostCollectorInput) (o
 		}
 	}
 
-	// merge to host info
-	output.Detail = HostInfo{
-		MinionInfo: minionResults.Results[0][input.Target],
-		DiskMounts: diskResults.Results[0][input.Target],
+	// build host info
+	minionInfo := minionResults.Results[0][input.Target]
+	diskMounts := diskResults.Results[0][input.Target]
+
+	// parse disk mount info
+	diskTotal := 0
+	var devDiskMounts []MountInfo
+	for _, mountInfo := range diskMounts {
+		if strings.HasPrefix(mountInfo.Filesystem, "/dev") {
+			devDiskMounts = append(devDiskMounts, mountInfo)
+			if v, err := strconv.Atoi(mountInfo.KBlocks); err != nil {
+				diskTotal += v
+			}
+		}
+	}
+
+	// parse hwaddr interfaces
+	var hwaddrInterfaces []string
+	for interfaceName, _ := range minionInfo.HwaddrInterfaces {
+		if interfaceName == "lo" {
+			continue
+		}
+		hwaddrInterfaces = append(hwaddrInterfaces, interfaceName)
+	}
+
+	output.HostInfo = HostInfo{
+		NumCpus:          minionInfo.NumCpus,
+		MemTotal:         minionInfo.MemTotal,
+		DiskTotal:        diskTotal,
+		Os:               fmt.Sprintf("%s %s", minionInfo.Os, minionInfo.Osrelease),
+		Kernel:           fmt.Sprintf("%s %s", minionInfo.Kernel, minionInfo.Kernelrelease),
+		DiskMounts:       devDiskMounts,
+		HwaddrInterfaces: hwaddrInterfaces,
 	}
 
 	return output, err
