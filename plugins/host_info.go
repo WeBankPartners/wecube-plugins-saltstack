@@ -131,11 +131,11 @@ type MinionInfo struct {
 type HostInfo struct {
 	Os               string      `json:"os"`
 	Kernel           string      `json:"kernel"`
-	NumCpus          int         `json:"num_cpus"`
-	MemTotal         int         `json:"mem_total"`
-	DiskTotal        int         `json:"disk_total"`
-	DiskMounts       []MountInfo `json:"disk_mounts"`
-	HwaddrInterfaces []string    `json:"hwaddr_interfaces"`
+	NumCpus          int         `json:"numCpus"`
+	MemTotal         int         `json:"memTotal"`
+	DiskTotal        int         `json:"diskTotal"`
+	DiskMounts       []MountInfo `json:"diskMounts"`
+	HwaddrInterfaces []string    `json:"hwaddrInterfaces"`
 }
 
 // MinionDetailResults salt-api return result
