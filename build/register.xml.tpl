@@ -212,10 +212,8 @@
                          <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">numCpus</parameter>
                          <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">memTotal</parameter>
                          <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">diskTotal</parameter>
-                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">os</parameter>
-                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">kernel</parameter>
-                         <parameter datatype="object" multiple="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">diskMounts</parameter>
-                         <parameter datatype="object" multiple="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">hwaddrInterfaces</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">Os</parameter>
+                         <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">Kernel</parameter>
                          <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                          <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                      </outputParameters>
