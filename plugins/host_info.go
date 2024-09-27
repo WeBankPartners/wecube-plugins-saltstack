@@ -287,11 +287,13 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 	for _, mountInfo := range diskMounts {
 		if strings.HasPrefix(mountInfo.Filesystem, "/dev") {
 			devDiskMounts = append(devDiskMounts, mountInfo)
-			if v, err1 := strconv.Atoi(mountInfo.KBlocks); err1 != nil {
+			if v, err1 := strconv.Atoi(mountInfo.KBlocks); err1 == nil {
 				diskTotal += v
 			}
 		}
 	}
+	//diskTotal = diskTotal / 1024 / 1024
+
 	log.Logger.Debug("build host info -> devDiskMounts", log.JsonObj("devDiskMounts", devDiskMounts))
 
 	// parse hwaddr interfaces
