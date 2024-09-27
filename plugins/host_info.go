@@ -260,17 +260,22 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 			return output, fmt.Errorf("unmarshal disk.usage result error: %s", err.Error())
 		}
 	}
+	log.Logger.Debug("salt target disk.usage by salt-api", log.JsonObj("diskMounts", diskResults))
 
 	// salt target grains.items by salt-api
 	var minionResults MinionDetailResults
-	minionUrl := fmt.Sprintf("https://127.0.0.1:8080/minions/%s", input.Target)
-	if result, err = CallSaltApi(minionUrl, SaltApiRequest{}, action.Language); err != nil {
+	if result, err = CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+		Client:   "local",
+		Function: "grains.items",
+		Target:   input.Target,
+	}, action.Language); err != nil {
 		return output, err
 	} else {
 		if err = json.Unmarshal([]byte(result), &minionResults); err != nil {
 			return output, fmt.Errorf("unmarshal disk.usage result error: %s", err.Error())
 		}
 	}
+	log.Logger.Debug("salt target grains.items by salt-api", log.JsonObj("minionResults", minionResults))
 
 	// build host info
 	minionInfo := minionResults.Results[0][input.Target]
@@ -287,6 +292,7 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 			}
 		}
 	}
+	log.Logger.Debug("build host info -> devDiskMounts", log.JsonObj("devDiskMounts", devDiskMounts))
 
 	// parse hwaddr interfaces
 	var hwaddrInterfaces []string
@@ -296,6 +302,7 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 		}
 		hwaddrInterfaces = append(hwaddrInterfaces, interfaceName)
 	}
+	log.Logger.Debug("build host info -> hwaddrInterfaces", log.JsonObj("hwaddrInterfaces", hwaddrInterfaces))
 
 	output.HostInfo = HostInfo{
 		NumCpus:          minionInfo.NumCpus,
@@ -306,6 +313,8 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 		DiskMounts:       devDiskMounts,
 		HwaddrInterfaces: hwaddrInterfaces,
 	}
+
+	log.Logger.Debug("build host info -> output", log.JsonObj("output", output))
 
 	return output, err
 }
