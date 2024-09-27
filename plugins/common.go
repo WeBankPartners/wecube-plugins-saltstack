@@ -185,7 +185,7 @@ type callSaltApiResults struct {
 }
 
 func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (string, error) {
-	log.Logger.Debug("Call salt api request", log.JsonObj("param", request))
+	log.Logger.Debug("Call salt api request", log.String("serviceUrl", serviceUrl), log.JsonObj("param", request))
 
 	token, err := getSaltApiToken()
 	if err != nil {
