@@ -148,64 +148,64 @@ type DiskUsageResults struct {
 	Results []map[string]map[string]MountInfo `json:"return,omitempty"`
 }
 
-var HostCollectorActions = make(map[string]Action)
+var HostInfoActions = make(map[string]Action)
 
 func init() {
-	HostCollectorActions["query"] = new(HostCollectorAction)
+	HostInfoActions["query"] = new(HostInfoAction)
 }
 
-type HostCollectorPlugin struct {
+type HostInfoPlugin struct {
 }
 
-func (plugin *HostCollectorPlugin) GetActionByName(actionName string) (Action, error) {
-	action, found := HostCollectorActions[actionName]
+func (plugin *HostInfoPlugin) GetActionByName(actionName string) (Action, error) {
+	action, found := HostInfoActions[actionName]
 	if !found {
-		return nil, fmt.Errorf("HostCollector plugin,action = %s not found", actionName)
+		return nil, fmt.Errorf("HostInfo plugin,action = %s not found", actionName)
 	}
 
 	return action, nil
 }
 
-type HostCollectorInputs struct {
-	Inputs []HostCollectorInput `json:"inputs,omitempty"`
+type HostInfoInputs struct {
+	Inputs []HostInfoInput `json:"inputs,omitempty"`
 }
 
-type HostCollectorInput struct {
+type HostInfoInput struct {
 	CallBackParameter
 	Guid   string `json:"guid,omitempty"`
 	Target string `json:"target,omitempty"`
 }
 
-type HostCollectorOutputs struct {
-	Outputs []HostCollectorOutput `json:"outputs,omitempty"`
+type HostInfoOutputs struct {
+	Outputs []HostInfoOutput `json:"outputs,omitempty"`
 }
 
-type HostCollectorOutput struct {
+type HostInfoOutput struct {
 	CallBackParameter
 	Result
 	Guid     string `json:"guid,omitempty"`
 	HostInfo `json:"detail,omitempty"`
 }
 
-type HostCollectorAction struct {
+type HostInfoAction struct {
 	Language string
 }
 
-func (action *HostCollectorAction) SetAcceptLanguage(language string) {
+func (action *HostInfoAction) SetAcceptLanguage(language string) {
 	action.Language = language
 }
 
-func (action *HostCollectorAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs HostCollectorInputs
+func (action *HostInfoAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs HostInfoInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
 	return inputs, nil
 }
 
-func (action *HostCollectorAction) Do(input interface{}) (interface{}, error) {
-	param, _ := input.(HostCollectorInputs)
-	outputs := HostCollectorOutputs{}
+func (action *HostInfoAction) Do(input interface{}) (interface{}, error) {
+	param, _ := input.(HostInfoInputs)
+	outputs := HostInfoOutputs{}
 	var finalErr error
 	for _, p := range param.Inputs {
 		ret, err := action.collectHostInfo(&p)
@@ -219,7 +219,7 @@ func (action *HostCollectorAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
-func (action *HostCollectorAction) CheckParam(input HostCollectorInput) error {
+func (action *HostInfoAction) CheckParam(input HostInfoInput) error {
 	if input.Target == "" {
 		return getParamEmptyError(action.Language, "target")
 	}
@@ -229,7 +229,7 @@ func (action *HostCollectorAction) CheckParam(input HostCollectorInput) error {
 
 	return nil
 }
-func (action *HostCollectorAction) collectHostInfo(input *HostCollectorInput) (output HostCollectorOutput, err error) {
+func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output HostInfoOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
