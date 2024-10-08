@@ -126,7 +126,7 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		return output, err
 	}
 	if input.DatabaseOwnerPassword != "" {
-		input.DatabaseOwnerPassword, err = AesDePassword(input.Guid, input.Seed, input.DatabaseOwnerPassword)
+		input.DatabaseOwnerPassword, err = AesDePassword(input.DatabaseOwnerGuid, input.Seed, input.DatabaseOwnerPassword)
 		if err != nil {
 			err = getPasswordDecodeError(action.Language, err)
 			return output, err
