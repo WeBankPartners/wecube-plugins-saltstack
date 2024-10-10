@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
@@ -303,6 +304,8 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+	BackUpEnabled        bool   `json:"backUpEnabled,omitempty"`
+	WeAppBackPath        string `json:"weAppBackPath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -464,6 +467,31 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		output.NewS3PkgPath = input.EndPoint
 	}
 
+	// backup dest file
+	// -- salt '*' file.copy /path/to/src_dir /path/to/dst_dir recurse=True remove_existing=True
+	// -- salt '*' file.mkdir /data/webackup/{{.guid}}/
+	// -- WeAppBackPath: /data/webackup
+	// salt '*' archive.tar zcf {{.WeAppBackPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
+	// salt '*' archive.tar zxf {{.WeAppBackPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
+	if input.BackUpEnabled && input.WeAppBackPath != "" {
+		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
+		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+			Client:   "local",
+			Function: "archive.tar",
+			Target:   input.Target,
+			Args: []string{
+				"zcf",
+				path.Join(input.WeAppBackPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
+				fmt.Sprintf("cwd='%s'", input.DestinationPath),
+				".",
+			},
+		}, action.Language); saltErr != nil {
+			errMsg := fmt.Sprintf("Backup %s to %s fail, %s\n", input.DestinationPath, input.WeAppBackPath, saltErr.Error())
+			output.FileDetail = errMsg
+			return output, fmt.Errorf(errMsg)
+		}
+	}
+
 	// copy apply package
 	fileCopyRequest := FileCopyInputs{
 		Inputs: []FileCopyInput{
@@ -483,7 +511,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	if err != nil {
 		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
-	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	output.FileDetail += fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{

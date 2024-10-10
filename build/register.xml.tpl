@@ -409,7 +409,9 @@
                         <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">startScript</parameter>
                         <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
                         <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_VARIBLE_PREFIX">encryptVariblePrefix</parameter>
-                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED">seed</parameter>
+                        <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="WeAppBackPath">weAppBackPath</parameter>
+                        <parameter datatype="bool" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="BackUpEnabled">backUpEnabled</parameter>
                         <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
                         <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
                     </inputParameters>
