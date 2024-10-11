@@ -580,45 +580,9 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 	return &outputs, finalErr
 }
 
-// copy from ApplyUpdateDeploymentAction for backup file reuse whe
-
+// ApplyRollbackDeploymentAction inherit ApplyUpdateDeploymentAction for backup file reuse
 type ApplyRollbackDeploymentAction struct {
-	Language string
-}
-
-func (action *ApplyRollbackDeploymentAction) SetAcceptLanguage(language string) {
-	action.Language = language
-}
-
-func (action *ApplyRollbackDeploymentAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs ApplyUpdateDeploymentInputs
-	if err := UnmarshalJson(param, &inputs); err != nil {
-		return nil, err
-	}
-	return inputs, nil
-}
-
-func (action *ApplyRollbackDeploymentAction) CheckParam(input ApplyUpdateDeploymentInput) error {
-	if input.EndPoint == "" {
-		return getParamEmptyError(action.Language, "endpoint")
-	}
-	if input.UserName == "" {
-		return getParamEmptyError(action.Language, "userName")
-	}
-	if input.Target == "" {
-		return getParamEmptyError(action.Language, "target")
-	}
-	if input.StartScriptPath == "" {
-		return getParamEmptyError(action.Language, "startScriptPath")
-	}
-	if input.DestinationPath == "" {
-		return getParamEmptyError(action.Language, "destinationPath")
-	}
-	if input.StopScriptPath == "" {
-		return getParamEmptyError(action.Language, "stopScriptPath")
-	}
-
-	return nil
+	ApplyUpdateDeploymentAction
 }
 
 func (action *ApplyRollbackDeploymentAction) applyRollbackDeployment(input ApplyUpdateDeploymentInput) (output ApplyUpdateDeploymentOutput, err error) {
