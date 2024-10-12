@@ -6,9 +6,6 @@ mkdir -p ${TMPDIR}
 
 TMP=${TMPDIR}/RSA_TMP_ENC
 TMP1=${TMPDIR}/RSA_TMP_ENC_SIN
-echo "$OPENSSL rsautl -encrypt -in $4 -inkey $2 -pubin -out $TMP"
-echo "$OPENSSL rsautl -sign -in $TMP -inkey $3 -out $TMP1"
-$OPENSSL rsautl -encrypt -in $4 -inkey $2 -pubin -out $TMP
 
 if [ "$1" = "enc-single" ]; then
   echo "$OPENSSL rsautl -encrypt -in $4 -inkey $2 -pubin -out $TMP"
