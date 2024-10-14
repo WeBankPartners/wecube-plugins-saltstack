@@ -41,21 +41,22 @@ const (
 )
 
 var (
-	DefaultS3Key              = "access_key"
-	DefaultS3Password         = "secret_key"
-	DefaultSpecialReplaceList []string
-	DefaultEncryptReplaceList []string
-	DefaultFileReplaceList    []string
-	ClusterList               []string
-	MasterHostIp              string
-	CoreUrl                   string
-	DefaultS3TmpAddress       string
-	SubSystemCode             string
-	SubSystemKey              string
-	SaltResetEnv              bool
-	ApiConcurrentNum          int
-	VariableNullCheck         bool
-	GlobalEncryptSeed         string
+	DefaultS3Key                    = "access_key"
+	DefaultS3Password               = "secret_key"
+	DefaultSpecialReplaceList       []string
+	DefaultEncryptReplaceList       []string
+	DefaultSingleEncryptReplaceList []string
+	DefaultFileReplaceList          []string
+	ClusterList                     []string
+	MasterHostIp                    string
+	CoreUrl                         string
+	DefaultS3TmpAddress             string
+	SubSystemCode                   string
+	SubSystemKey                    string
+	SaltResetEnv                    bool
+	ApiConcurrentNum                int
+	VariableNullCheck               bool
+	GlobalEncryptSeed               string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -432,6 +433,13 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Variable encrypt replace without any param")
 	}
+	tmpSingleEncryptReplace := os.Getenv("SALTSTACK_SINGLE_ENCRYPT_VARIBLE_PREFIX")
+	if tmpEncryptReplace != "" {
+		DefaultSingleEncryptReplaceList = strings.Split(tmpSingleEncryptReplace, ",")
+		log.Logger.Info("Variable single encrypt", log.StringList("special", DefaultSingleEncryptReplaceList))
+	} else {
+		log.Logger.Warn("Variable single encrypt replace without any param")
+	}
 	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
 	if tmpFileReplace != "" {
 		DefaultFileReplaceList = strings.Split(tmpFileReplace, ",")
@@ -622,4 +630,13 @@ func getEncryptSeed(inputSeed string) string {
 		return inputSeed
 	}
 	return GlobalEncryptSeed
+}
+
+func isContains(sList []string, t string) bool {
+	for _, s := range sList {
+		if s == t {
+			return true
+		}
+	}
+	return false
 }

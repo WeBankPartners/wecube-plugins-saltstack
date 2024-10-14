@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -16,17 +17,25 @@ func TestReplaceFileVar(t *testing.T) {
 		"Allow":     "yes",
 	}
 
+	dir, err := os.Getwd()
+	fmt.Println(dir)
+
 	filepath := "/Users/tylertang/Desktop/go_test/config2.conf"
 
-	keyInfo, err := GetVariable(filepath, DefaultSpecialReplaceList)
+	keyInfo, err := GetVariable(filepath, DefaultSpecialReplaceList, false)
 	if err != nil {
 		fmt.Printf("GetVariable err=%v\n", err)
 	}
 
 	fmt.Println("keyINfo", keyInfo)
 
-	err = replaceFileVar(keyMap, filepath, "seed", "private_key", "public_key", "{cpher_A}", "", "", DefaultSpecialReplaceList)
+	priKey := ""
+	pubKey := ""
+	decompressDirName := ""
+	specialReplaceList := []string{}
+	prefix := []string{}
 	if err != nil {
+		err = replaceFileVar(keyMap, filepath, "seed", pubKey, priKey, decompressDirName, specialReplaceList, prefix, DefaultSpecialReplaceList)
 		fmt.Printf("replaceFileVar err=%v\n", err)
 	}
 
