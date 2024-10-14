@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
@@ -14,6 +15,7 @@ func init() {
 	ApplyDeploymentActions["new"] = new(ApplyNewDeploymentAction)
 	ApplyDeploymentActions["update"] = new(ApplyUpdateDeploymentAction)
 	ApplyDeploymentActions["delete"] = new(ApplyDeleteDeploymentAction)
+	ApplyDeploymentActions["rollback"] = new(ApplyRollbackDeploymentAction)
 }
 
 type ApplyDeploymentPlugin struct {
@@ -303,6 +305,8 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+	AppBackUpEnabled     bool   `json:"appBackUpEnabled,omitempty"`
+	AppBackUpPath        string `json:"appBackUpPath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -464,6 +468,41 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		output.NewS3PkgPath = input.EndPoint
 	}
 
+	// backup dest dir to tar guid.tar.gz
+	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
+	if input.AppBackUpEnabled && input.AppBackUpPath != "" {
+		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
+
+		// salt '*' file.mkdir {{.AppBackUpPath}}
+		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+			Client:   "local",
+			Function: "file.mkdir",
+			Target:   input.Target,
+			Args:     []string{input.AppBackUpPath},
+		}, action.Language); saltErr != nil {
+			errMsg := fmt.Sprintf("Failed when mkdir [%s], %s\n", input.AppBackUpPath, saltErr.Error())
+			output.FileDetail = errMsg
+			return output, fmt.Errorf(errMsg)
+		}
+
+		// salt '*' archive.tar zcf {{.AppBackUpPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
+		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+			Client:   "local",
+			Function: "archive.tar",
+			Target:   input.Target,
+			Args: []string{
+				"zcf",
+				path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
+				fmt.Sprintf("cwd='%s'", input.DestinationPath),
+				".",
+			},
+		}, action.Language); saltErr != nil {
+			errMsg := fmt.Sprintf("Failed when archive %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+			output.FileDetail = errMsg
+			return output, fmt.Errorf(errMsg)
+		}
+	}
+
 	// copy apply package
 	fileCopyRequest := FileCopyInputs{
 		Inputs: []FileCopyInput{
@@ -483,7 +522,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	if err != nil {
 		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
-	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	output.FileDetail += fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{
@@ -534,6 +573,160 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
 			log.Logger.Error("App update deploy action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+	}
+	return &outputs, finalErr
+}
+
+// ApplyRollbackDeploymentAction inherit ApplyUpdateDeploymentAction for backup file reuse
+type ApplyRollbackDeploymentAction struct {
+	ApplyUpdateDeploymentAction
+}
+
+func (action *ApplyRollbackDeploymentAction) applyRollbackDeployment(input ApplyUpdateDeploymentInput) (output ApplyUpdateDeploymentOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.Target = input.Target
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.RetCode = 1
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(input)
+	if err != nil {
+		return output, err
+	}
+	input.Seed = getEncryptSeed(input.Seed)
+	if !strings.Contains(input.UserName, ":") {
+		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
+	}
+	if !strings.HasPrefix(input.StartScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		var newScriptPathList []string
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
+			} else {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
+			}
+		}
+		input.StartScriptPath = strings.Join(newScriptPathList, ",")
+	}
+	if !strings.HasPrefix(input.StopScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		var newStopPathList []string
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
+			} else {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
+			}
+		}
+		input.StopScriptPath = strings.Join(newStopPathList, ",")
+	}
+	// stop apply script
+	runStopScriptRequest := RunScriptInputs{
+		Inputs: []RunScriptInput{
+			RunScriptInput{
+				EndPointType: "LOCAL",
+				EndPoint:     input.StopScriptPath,
+				Target:       input.Target,
+				RunAs:        strings.Split(input.UserName, ":")[0],
+				Guid:         input.Guid,
+			},
+		},
+	}
+
+	log.Logger.Debug("App update", log.String("step", "run stop script"), log.JsonObj("param", runStopScriptRequest))
+	runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
+	if err != nil {
+		return output, fmt.Errorf("Run stop script fail,%s ", err.Error())
+	}
+	output.RunStopScriptDetail = runStopScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+
+	log.Logger.Debug("App update", log.String("step", "extract backup file"), log.JsonObj("input", input))
+
+	// extract backup file
+	if !input.AppBackUpEnabled || input.AppBackUpPath == "" {
+		errMsg := fmt.Sprintf("rollback disabled, AppBackUpEnabled=%v, AppBackUpPath=%s", input.AppBackUpEnabled, input.AppBackUpPath)
+		output.FileDetail = errMsg
+		return output, fmt.Errorf(errMsg)
+	}
+
+	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
+	tarFile := path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid))
+	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+		Client:   "local",
+		Function: "archive.tar",
+		Target:   input.Target,
+		Args:     []string{"zxf", tarFile, fmt.Sprintf("dest='%s'", input.DestinationPath)},
+	}, action.Language); saltErr != nil {
+		errMsg := fmt.Sprintf("Failed when extract %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+		output.FileDetail = errMsg
+		return output, fmt.Errorf(errMsg)
+	}
+	output.FileDetail += fmt.Sprintf("extract backup file success: %s -> %s", tarFile, input.DestinationPath)
+
+	// start apply script
+	runStartScriptRequest := RunScriptInputs{
+		Inputs: []RunScriptInput{
+			RunScriptInput{
+				EndPointType: "LOCAL",
+				EndPoint:     input.StartScriptPath,
+				Target:       input.Target,
+				RunAs:        strings.Split(input.UserName, ":")[0],
+				Guid:         input.Guid,
+			},
+		},
+	}
+	if input.ExecArg != "" {
+		runStartScriptRequest.Inputs[0].ExecArg = input.ExecArg
+	}
+
+	log.Logger.Debug("App update", log.String("step", "run start script"), log.JsonObj("param", runStartScriptRequest))
+	runStartScriptOutputs, err := runApplyScript(runStartScriptRequest)
+	if err != nil {
+		return output, fmt.Errorf("Run start script fail,%s ", err.Error())
+	}
+	output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+
+	return output, err
+}
+
+func (action *ApplyRollbackDeploymentAction) Do(input interface{}) (interface{}, error) {
+	inputs := input.(ApplyUpdateDeploymentInputs)
+	outputs := ApplyUpdateDeploymentOutputs{}
+	var finalErr error
+	outputChan := make(chan ApplyUpdateDeploymentThreadObj, len(inputs.Inputs))
+	wg := sync.WaitGroup{}
+	for i, input := range inputs.Inputs {
+		wg.Add(1)
+		go func(tmpInput ApplyUpdateDeploymentInput, index int) {
+			output, err := action.applyRollbackDeployment(tmpInput)
+			outputChan <- ApplyUpdateDeploymentThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+		}(input, i)
+		outputs.Outputs = append(outputs.Outputs, ApplyUpdateDeploymentOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
+		}
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("App rollback deploy action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
