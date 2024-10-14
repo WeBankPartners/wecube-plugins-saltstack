@@ -305,7 +305,7 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
-	AppBackUpEnabled     bool   `json:"appBackUpEnabled,omitempty"`
+	AppBackUpEnabled     string `json:"appBackUpEnabled,omitempty"`
 	AppBackUpPath        string `json:"appBackUpPath,omitempty"`
 }
 
@@ -470,7 +470,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 
 	// backup dest dir to tar guid.tar.gz
 	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
-	if input.AppBackUpEnabled && input.AppBackUpPath != "" {
+	if input.AppBackUpEnabled == "Y" && input.AppBackUpPath != "" {
 		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
 
 		// salt '*' file.mkdir {{.AppBackUpPath}}
@@ -658,7 +658,7 @@ func (action *ApplyRollbackDeploymentAction) applyRollbackDeployment(input Apply
 	log.Logger.Debug("App update", log.String("step", "extract backup file"), log.JsonObj("input", input))
 
 	// extract backup file
-	if !input.AppBackUpEnabled || input.AppBackUpPath == "" {
+	if input.AppBackUpEnabled != "Y" || input.AppBackUpPath == "" {
 		errMsg := fmt.Sprintf("rollback disabled, AppBackUpEnabled=%v, AppBackUpPath=%s", input.AppBackUpEnabled, input.AppBackUpPath)
 		output.FileDetail = errMsg
 		return output, fmt.Errorf(errMsg)
