@@ -307,6 +307,7 @@ type ApplyUpdateDeploymentInput struct {
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 	AppBackUpEnabled     string `json:"appBackUpEnabled,omitempty"`
 	AppBackUpPath        string `json:"appBackUpPath,omitempty"`
+	ExcludePath          string `json:"ExcludePath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -486,16 +487,25 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		}
 
 		// salt '*' archive.tar zcf {{.AppBackUpPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
+		// tar -zcvf tmp.tar.gz --exclude-vcs --exclude={.idea,venv,vendor,.github} .
+		cmdArgs := []string{
+			"zcf",
+			path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
+			fmt.Sprintf("cwd='%s'", input.DestinationPath),
+		}
+
+		// support exclude log dir when backup
+		if input.ExcludePath != "" {
+			cmdArgs = append(cmdArgs, fmt.Sprintf("--exclude={%s}", input.ExcludePath))
+		}
+		cmdArgs = append(cmdArgs, ".")
+
+		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("cmdArgs", cmdArgs))
 		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
 			Client:   "local",
 			Function: "archive.tar",
 			Target:   input.Target,
-			Args: []string{
-				"zcf",
-				path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
-				fmt.Sprintf("cwd='%s'", input.DestinationPath),
-				".",
-			},
+			Args:     cmdArgs,
 		}, action.Language); saltErr != nil {
 			errMsg := fmt.Sprintf("Failed when archive %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
 			output.FileDetail = errMsg
