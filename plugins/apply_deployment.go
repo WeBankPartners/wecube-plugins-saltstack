@@ -307,7 +307,7 @@ type ApplyUpdateDeploymentInput struct {
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 	AppBackUpEnabled     string `json:"appBackUpEnabled,omitempty"`
 	AppBackUpPath        string `json:"appBackUpPath,omitempty"`
-	ExcludePath          string `json:"ExcludePath,omitempty"`
+	ExcludePath          string `json:"excludePath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
