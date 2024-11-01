@@ -51,6 +51,11 @@ type ApplyNewDeploymentInput struct {
 	Password             string `json:"password,omitempty"`
 	RwDir                string `json:"rwDir,omitempty"`
 	RwFile               string `json:"rwFile,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -68,6 +73,11 @@ type ApplyNewDeploymentOutput struct {
 	RetCode         int    `json:"retCode,omitempty"`
 	RunScriptDetail string `json:"runScriptDetail,omitempty"`
 	Password        string `json:"password,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentThreadObj struct {
@@ -248,6 +258,26 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 		return output, fmt.Errorf("Run start script fail,%s ", err.Error())
 	}
 	output.RunScriptDetail = runScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+
+	log.Logger.Debug("App deploy", log.String("step", "parse log files"), log.JsonObj("file", input.LogFileKeyword))
+	if ret, err := FindFiles(input.LogFileKeyword, input.Target); err == nil {
+		output.LogFileKeyword = ret
+	}
+
+	log.Logger.Debug("App deploy", log.String("step", "parse log files"), log.JsonObj("file", input.LogFileMetric))
+	if ret, err := FindFiles(input.LogFileMetric, input.Target); err == nil {
+		output.LogFileMetric = ret
+	}
+
+	log.Logger.Debug("App deploy", log.String("step", "parse log files"), log.JsonObj("file", input.LogFileTrade))
+	if ret, err := FindFiles(input.LogFileTrade, input.Target); err == nil {
+		output.LogFileTrade = ret
+	}
+
+	log.Logger.Debug("App deploy", log.String("step", "parse log files"), log.JsonObj("file", input.LogFileTrace))
+	if ret, err := FindFiles(input.LogFileTrace, input.Target); err == nil {
+		output.LogFileTrace = ret
+	}
 
 	return output, err
 }
