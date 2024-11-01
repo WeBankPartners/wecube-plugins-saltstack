@@ -15,9 +15,10 @@ type FindResults struct {
 // FindGlobFiles salt '*' file.find path=/var/log name=*yum.log print=path
 func FindGlobFiles(dest, name string, target string) (string, error) {
 	// parse name to dir and file name
-	if !filepath.IsAbs(name) {
-		name = filepath.Join(dest, name)
-	}
+
+	// name is always relative to dest
+	// if !filepath.IsAbs(name) {
+	name = filepath.Join(dest, name)
 	dirName := filepath.Dir(name)
 	fileName := filepath.Base(name)
 
