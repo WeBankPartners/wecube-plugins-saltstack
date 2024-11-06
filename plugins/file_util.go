@@ -12,9 +12,13 @@ type FindResults struct {
 	Results []map[string][]string `json:"return,omitempty"`
 }
 
-// FindFiles salt '*' file.find path=/var/log name=*yum.log print=path
-func FindFiles(name string, target string) (string, error) {
+// FindGlobFiles salt '*' file.find path=/var/log name=*yum.log print=path
+func FindGlobFiles(dest, name string, target string) (string, error) {
 	// parse name to dir and file name
+
+	// name is always relative to dest
+	// if !filepath.IsAbs(name) {
+	name = filepath.Join(dest, name)
 	dirName := filepath.Dir(name)
 	fileName := filepath.Base(name)
 

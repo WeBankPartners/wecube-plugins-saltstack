@@ -53,6 +53,11 @@ type ApplyNewDeploymentInput struct {
 	Password             string `json:"password,omitempty"`
 	RwDir                string `json:"rwDir,omitempty"`
 	RwFile               string `json:"rwFile,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -70,6 +75,11 @@ type ApplyNewDeploymentOutput struct {
 	RetCode         int    `json:"retCode,omitempty"`
 	RunScriptDetail string `json:"runScriptDetail,omitempty"`
 	Password        string `json:"password,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentThreadObj struct {
@@ -251,6 +261,8 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	}
 	output.RunScriptDetail = runScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
+	// parse log files from glob name
+	action.parseGlobLogFiles(&input, &output)
 	return output, err
 }
 
@@ -284,6 +296,26 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	return &outputs, finalErr
 }
 
+func (action *ApplyNewDeploymentAction) parseGlobLogFiles(input *ApplyNewDeploymentInput, output *ApplyNewDeploymentOutput) {
+	for _, logFile := range []struct {
+		logFilePattern string
+		outputField    *string
+	}{
+		{input.LogFileTrade, &output.LogFileTrade},
+		{input.LogFileTrace, &output.LogFileTrace},
+		{input.LogFileMetric, &output.LogFileMetric},
+		{input.LogFileKeyword, &output.LogFileKeyword},
+	} {
+		if logFile.logFilePattern == "" {
+			continue
+		}
+		log.Logger.Debug("App deploy", log.String("step", "parse log file: "+logFile.logFilePattern))
+		if ret, err := FindGlobFiles(input.DestinationPath, logFile.logFilePattern, input.Target); err == nil {
+			*logFile.outputField = ret
+		}
+	}
+}
+
 type ApplyUpdateDeploymentInputs struct {
 	Inputs []ApplyUpdateDeploymentInput `json:"inputs,omitempty"`
 }
@@ -305,6 +337,12 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
+
 	AppBackUpEnabled     string `json:"appBackUpEnabled,omitempty"`
 	AppBackUpPath        string `json:"appBackUpPath,omitempty"`
 	ExcludePath          string `json:"excludePath,omitempty"`
@@ -324,6 +362,11 @@ type ApplyUpdateDeploymentOutput struct {
 	RetCode              int    `json:"retCode,omitempty"`
 	RunStartScriptDetail string `json:"runStartScriptDetail,omitempty"`
 	RunStopScriptDetail  string `json:"runStopScriptDetail,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyUpdateDeploymentAction struct {
@@ -557,6 +600,8 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	}
 	output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
+	// parse log files from glob name
+	action.parseGlobLogFiles(&input, &output)
 	return output, err
 }
 
@@ -742,6 +787,27 @@ func (action *ApplyRollbackDeploymentAction) Do(input interface{}) (interface{},
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 	return &outputs, finalErr
+}
+
+func (action *ApplyUpdateDeploymentAction) parseGlobLogFiles(input *ApplyUpdateDeploymentInput, output *ApplyUpdateDeploymentOutput) {
+	for _, logFile := range []struct {
+		logFilePattern string
+		outputField    *string
+	}{
+		{input.LogFileTrade, &output.LogFileTrade},
+		{input.LogFileTrace, &output.LogFileTrace},
+		{input.LogFileMetric, &output.LogFileMetric},
+		{input.LogFileKeyword, &output.LogFileKeyword},
+	} {
+		if logFile.logFilePattern == "" {
+			continue
+		}
+
+		log.Logger.Debug("App update", log.String("step", "parse log file: "+logFile.logFilePattern))
+		if ret, err := FindGlobFiles(input.DestinationPath, logFile.logFilePattern, input.Target); err == nil {
+			*logFile.outputField = ret
+		}
+	}
 }
 
 func createApplyUser(input interface{}) (interface{}, error) {
