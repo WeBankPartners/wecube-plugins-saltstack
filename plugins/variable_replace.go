@@ -264,6 +264,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	publicKey := input.AppPublicKey
 	privateKey := input.SysPrivateKey
 	prefix := DefaultEncryptReplaceList
+	prefix = append(prefix, DefaultSingleEncryptReplaceList...)
 	fileReplacePrefix := DefaultFileReplaceList
 
 	index := strings.LastIndexAny(filepath, "/")
@@ -440,7 +441,7 @@ func isKeyNeedEncrypt(key string, prefix []string) bool {
 	return isNeed
 }
 
-func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) {
+func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (string, error) {
 	publicKeyFile, err := getTempFile()
 	if err != nil {
 		return "", err
@@ -477,7 +478,7 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 	}
 	tmpWorkspace := fmt.Sprintf("enc-%d", time.Now().UnixNano())
 	args := []string{
-		"enc",
+		encryptType,
 		publicKeyFile,
 		privateKeyFile,
 		rawDataFile,
@@ -504,6 +505,13 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 		return value, nil
 	}
 
+	// decide encrypt type
+	encryptType := "enc"
+	if isContains(DefaultSingleEncryptReplaceList, key) {
+		// encrypt without sign
+		encryptType = "enc-single"
+	}
+
 	if publicKey == "" {
 		return "", errors.New("GetVariableValue publicKey is empty")
 	}
@@ -514,7 +522,7 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	publicKey = replaceLF(publicKey)
 	privateKey = replaceLF(privateKey)
 
-	encryptValue, err := encrpytSenstiveData(value, publicKey, privateKey)
+	encryptValue, err := encrpytSenstiveData(value, publicKey, privateKey, encryptType)
 	if err != nil {
 		err = fmt.Errorf("Try to encrypt key %s fail,%s ", key, err.Error())
 	}
