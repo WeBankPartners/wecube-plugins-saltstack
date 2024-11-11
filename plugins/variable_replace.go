@@ -429,8 +429,20 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string, prefix []string, encryptType string) bool {
-	isNeed := false
+func isKeyNeedEncrypt(key string, prefix []string) (bool, string) {
+	// single encrypt check
+	encryptType := DoubleEncryptType
+	for _, v := range DefaultSingleEncryptReplaceList {
+		if v == "" {
+			continue
+		}
+		if strings.HasPrefix(key, v) {
+			// single encrypt matched, encrypt without sign
+			log.Logger.Info("Single encrypt matched", log.String("key", key))
+			encryptType = SingEncryptType
+			break
+		}
+	}
 
 	// key encrypt escape check
 	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 {
@@ -443,11 +455,12 @@ func isKeyNeedEncrypt(key string, prefix []string, encryptType string) bool {
 			)
 		} else {
 			if encEscapePrefix.MatchString(key) {
-				return false
+				return false, encryptType
 			}
 		}
 	}
 
+	isNeed := false
 	for _, v := range prefix {
 		if v == "" {
 			continue
@@ -458,7 +471,7 @@ func isKeyNeedEncrypt(key string, prefix []string, encryptType string) bool {
 			break
 		}
 	}
-	return isNeed
+	return isNeed, encryptType
 }
 
 func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (string, error) {
@@ -525,14 +538,7 @@ func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (st
 }
 
 func getVariableValue(key string, value string, publicKey string, privateKey string, prefix []string) (string, error) {
-	// decide encrypt type
-	encryptType := DoubleEncryptType
-	if isContains(DefaultSingleEncryptReplaceList, key) {
-		// encrypt without sign
-		encryptType = SingEncryptType
-	}
-
-	needEncrypt := isKeyNeedEncrypt(key, prefix, encryptType)
+	needEncrypt, encryptType := isKeyNeedEncrypt(key, prefix)
 	if !needEncrypt {
 		return value, nil
 	}
