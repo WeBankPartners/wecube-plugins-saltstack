@@ -25,6 +25,8 @@ var (
 	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
 	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
 	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
+	DoubleEncryptType           = "enc"
+	SingEncryptType             = "enc-single"
 )
 
 func init() {
@@ -427,18 +429,49 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string, prefix []string) bool {
+func isKeyNeedEncrypt(key string, prefix []string) (bool, string) {
+	// single encrypt check
+	encryptType := DoubleEncryptType
+	for _, v := range DefaultSingleEncryptReplaceList {
+		if v == "" {
+			continue
+		}
+		if strings.HasPrefix(key, v) {
+			// single encrypt matched, encrypt without sign
+			log.Logger.Info("Single encrypt matched", log.String("key", key))
+			encryptType = SingEncryptType
+			break
+		}
+	}
+
+	// key encrypt escape check
+	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 {
+		if encEscapePrefix, err := regexp.Compile(
+			fmt.Sprintf("^(%s)\\w*", strings.Join(DefaultEncryptEscapeList, "|")),
+		); err != nil {
+			log.Logger.Error("Compile escape regex error",
+				log.String("encryptType", encryptType),
+				log.JsonObj("DefaultEncryptEscapeList", DefaultEncryptEscapeList),
+			)
+		} else {
+			if encEscapePrefix.MatchString(key) {
+				return false, encryptType
+			}
+		}
+	}
+
 	isNeed := false
 	for _, v := range prefix {
 		if v == "" {
 			continue
 		}
+
 		if strings.HasPrefix(key, v) {
 			isNeed = true
 			break
 		}
 	}
-	return isNeed
+	return isNeed, encryptType
 }
 
 func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (string, error) {
@@ -496,20 +529,18 @@ func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (st
 		return "", err
 	}
 
+	// add cipher type for single encrypt
+	if encryptType == SingEncryptType {
+		return fmt.Sprintf("%s%s", "ffffff02", encryptData), nil
+	}
+
 	return encryptData, nil
 }
 
 func getVariableValue(key string, value string, publicKey string, privateKey string, prefix []string) (string, error) {
-	needEncrypt := isKeyNeedEncrypt(key, prefix)
+	needEncrypt, encryptType := isKeyNeedEncrypt(key, prefix)
 	if !needEncrypt {
 		return value, nil
-	}
-
-	// decide encrypt type
-	encryptType := "enc"
-	if isContains(DefaultSingleEncryptReplaceList, key) {
-		// encrypt without sign
-		encryptType = "enc-single"
 	}
 
 	if publicKey == "" {
