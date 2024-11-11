@@ -25,6 +25,8 @@ var (
 	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
 	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
 	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
+	DoubleEncryptType           = "enc"
+	SingEncryptType             = "enc-single"
 )
 
 func init() {
@@ -496,6 +498,11 @@ func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (st
 		return "", err
 	}
 
+	// add cipher type for single encrypt
+	if encryptType == SingEncryptType {
+		return fmt.Sprintf("%s%s", "ffffff02", encryptData), nil
+	}
+
 	return encryptData, nil
 }
 
@@ -506,10 +513,10 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	}
 
 	// decide encrypt type
-	encryptType := "enc"
+	encryptType := DoubleEncryptType
 	if isContains(DefaultSingleEncryptReplaceList, key) {
 		// encrypt without sign
-		encryptType = "enc-single"
+		encryptType = SingEncryptType
 	}
 
 	if publicKey == "" {
