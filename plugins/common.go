@@ -46,6 +46,7 @@ var (
 	DefaultSpecialReplaceList       []string
 	DefaultEncryptReplaceList       []string
 	DefaultSingleEncryptReplaceList []string
+	DefaultEncryptEscapeList        []string
 	DefaultFileReplaceList          []string
 	ClusterList                     []string
 	MasterHostIp                    string
@@ -439,6 +440,13 @@ func InitEnvParam() {
 		log.Logger.Info("Variable single encrypt", log.StringList("special", DefaultSingleEncryptReplaceList))
 	} else {
 		log.Logger.Warn("Variable single encrypt replace without any param")
+	}
+	tmpEncryptEscape := os.Getenv("SALTSTACK_ENCRYPT_ESCAPE_PREFIX")
+	if tmpEncryptReplace != "" {
+		DefaultEncryptEscapeList = strings.Split(tmpEncryptEscape, ",")
+		log.Logger.Info("Variable encrypt escape", log.StringList("special", DefaultEncryptEscapeList))
+	} else {
+		log.Logger.Warn("Variable encrypt escape without any param")
 	}
 	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
 	if tmpFileReplace != "" {

@@ -27,6 +27,7 @@ var (
 	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
 	DoubleEncryptType           = "enc"
 	SingEncryptType             = "enc-single"
+	EncEscapePrefix, _          = regexp.Compile(fmt.Sprintf("^(%s)\\w*", strings.Join(DefaultEncryptEscapeList, "|")))
 )
 
 func init() {
@@ -429,12 +430,19 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string, prefix []string) bool {
+func isKeyNeedEncrypt(key string, prefix []string, encryptType string) bool {
 	isNeed := false
+
+	// key encrypt escape check
+	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 && EncEscapePrefix.MatchString(key) {
+		return false
+	}
+
 	for _, v := range prefix {
 		if v == "" {
 			continue
 		}
+
 		if strings.HasPrefix(key, v) {
 			isNeed = true
 			break
@@ -507,16 +515,16 @@ func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (st
 }
 
 func getVariableValue(key string, value string, publicKey string, privateKey string, prefix []string) (string, error) {
-	needEncrypt := isKeyNeedEncrypt(key, prefix)
-	if !needEncrypt {
-		return value, nil
-	}
-
 	// decide encrypt type
 	encryptType := DoubleEncryptType
 	if isContains(DefaultSingleEncryptReplaceList, key) {
 		// encrypt without sign
 		encryptType = SingEncryptType
+	}
+
+	needEncrypt := isKeyNeedEncrypt(key, prefix, encryptType)
+	if !needEncrypt {
+		return value, nil
 	}
 
 	if publicKey == "" {
