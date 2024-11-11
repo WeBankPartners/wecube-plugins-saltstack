@@ -27,7 +27,6 @@ var (
 	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
 	DoubleEncryptType           = "enc"
 	SingEncryptType             = "enc-single"
-	EncEscapePrefix, _          = regexp.Compile(fmt.Sprintf("^(%s)\\w*", strings.Join(DefaultEncryptEscapeList, "|")))
 )
 
 func init() {
@@ -434,8 +433,19 @@ func isKeyNeedEncrypt(key string, prefix []string, encryptType string) bool {
 	isNeed := false
 
 	// key encrypt escape check
-	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 && EncEscapePrefix.MatchString(key) {
-		return false
+	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 {
+		if encEscapePrefix, err := regexp.Compile(
+			fmt.Sprintf("^(%s)\\w*", strings.Join(DefaultEncryptEscapeList, "|")),
+		); err != nil {
+			log.Logger.Error("Compile escape regex error",
+				log.String("encryptType", encryptType),
+				log.JsonObj("DefaultEncryptEscapeList", DefaultEncryptEscapeList),
+			)
+		} else {
+			if encEscapePrefix.MatchString(key) {
+				return false
+			}
+		}
 	}
 
 	for _, v := range prefix {
