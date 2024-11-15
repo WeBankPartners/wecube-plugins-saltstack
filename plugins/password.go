@@ -29,9 +29,9 @@ type PasswordEncodeInputs struct {
 
 type PasswordEncodeInput struct {
 	CallBackParameter
-	Guid      string `json:"guid,omitempty"`
-	Seed      string `json:"seed,omitempty"`
-	Password  string `json:"password,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type PasswordEncodeOutputs struct {
@@ -51,9 +51,9 @@ type PasswordDecodeInputs struct {
 
 type PasswordDecodeInput struct {
 	CallBackParameter
-	Guid      string `json:"guid,omitempty"`
-	Seed      string `json:"seed,omitempty"`
-	Password  string `json:"password,omitempty"`
+	Guid     string `json:"guid,omitempty"`
+	Seed     string `json:"seed,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type PasswordDecodeOutputs struct {
@@ -118,7 +118,8 @@ func (action *PasswordEncodeAction) Do(input interface{}) (interface{}, error) {
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
 		}
-		encryptPassword,err := AesEnPassword(input.Guid, input.Seed, input.Password, DEFALT_CIPHER)
+		input.Seed = getEncryptSeed(input.Seed)
+		encryptPassword, err := AesEnPassword(input.Guid, input.Seed, input.Password, DEFALT_CIPHER)
 		if err != nil {
 			err = getPasswordEncodeError(action.Language, err)
 			output.Result.Code = RESULT_CODE_ERROR
@@ -176,7 +177,8 @@ func (action *PasswordDecodeAction) Do(input interface{}) (interface{}, error) {
 			outputs.Outputs = append(outputs.Outputs, output)
 			continue
 		}
-		decodePassword,err := AesDePassword(input.Guid, input.Seed, input.Password)
+		input.Seed = getEncryptSeed(input.Seed)
+		decodePassword, err := AesDePassword(input.Guid, input.Seed, input.Password)
 		if err != nil {
 			err = getPasswordDecodeError(action.Language, err)
 			output.Result.Code = RESULT_CODE_ERROR

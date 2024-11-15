@@ -119,13 +119,14 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	}
 
 	//get root password
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
 	if input.DatabaseOwnerPassword != "" {
-		input.DatabaseOwnerPassword, err = AesDePassword(input.Guid, input.Seed, input.DatabaseOwnerPassword)
+		input.DatabaseOwnerPassword, err = AesDePassword(input.DatabaseOwnerGuid, input.Seed, input.DatabaseOwnerPassword)
 		if err != nil {
 			err = getPasswordDecodeError(action.Language, err)
 			return output, err
@@ -296,7 +297,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 	if err != nil {
 		return output, err
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	password, tmpErr := AesDePassword(input.Guid, input.Seed, input.Password)
 	if tmpErr != nil {
 		err = getPasswordDecodeError(action.Language, tmpErr)
