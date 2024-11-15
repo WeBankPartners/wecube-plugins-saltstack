@@ -58,7 +58,7 @@ type RunMysqlScriptOutput struct {
 	Detail string `json:"detail,omitempty"`
 }
 
-type RunMysqlScriptAction struct { Language string }
+type RunMysqlScriptAction struct{ Language string }
 
 func (action *RunMysqlScriptAction) SetAcceptLanguage(language string) {
 	action.Language = language
@@ -104,8 +104,8 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 
 	if input.Port == "" {
 		input.Port = "3306"
-	}else{
-		_,err := strconv.Atoi(input.Port)
+	} else {
+		_, err := strconv.Atoi(input.Port)
 		if err != nil {
 			return getParamValidateError(action.Language, "port", "Port is not num")
 		}
@@ -166,7 +166,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	}
 
 	var fileNameList []string
-	for _,v := range splitWithCustomFlag(input.EndPoint) {
+	for _, v := range splitWithCustomFlag(input.EndPoint) {
 		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
 		if err != nil {
 			return output, err
@@ -177,7 +177,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	//if err != nil {
 	//	return output, err
 	//}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
@@ -201,7 +201,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 
 		if len(fileNameList) > 1 {
-			return output,fmt.Errorf("Param endpoint validate fail,endpoint must be one when suffix not like *.sql ")
+			return output, fmt.Errorf("Param endpoint validate fail,endpoint must be one when suffix not like *.sql ")
 		}
 
 		// unpack file
@@ -216,21 +216,21 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		for _, file := range sqlFiles {
 			file = strings.TrimSpace(file)
 			if strings.Contains(file, "*") {
-				sortOutput,tmpErr := exec.Command("/bin/bash", "-c", fmt.Sprintf("ls %s/%s | sort", newDir, file)).Output()
+				sortOutput, tmpErr := exec.Command("/bin/bash", "-c", fmt.Sprintf("ls %s/%s | sort", newDir, file)).Output()
 				sortOutputString := string(sortOutput)
 				if tmpErr != nil || sortOutputString == "" {
 					if tmpErr == nil {
 						tmpErr = fmt.Errorf("can not fetch any file")
 					}
 					err = fmt.Errorf("Try to find %s sql file fail,%s ", file, tmpErr.Error())
-					return output,err
+					return output, err
 				}
-				for _,vv := range strings.Split(sortOutputString, "\n") {
+				for _, vv := range strings.Split(sortOutputString, "\n") {
 					if vv != "" {
 						files = append(files, vv)
 					}
 				}
-			}else {
+			} else {
 				sqlFile := newDir + "/" + file
 				if !fileExist(sqlFile) {
 					err = getFileNotExistError(action.Language, sqlFile)
@@ -240,7 +240,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 			}
 		}
 	} else {
-		for _,v := range fileNameList {
+		for _, v := range fileNameList {
 			// move the *.sql to newDir directly
 			out, tmpErr := exec.Command("/bin/bash", "-c", fmt.Sprintf("mv -f %s %s", v, newDir)).Output()
 			log.Logger.Debug("Run move command", log.String("output", string(out)), log.Error(tmpErr))
@@ -269,7 +269,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 	}
 
-	for _,v := range fileNameList {
+	for _, v := range fileNameList {
 		err = os.RemoveAll(v)
 		if err != nil {
 			return output, err
@@ -304,7 +304,7 @@ func splitWithCustomFlag(input string) []string {
 	input = strings.Replace(input, ",", "^^^", -1)
 	input = strings.Replace(input, "|", "^^^", -1)
 	var output []string
-	for _,v := range strings.Split(input, "^^^") {
+	for _, v := range strings.Split(input, "^^^") {
 		if v != "" {
 			output = append(output, v)
 		}

@@ -20,6 +20,8 @@
         <systemParameter name="SALTSTACK_SCRIPT_S3" scopeType="global" defaultValue="S3"/>
         <systemParameter name="SALTSTACK_SCRIPT_USER_PARAM" scopeType="global" defaultValue="USER_PARAM"/>
         <systemParameter name="SALTSTACK_ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="!,%"/>
+        <systemParameter name="SALTSTACK_SINGLE_ENCRYPT_VARIBLE_PREFIX" scopeType="global" defaultValue="+"/>
+        <systemParameter name="SALTSTACK_ENCRYPT_ESCAPE_PREFIX" scopeType="global" defaultValue=""/>
         <systemParameter name="SALTSTACK_FILE_VARIBLE_PREFIX" scopeType="global" defaultValue="^"/>
         <systemParameter name="SALTSTACK_SYSTEM_PRIVATE_KEY" scopeType="global" defaultValue=""/>
         <systemParameter name="SALTSTACK_AGENT_USER" scopeType="global" defaultValue="root"/>
@@ -39,7 +41,7 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{IMAGENAME}}" containerName="{{CONTAINERNAME}}" portBindings="9099:80,4505:4505,4506:4506,4507:4507,{{PORTBINDING}}" volumeBindings="/etc/localtime:/etc/localtime,{{BASE_MOUNT_PATH}}/data/minions_pki:/etc/salt/pki/master/minions,{{BASE_MOUNT_PATH}}/saltstack/logs:/home/app/wecube-plugins-saltstack/logs,{{BASE_MOUNT_PATH}}/data:/home/app/data,{{BASE_MOUNT_PATH}}/certs:/data/certs" envVariables="minion_master_ip={{ALLOCATE_HOST}},minion_port={{SALTSTACK_AGENT_PORT}},DEFAULT_S3_KEY={{S3_ACCESS_KEY}},DEFAULT_S3_PASSWORD={{S3_SECRET_KEY}},SALTSTACK_DEFAULT_SPECIAL_REPLACE={{SALTSTACK_DEFAULT_SPECIAL_REPLACE}},CORE_ADDR={{CORE_ADDR}},GATEWAY_URL={{GATEWAY_URL}},SALTSTACK_ENCRYPT_VARIBLE_PREFIX={{SALTSTACK_ENCRYPT_VARIBLE_PREFIX}},SALTSTACK_FILE_VARIBLE_PREFIX={{SALTSTACK_FILE_VARIBLE_PREFIX}},SALTSTACK_LOG_LEVEL={{SALTSTACK_LOG_LEVEL}},JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},S3_SERVER_URL={{S3_SERVER_URL}},SUB_SYSTEM_CODE={{SUB_SYSTEM_CODE}},SUB_SYSTEM_KEY={{SUB_SYSTEM_KEY}},SALTSTACK_RESET_ENV={{SALTSTACK_RESET_ENV}},API_CONCURRENT_NUM={{SALTSTACK_API_CONCURRENT_NUM}},SALTSTACK_VARIABLE_NULL_CHECK={{SALTSTACK_VARIABLE_NULL_CHECK}}"/>
+        <docker imageName="{{IMAGENAME}}" containerName="{{CONTAINERNAME}}" portBindings="9099:80,4505:4505,4506:4506,4507:4507,{{PORTBINDING}}" volumeBindings="/etc/localtime:/etc/localtime,{{BASE_MOUNT_PATH}}/data/minions_pki:/etc/salt/pki/master/minions,{{BASE_MOUNT_PATH}}/saltstack/logs:/home/app/wecube-plugins-saltstack/logs,{{BASE_MOUNT_PATH}}/data:/home/app/data,{{BASE_MOUNT_PATH}}/certs:/data/certs" envVariables="minion_master_ip={{ALLOCATE_HOST}},minion_port={{SALTSTACK_AGENT_PORT}},DEFAULT_S3_KEY={{S3_ACCESS_KEY}},DEFAULT_S3_PASSWORD={{S3_SECRET_KEY}},SALTSTACK_DEFAULT_SPECIAL_REPLACE={{SALTSTACK_DEFAULT_SPECIAL_REPLACE}},CORE_ADDR={{CORE_ADDR}},GATEWAY_URL={{GATEWAY_URL}},SALTSTACK_ENCRYPT_VARIBLE_PREFIX={{SALTSTACK_ENCRYPT_VARIBLE_PREFIX}},SALTSTACK_SINGLE_ENCRYPT_VARIBLE_PREFIX={{SALTSTACK_SINGLE_ENCRYPT_VARIBLE_PREFIX}},SALTSTACK_ENCRYPT_ESCAPE_PREFIX={{SALTSTACK_ENCRYPT_ESCAPE_PREFIX}},SALTSTACK_FILE_VARIBLE_PREFIX={{SALTSTACK_FILE_VARIBLE_PREFIX}},SALTSTACK_LOG_LEVEL={{SALTSTACK_LOG_LEVEL}},JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},S3_SERVER_URL={{S3_SERVER_URL}},SUB_SYSTEM_CODE={{SUB_SYSTEM_CODE}},SUB_SYSTEM_KEY={{SUB_SYSTEM_KEY}},SALTSTACK_RESET_ENV={{SALTSTACK_RESET_ENV}},API_CONCURRENT_NUM={{SALTSTACK_API_CONCURRENT_NUM}},SALTSTACK_VARIABLE_NULL_CHECK={{SALTSTACK_VARIABLE_NULL_CHECK}},ENCRYPT_SEED={{ENCRYPT_SEED}}"/>
         <s3 bucketName="salt-tmp"/>
     </resourceDependencies>
 
@@ -104,10 +106,9 @@
             <interface action="run" path="/saltstack/v1/host-script/run" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
@@ -121,10 +122,9 @@
             <interface action="ssh-run" path="/saltstack/v1/host-script/ssh-run" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
@@ -140,10 +140,9 @@
             <interface action="run-local" path="/saltstack/v1/host-script/run" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_LOCAL">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_LOCAL">endpointType</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
@@ -157,10 +156,9 @@
             <interface action="run-s3" path="/saltstack/v1/host-script/run" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_S3">endpointType</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_S3">endpointType</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">args</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">workDir</parameter>
@@ -174,8 +172,7 @@
             <interface action="run-user-param" path="/saltstack/v1/host-script/run" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
-                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SCRIPT_END_POINT_TYPE_USER_PARAM">endpointType</parameter>
-                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">endpoint</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_SCRIPT_USER_PARAM">endpointType</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">scriptContent</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">runAs</parameter>
@@ -201,6 +198,24 @@
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
+        <plugin name="host-info" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
+            <interface action="query" path="/saltstack/v1/host-info/query" filterRule="">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">target</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">numCpus</parameter>
+                    <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">memTotal</parameter>
+                    <parameter datatype="int" sensitiveData="N" mappingType="entity" mappingEntityExpression="">diskTotal</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">os</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">kernel</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
@@ -353,6 +368,25 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
             </interface>
+             <interface action="change-password" path="/saltstack/v1/mysql-user/change-password" filterRule="">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">userName</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserName</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">databaseUserGuid</parameter>
+                    <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">databaseUserPassword</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
         </plugin>
         <plugin name="apply-deployment" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
             <interface action="new" path="/saltstack/v1/apply-deployment/new" filterRule="">
@@ -373,12 +407,20 @@
                     <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwDir</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">rwFile</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrade</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrace</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileMetric</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileKeyword</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileTrade</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileTrace</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileMetric</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileKeyword</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
@@ -399,11 +441,19 @@
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">appPublicKey</parameter>
                     <parameter datatype="string" required="N" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SYSTEM_PRIVATE_KEY" >sysPrivateKey</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrade</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrace</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileMetric</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileKeyword</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">s3PkgPath</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">fileDetail</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileTrade</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileTrace</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileMetric</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">logFileKeyword</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
@@ -437,7 +487,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
             </interface>
-             <interface action="decode" path="/saltstack/v1/password/decode" filterRule="">
+            <interface action="decode" path="/saltstack/v1/password/decode" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>

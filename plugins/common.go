@@ -41,20 +41,23 @@ const (
 )
 
 var (
-	DefaultS3Key              = "access_key"
-	DefaultS3Password         = "secret_key"
-	DefaultSpecialReplaceList []string
-	DefaultEncryptReplaceList []string
-	DefaultFileReplaceList    []string
-	ClusterList               []string
-	MasterHostIp              string
-	CoreUrl                   string
-	DefaultS3TmpAddress       string
-	SubSystemCode             string
-	SubSystemKey              string
-	SaltResetEnv              bool
-	ApiConcurrentNum          int
-	VariableNullCheck         bool
+	DefaultS3Key                    = "access_key"
+	DefaultS3Password               = "secret_key"
+	DefaultSpecialReplaceList       []string
+	DefaultEncryptReplaceList       []string
+	DefaultSingleEncryptReplaceList []string
+	DefaultEncryptEscapeList        []string
+	DefaultFileReplaceList          []string
+	ClusterList                     []string
+	MasterHostIp                    string
+	CoreUrl                         string
+	DefaultS3TmpAddress             string
+	SubSystemCode                   string
+	SubSystemKey                    string
+	SaltResetEnv                    bool
+	ApiConcurrentNum                int
+	VariableNullCheck               bool
+	GlobalEncryptSeed               string
 )
 
 var CIPHER_MAP = map[string]string{
@@ -184,7 +187,7 @@ type callSaltApiResults struct {
 }
 
 func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (string, error) {
-	log.Logger.Debug("Call salt api request", log.JsonObj("param", request))
+	log.Logger.Debug("Call salt api request", log.String("serviceUrl", serviceUrl), log.JsonObj("param", request))
 
 	token, err := getSaltApiToken()
 	if err != nil {
@@ -279,17 +282,17 @@ func AesEnPassword(guid, seed, password, cipher string) (string, error) {
 }
 
 func AesDePassword(guid, seed, password string) (string, error) {
-	var cipher string
+	var cipherPrefix string
 	for _, _cipher := range CIPHER_MAP {
 		if strings.HasPrefix(password, _cipher) {
-			cipher = _cipher
+			cipherPrefix = _cipher
 			break
 		}
 	}
-	if cipher == "" {
+	if cipherPrefix == "" {
 		return password, nil
 	}
-	password = password[len(cipher):]
+	password = password[len(cipherPrefix):]
 
 	md5sum := Md5Encode(guid + seed)
 	dePassword, err := AesDecode(md5sum[0:16], password)
@@ -431,6 +434,20 @@ func InitEnvParam() {
 	} else {
 		log.Logger.Warn("Variable encrypt replace without any param")
 	}
+	tmpSingleEncryptReplace := os.Getenv("SALTSTACK_SINGLE_ENCRYPT_VARIBLE_PREFIX")
+	if tmpEncryptReplace != "" {
+		DefaultSingleEncryptReplaceList = strings.Split(tmpSingleEncryptReplace, ",")
+		log.Logger.Info("Variable single encrypt", log.StringList("special", DefaultSingleEncryptReplaceList))
+	} else {
+		log.Logger.Warn("Variable single encrypt replace without any param")
+	}
+	tmpEncryptEscape := os.Getenv("SALTSTACK_ENCRYPT_ESCAPE_PREFIX")
+	if tmpEncryptReplace != "" {
+		DefaultEncryptEscapeList = strings.Split(tmpEncryptEscape, ",")
+		log.Logger.Info("Variable encrypt escape", log.StringList("special", DefaultEncryptEscapeList))
+	} else {
+		log.Logger.Warn("Variable encrypt escape without any param")
+	}
 	tmpFileReplace := os.Getenv("SALTSTACK_FILE_VARIBLE_PREFIX")
 	if tmpFileReplace != "" {
 		DefaultFileReplaceList = strings.Split(tmpFileReplace, ",")
@@ -490,6 +507,7 @@ func InitEnvParam() {
 	} else {
 		VariableNullCheck = false
 	}
+	GlobalEncryptSeed = os.Getenv("ENCRYPT_SEED")
 }
 
 func checkIllegalParam(input string) bool {
@@ -600,4 +618,33 @@ func RSAEncryptByPrivate(orgidata []byte, privatekey string) ([]byte, error) {
 		m.Mod(m, priv.N)
 	}
 	return m.Bytes(), nil
+}
+
+func getEncryptSeed(inputSeed string) string {
+	if GlobalEncryptSeed == "" {
+		return inputSeed
+	}
+	if inputSeed == "" {
+		return GlobalEncryptSeed
+	}
+	var cipherPrefix string
+	for _, _cipher := range CIPHER_MAP {
+		if strings.HasPrefix(inputSeed, _cipher) {
+			cipherPrefix = _cipher
+			break
+		}
+	}
+	if cipherPrefix == "" {
+		return inputSeed
+	}
+	return GlobalEncryptSeed
+}
+
+func isContains(sList []string, t string) bool {
+	for _, s := range sList {
+		if s == t {
+			return true
+		}
+	}
+	return false
 }

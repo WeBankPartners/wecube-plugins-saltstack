@@ -25,6 +25,8 @@ var (
 	KEY_KEY_SEPERATOR           = VARIABLE_VARIABLE_SEPERATOR
 	ONE_VARIABLE_SEPERATOR      = "&" + SEPERATOR
 	NULL_VALUE_FLAG             = "NULL" + SEPERATOR
+	DoubleEncryptType           = "enc"
+	SingEncryptType             = "enc-single"
 )
 
 func init() {
@@ -145,9 +147,17 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 			output.Result.Message = err.Error()
 		}
 	}()
-
 	err = action.CheckParam(*input)
 	if err != nil {
+		return output, err
+	}
+	input.Seed = getEncryptSeed(input.Seed)
+	if input.AppPublicKey, err = AesDePassword(input.Guid, input.Seed, input.AppPublicKey); err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("decode appPlubicKey fail,%s ", err.Error()))
+		return output, err
+	}
+	if input.SysPrivateKey, err = AesDePassword(input.Guid, input.Seed, input.SysPrivateKey); err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("decode sysPrivateKey fail,%s ", err.Error()))
 		return output, err
 	}
 
@@ -256,6 +266,7 @@ func ReplaceFileVar(filepath string, input *VariableReplaceInput, decompressDirN
 	publicKey := input.AppPublicKey
 	privateKey := input.SysPrivateKey
 	prefix := DefaultEncryptReplaceList
+	prefix = append(prefix, DefaultSingleEncryptReplaceList...)
 	fileReplacePrefix := DefaultFileReplaceList
 
 	index := strings.LastIndexAny(filepath, "/")
@@ -418,21 +429,52 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func isKeyNeedEncrypt(key string, prefix []string) bool {
+func isKeyNeedEncrypt(key string, prefix []string) (bool, string) {
+	// single encrypt check
+	encryptType := DoubleEncryptType
+	for _, v := range DefaultSingleEncryptReplaceList {
+		if v == "" {
+			continue
+		}
+		if strings.HasPrefix(key, v) {
+			// single encrypt matched, encrypt without sign
+			log.Logger.Info("Single encrypt matched", log.String("key", key))
+			encryptType = SingEncryptType
+			break
+		}
+	}
+
+	// key encrypt escape check
+	if encryptType == SingEncryptType && len(DefaultEncryptEscapeList) > 0 {
+		if encEscapePrefix, err := regexp.Compile(
+			fmt.Sprintf("^(%s)\\w*", strings.Join(DefaultEncryptEscapeList, "|")),
+		); err != nil {
+			log.Logger.Error("Compile escape regex error",
+				log.String("encryptType", encryptType),
+				log.JsonObj("DefaultEncryptEscapeList", DefaultEncryptEscapeList),
+			)
+		} else {
+			if encEscapePrefix.MatchString(key) {
+				return false, encryptType
+			}
+		}
+	}
+
 	isNeed := false
 	for _, v := range prefix {
 		if v == "" {
 			continue
 		}
+
 		if strings.HasPrefix(key, v) {
 			isNeed = true
 			break
 		}
 	}
-	return isNeed
+	return isNeed, encryptType
 }
 
-func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) {
+func encrpytSenstiveData(rawData, publicKey, privateKey, encryptType string) (string, error) {
 	publicKeyFile, err := getTempFile()
 	if err != nil {
 		return "", err
@@ -469,7 +511,7 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 	}
 	tmpWorkspace := fmt.Sprintf("enc-%d", time.Now().UnixNano())
 	args := []string{
-		"enc",
+		encryptType,
 		publicKeyFile,
 		privateKeyFile,
 		rawDataFile,
@@ -487,11 +529,16 @@ func encrpytSenstiveData(rawData, publicKey, privateKey string) (string, error) 
 		return "", err
 	}
 
+	// add cipher type for single encrypt
+	if encryptType == SingEncryptType {
+		return fmt.Sprintf("%s%s", "ffffff02", encryptData), nil
+	}
+
 	return encryptData, nil
 }
 
 func getVariableValue(key string, value string, publicKey string, privateKey string, prefix []string) (string, error) {
-	needEncrypt := isKeyNeedEncrypt(key, prefix)
+	needEncrypt, encryptType := isKeyNeedEncrypt(key, prefix)
 	if !needEncrypt {
 		return value, nil
 	}
@@ -506,7 +553,7 @@ func getVariableValue(key string, value string, publicKey string, privateKey str
 	publicKey = replaceLF(publicKey)
 	privateKey = replaceLF(privateKey)
 
-	encryptValue, err := encrpytSenstiveData(value, publicKey, privateKey)
+	encryptValue, err := encrpytSenstiveData(value, publicKey, privateKey, encryptType)
 	if err != nil {
 		err = fmt.Errorf("Try to encrypt key %s fail,%s ", key, err.Error())
 	}

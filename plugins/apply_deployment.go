@@ -14,6 +14,7 @@ func init() {
 	ApplyDeploymentActions["new"] = new(ApplyNewDeploymentAction)
 	ApplyDeploymentActions["update"] = new(ApplyUpdateDeploymentAction)
 	ApplyDeploymentActions["delete"] = new(ApplyDeleteDeploymentAction)
+	//ApplyDeploymentActions["rollback"] = new(ApplyRollbackDeploymentAction)
 }
 
 type ApplyDeploymentPlugin struct {
@@ -49,8 +50,13 @@ type ApplyNewDeploymentInput struct {
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
 	Password             string `json:"password,omitempty"`
-	RwDir             string `json:"rwDir,omitempty"`
+	RwDir                string `json:"rwDir,omitempty"`
 	RwFile               string `json:"rwFile,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -68,6 +74,11 @@ type ApplyNewDeploymentOutput struct {
 	RetCode         int    `json:"retCode,omitempty"`
 	RunScriptDetail string `json:"runScriptDetail,omitempty"`
 	Password        string `json:"password,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyNewDeploymentThreadObj struct {
@@ -130,6 +141,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	if err != nil {
 		return output, err
 	}
+	input.Seed = getEncryptSeed(input.Seed)
 	userGroup := input.UserName
 	if strings.Contains(userGroup, ":") {
 		userGroup = strings.Split(userGroup, ":")[1]
@@ -143,10 +155,10 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newScriptPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -156,13 +168,13 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	addUserRequest := AddUserInputs{
 		Inputs: []AddUserInput{
 			AddUserInput{
-				Guid:     input.Guid,
-				Target:   input.Target,
-				UserName: strings.Split(input.UserName, ":")[0],
-				Password: input.Password,
-				Seed:     input.Seed,
-				RwDir:    input.RwDir,
-				RwFile:   input.RwFile,
+				Guid:      input.Guid,
+				Target:    input.Target,
+				UserName:  strings.Split(input.UserName, ":")[0],
+				Password:  input.Password,
+				Seed:      input.Seed,
+				RwDir:     input.RwDir,
+				RwFile:    input.RwFile,
 				UserGroup: userGroup,
 			},
 		},
@@ -248,6 +260,8 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	}
 	output.RunScriptDetail = runScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
+	// parse log files from glob name
+	action.parseGlobLogFiles(&input, &output)
 	return output, err
 }
 
@@ -257,13 +271,13 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	var finalErr error
 	outputChan := make(chan ApplyNewDeploymentThreadObj, len(inputs.Inputs))
 	wg := sync.WaitGroup{}
-	for i,input := range inputs.Inputs {
+	for i, input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyNewDeploymentInput,index int) {
+		go func(tmpInput ApplyNewDeploymentInput, index int) {
 			output, err := action.applyNewDeployment(tmpInput)
-			outputChan <- ApplyNewDeploymentThreadObj{Data:output,Err:err,Index:index}
+			outputChan <- ApplyNewDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
-		}(input,i)
+		}(input, i)
 		outputs.Outputs = append(outputs.Outputs, ApplyNewDeploymentOutput{})
 	}
 	wg.Wait()
@@ -271,7 +285,7 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		if len(outputChan) == 0 {
 			break
 		}
-		tmpOutput := <- outputChan
+		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
 			log.Logger.Error("App new deploy action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
@@ -279,6 +293,26 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 	return &outputs, finalErr
+}
+
+func (action *ApplyNewDeploymentAction) parseGlobLogFiles(input *ApplyNewDeploymentInput, output *ApplyNewDeploymentOutput) {
+	for _, logFile := range []struct {
+		logFilePattern string
+		outputField    *string
+	}{
+		{input.LogFileTrade, &output.LogFileTrade},
+		{input.LogFileTrace, &output.LogFileTrace},
+		{input.LogFileMetric, &output.LogFileMetric},
+		{input.LogFileKeyword, &output.LogFileKeyword},
+	} {
+		if logFile.logFilePattern == "" {
+			continue
+		}
+		log.Logger.Debug("App deploy", log.String("step", "parse log file: "+logFile.logFilePattern))
+		if ret, err := FindGlobFiles(input.DestinationPath, logFile.logFilePattern, input.Target); err == nil {
+			*logFile.outputField = ret
+		}
+	}
 }
 
 type ApplyUpdateDeploymentInputs struct {
@@ -302,6 +336,15 @@ type ApplyUpdateDeploymentInput struct {
 	Seed                 string `json:"seed,omitempty"`
 	AppPublicKey         string `json:"appPublicKey,omitempty"`
 	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
+
+	//AppBackUpEnabled string `json:"appBackUpEnabled,omitempty"`
+	//AppBackUpPath    string `json:"appBackUpPath,omitempty"`
+	//ExcludePath      string `json:"excludePath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -318,6 +361,11 @@ type ApplyUpdateDeploymentOutput struct {
 	RetCode              int    `json:"retCode,omitempty"`
 	RunStartScriptDetail string `json:"runStartScriptDetail,omitempty"`
 	RunStopScriptDetail  string `json:"runStopScriptDetail,omitempty"`
+
+	LogFileTrade   string `json:"logFileTrade,omitempty"`
+	LogFileTrace   string `json:"logFileTrace,omitempty"`
+	LogFileMetric  string `json:"logFileMetric,omitempty"`
+	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 }
 
 type ApplyUpdateDeploymentAction struct {
@@ -383,7 +431,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	if err != nil {
 		return output, err
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	if !strings.Contains(input.UserName, ":") {
 		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
 	}
@@ -392,10 +440,10 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newScriptPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -406,10 +454,10 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newStopPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
 			}
 		}
@@ -463,6 +511,50 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		output.NewS3PkgPath = input.EndPoint
 	}
 
+	// backup dest dir to tar guid.tar.gz
+	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
+	//if input.AppBackUpEnabled == "Y" && input.AppBackUpPath != "" {
+	//	log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
+	//
+	//	// salt '*' file.mkdir {{.AppBackUpPath}}
+	//	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//		Client:   "local",
+	//		Function: "file.mkdir",
+	//		Target:   input.Target,
+	//		Args:     []string{input.AppBackUpPath},
+	//	}, action.Language); saltErr != nil {
+	//		errMsg := fmt.Sprintf("Failed when mkdir [%s], %s\n", input.AppBackUpPath, saltErr.Error())
+	//		output.FileDetail = errMsg
+	//		return output, fmt.Errorf(errMsg)
+	//	}
+	//
+	//	// salt '*' archive.tar zcf {{.AppBackUpPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
+	//	// tar -zcvf tmp.tar.gz --exclude-vcs --exclude={.idea,venv,vendor,.github} .
+	//	cmdArgs := []string{
+	//		"zcf",
+	//		path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
+	//		fmt.Sprintf("cwd='%s'", input.DestinationPath),
+	//	}
+	//
+	//	// support exclude log dir when backup
+	//	if input.ExcludePath != "" {
+	//		cmdArgs = append(cmdArgs, fmt.Sprintf("--exclude={%s}", input.ExcludePath))
+	//	}
+	//	cmdArgs = append(cmdArgs, ".")
+	//
+	//	log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("cmdArgs", cmdArgs))
+	//	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//		Client:   "local",
+	//		Function: "archive.tar",
+	//		Target:   input.Target,
+	//		Args:     cmdArgs,
+	//	}, action.Language); saltErr != nil {
+	//		errMsg := fmt.Sprintf("Failed when archive %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+	//		output.FileDetail = errMsg
+	//		return output, fmt.Errorf(errMsg)
+	//	}
+	//}
+
 	// copy apply package
 	fileCopyRequest := FileCopyInputs{
 		Inputs: []FileCopyInput{
@@ -482,7 +574,163 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	if err != nil {
 		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
-	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	output.FileDetail += fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+
+	// start apply script
+	runStartScriptRequest := RunScriptInputs{
+		Inputs: []RunScriptInput{
+			RunScriptInput{
+				EndPointType: "LOCAL",
+				EndPoint:     input.StartScriptPath,
+				Target:       input.Target,
+				RunAs:        strings.Split(input.UserName, ":")[0],
+				Guid:         input.Guid,
+			},
+		},
+	}
+	if input.ExecArg != "" {
+		runStartScriptRequest.Inputs[0].ExecArg = input.ExecArg
+	}
+
+	log.Logger.Debug("App update", log.String("step", "run start script"), log.JsonObj("param", runStartScriptRequest))
+	runStartScriptOutputs, err := runApplyScript(runStartScriptRequest)
+	if err != nil {
+		return output, fmt.Errorf("Run start script fail,%s ", err.Error())
+	}
+	output.RunStartScriptDetail = runStartScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+
+	// parse log files from glob name
+	action.parseGlobLogFiles(&input, &output)
+	return output, err
+}
+
+func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, error) {
+	inputs := input.(ApplyUpdateDeploymentInputs)
+	outputs := ApplyUpdateDeploymentOutputs{}
+	var finalErr error
+	outputChan := make(chan ApplyUpdateDeploymentThreadObj, len(inputs.Inputs))
+	wg := sync.WaitGroup{}
+	for i, input := range inputs.Inputs {
+		wg.Add(1)
+		go func(tmpInput ApplyUpdateDeploymentInput, index int) {
+			output, err := action.applyUpdateDeployment(tmpInput)
+			outputChan <- ApplyUpdateDeploymentThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+		}(input, i)
+		outputs.Outputs = append(outputs.Outputs, ApplyUpdateDeploymentOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
+		}
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("App update deploy action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+	}
+	return &outputs, finalErr
+}
+
+// ApplyRollbackDeploymentAction inherit ApplyUpdateDeploymentAction for backup file reuse
+type ApplyRollbackDeploymentAction struct {
+	ApplyUpdateDeploymentAction
+}
+
+func (action *ApplyRollbackDeploymentAction) applyRollbackDeployment(input ApplyUpdateDeploymentInput) (output ApplyUpdateDeploymentOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.Target = input.Target
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.RetCode = 1
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(input)
+	if err != nil {
+		return output, err
+	}
+	input.Seed = getEncryptSeed(input.Seed)
+	if !strings.Contains(input.UserName, ":") {
+		input.UserName = fmt.Sprintf("%s:%s", input.UserName, input.UserName)
+	}
+	if !strings.HasPrefix(input.StartScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		var newScriptPathList []string
+		for _, oldScript := range splitWithCustomFlag(input.StartScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript[1:])
+			} else {
+				newScriptPathList = append(newScriptPathList, input.DestinationPath+oldScript)
+			}
+		}
+		input.StartScriptPath = strings.Join(newScriptPathList, ",")
+	}
+	if !strings.HasPrefix(input.StopScriptPath, input.DestinationPath) {
+		if !strings.HasSuffix(input.DestinationPath, "/") {
+			input.DestinationPath = input.DestinationPath + "/"
+		}
+		var newStopPathList []string
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+			if strings.HasPrefix(oldScript, "/") {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
+			} else {
+				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
+			}
+		}
+		input.StopScriptPath = strings.Join(newStopPathList, ",")
+	}
+	// stop apply script
+	runStopScriptRequest := RunScriptInputs{
+		Inputs: []RunScriptInput{
+			RunScriptInput{
+				EndPointType: "LOCAL",
+				EndPoint:     input.StopScriptPath,
+				Target:       input.Target,
+				RunAs:        strings.Split(input.UserName, ":")[0],
+				Guid:         input.Guid,
+			},
+		},
+	}
+
+	log.Logger.Debug("App update", log.String("step", "run stop script"), log.JsonObj("param", runStopScriptRequest))
+	runStopScriptOutputs, err := runApplyScript(runStopScriptRequest)
+	if err != nil {
+		return output, fmt.Errorf("Run stop script fail,%s ", err.Error())
+	}
+	output.RunStopScriptDetail = runStopScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
+
+	log.Logger.Debug("App update", log.String("step", "extract backup file"), log.JsonObj("input", input))
+
+	// extract backup file
+	//if input.AppBackUpEnabled != "Y" || input.AppBackUpPath == "" {
+	//	errMsg := fmt.Sprintf("rollback disabled, AppBackUpEnabled=%v, AppBackUpPath=%s", input.AppBackUpEnabled, input.AppBackUpPath)
+	//	output.FileDetail = errMsg
+	//	return output, fmt.Errorf(errMsg)
+	//}
+
+	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
+	//tarFile := path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid))
+	//if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//	Client:   "local",
+	//	Function: "archive.tar",
+	//	Target:   input.Target,
+	//	Args:     []string{"zxf", tarFile, fmt.Sprintf("dest='%s'", input.DestinationPath)},
+	//}, action.Language); saltErr != nil {
+	//	errMsg := fmt.Sprintf("Failed when extract %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+	//	output.FileDetail = errMsg
+	//	return output, fmt.Errorf(errMsg)
+	//}
+	//output.FileDetail += fmt.Sprintf("extract backup file success: %s -> %s", tarFile, input.DestinationPath)
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{
@@ -510,19 +758,19 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	return output, err
 }
 
-func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, error) {
+func (action *ApplyRollbackDeploymentAction) Do(input interface{}) (interface{}, error) {
 	inputs := input.(ApplyUpdateDeploymentInputs)
 	outputs := ApplyUpdateDeploymentOutputs{}
 	var finalErr error
 	outputChan := make(chan ApplyUpdateDeploymentThreadObj, len(inputs.Inputs))
 	wg := sync.WaitGroup{}
-	for i,input := range inputs.Inputs {
+	for i, input := range inputs.Inputs {
 		wg.Add(1)
-		go func(tmpInput ApplyUpdateDeploymentInput,index int) {
-			output, err := action.applyUpdateDeployment(tmpInput)
-			outputChan <- ApplyUpdateDeploymentThreadObj{Data:output,Err:err,Index:index}
+		go func(tmpInput ApplyUpdateDeploymentInput, index int) {
+			output, err := action.applyRollbackDeployment(tmpInput)
+			outputChan <- ApplyUpdateDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
-		}(input,i)
+		}(input, i)
 		outputs.Outputs = append(outputs.Outputs, ApplyUpdateDeploymentOutput{})
 	}
 	wg.Wait()
@@ -530,14 +778,35 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 		if len(outputChan) == 0 {
 			break
 		}
-		tmpOutput := <- outputChan
+		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
-			log.Logger.Error("App update deploy action", log.Error(tmpOutput.Err))
+			log.Logger.Error("App rollback deploy action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 	return &outputs, finalErr
+}
+
+func (action *ApplyUpdateDeploymentAction) parseGlobLogFiles(input *ApplyUpdateDeploymentInput, output *ApplyUpdateDeploymentOutput) {
+	for _, logFile := range []struct {
+		logFilePattern string
+		outputField    *string
+	}{
+		{input.LogFileTrade, &output.LogFileTrade},
+		{input.LogFileTrace, &output.LogFileTrace},
+		{input.LogFileMetric, &output.LogFileMetric},
+		{input.LogFileKeyword, &output.LogFileKeyword},
+	} {
+		if logFile.logFilePattern == "" {
+			continue
+		}
+
+		log.Logger.Debug("App update", log.String("step", "parse log file: "+logFile.logFilePattern))
+		if ret, err := FindGlobFiles(input.DestinationPath, logFile.logFilePattern, input.Target); err == nil {
+			*logFile.outputField = ret
+		}
+	}
 }
 
 func createApplyUser(input interface{}) (interface{}, error) {
@@ -667,10 +936,10 @@ func (action *ApplyDeleteDeploymentAction) applyDeleteDeployment(input *ApplyDel
 			input.DestinationPath = input.DestinationPath + "/"
 		}
 		var newStopPathList []string
-		for _,oldScript := range splitWithCustomFlag(input.StopScriptPath) {
+		for _, oldScript := range splitWithCustomFlag(input.StopScriptPath) {
 			if strings.HasPrefix(oldScript, "/") {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript[1:])
-			}else{
+			} else {
 				newStopPathList = append(newStopPathList, input.DestinationPath+oldScript)
 			}
 		}

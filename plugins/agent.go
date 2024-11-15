@@ -259,7 +259,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	if tmpErr != nil || string(b) != "" {
 		removeSaltKeys(input.Host)
 	}
-
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
@@ -350,6 +350,7 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 	}
 
 	// Decrypt Password
+	input.Seed = getEncryptSeed(input.Seed)
 	password, err := AesDePassword(input.Guid, input.Seed, input.Password)
 	if err != nil {
 		err = getPasswordDecodeError(action.Language, err)
