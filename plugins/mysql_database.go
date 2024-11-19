@@ -125,8 +125,9 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		err = getPasswordDecodeError(action.Language, err)
 		return output, err
 	}
+	var dbOwnerPassword string
 	if input.DatabaseOwnerPassword != "" {
-		input.DatabaseOwnerPassword, err = AesDePassword(input.DatabaseOwnerGuid, input.Seed, input.DatabaseOwnerPassword)
+		dbOwnerPassword, err = AesDePassword(input.DatabaseOwnerGuid, input.Seed, input.DatabaseOwnerPassword)
 		if err != nil {
 			err = getPasswordDecodeError(action.Language, err)
 			return output, err
@@ -148,14 +149,15 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 	}
 
 	// check database user whether is existed.
-	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseOwnerName, action.Language)
-	if err != nil {
+	isUserExist, checkUserExistErr := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseOwnerName, action.Language)
+	if checkUserExistErr != nil {
+		err = getAddMysqlDatabaseError(action.Language, fmt.Sprintf("check user exist fail,%s ", checkUserExistErr.Error()))
 		return output, err
 	}
-	if isExist == true {
-		err = getAddMysqlDatabaseError(action.Language, fmt.Sprintf("user %s already exists", input.DatabaseOwnerName))
-		return output, err
-	}
+	//if isExist == true {
+	//	err = getAddMysqlDatabaseError(action.Language, fmt.Sprintf("user %s already exists", input.DatabaseOwnerName))
+	//	return output, err
+	//}
 
 	// create database
 	cmd := fmt.Sprintf("create database %s ", input.DatabaseName)
@@ -164,25 +166,25 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 		return output, err
 	}
 
-	dbOwnerPassword := input.DatabaseOwnerPassword
-	if dbOwnerPassword == "" {
-		dbOwnerPassword = createRandomPassword()
-	}
+	if !isUserExist {
+		if dbOwnerPassword == "" {
+			dbOwnerPassword = createRandomPassword()
+		}
+		// create user
+		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
+		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
+			err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
+			return output, err
+		}
 
-	// create user
-	cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
-	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
-		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
-		return output, err
+		// encrypt password
+		encryptPassword, encodeErr := AesEnPassword(input.DatabaseOwnerGuid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
+		if encodeErr != nil {
+			err = getPasswordEncodeError(action.Language, encodeErr)
+			return output, err
+		}
+		output.DatabaseOwnerPassword = encryptPassword
 	}
-
-	// encrypt password
-	encryptPassword, err := AesEnPassword(input.DatabaseOwnerGuid, input.Seed, dbOwnerPassword, DEFALT_CIPHER)
-	if err != nil {
-		err = getPasswordEncodeError(action.Language, err)
-		return output, err
-	}
-	output.DatabaseOwnerPassword = encryptPassword
 
 	// grant permission
 	permission := "ALL PRIVILEGES"
