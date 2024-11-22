@@ -165,7 +165,11 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		output.NewS3PkgPath = input.EndPoint
 		return output, err
 	}
-
+	if input.AppPublicKey != "" {
+		if !strings.HasPrefix(input.AppPublicKey, "-----BEGIN PUBLIC KEY-----") {
+			input.AppPublicKey = fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----", input.AppPublicKey)
+		}
+	}
 	suffix, err := getCompressFileSuffix(input.EndPoint)
 	if err != nil {
 		err = getDecompressSuffixError(action.Language, input.EndPoint)
