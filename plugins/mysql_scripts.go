@@ -10,6 +10,11 @@ import (
 	"strconv"
 )
 
+var (
+	SOURCE_TYPE_S3         = "S3"
+	SOURCE_TYPE_USER_PARAM = "USER_PARAM"
+)
+
 var MysqlScriptPluginActions = make(map[string]Action)
 
 func init() {
@@ -34,8 +39,10 @@ type RunMysqlScriptInputs struct {
 
 type RunMysqlScriptInput struct {
 	CallBackParameter
+	SourceType   string `json:"sourceType,omitempty"` // S3,USER_PARAM
 	EndPoint     string `json:"endpoint,omitempty"`
 	SqlFiles     string `json:"sql_files,omitempty"`
+	Sql          string `json:"sql,omitempty"`
 	Guid         string `json:"guid,omitempty"`
 	Seed         string `json:"seed,omitempty"`
 	Host         string `json:"host,omitempty"`
@@ -98,8 +105,15 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if checkIllegalParam(input.Password) {
 		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
-	if input.EndPoint == "" {
-		return getParamEmptyError(action.Language, "endpoint")
+
+	if input.SourceType == SOURCE_TYPE_USER_PARAM {
+		if input.Sql == "" {
+			return getParamEmptyError(action.Language, "sql")
+		}
+	} else {
+		if input.EndPoint == "" {
+			return getParamEmptyError(action.Language, "endpoint")
+		}
 	}
 
 	if input.Port == "" {
@@ -165,14 +179,29 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		return output, err
 	}
 
+	// add user input sql support
 	var fileNameList []string
-	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
+	if input.SourceType == SOURCE_TYPE_USER_PARAM {
+		sqlFile, err := getTempFile()
 		if err != nil {
 			return output, err
 		}
-		fileNameList = append(fileNameList, fileName)
+		defer os.Remove(sqlFile)
+
+		if err = writeStringToFile(input.Sql, sqlFile); err != nil {
+			return output, err
+		}
+		fileNameList = append(fileNameList, sqlFile)
+	} else {
+		for _, v := range splitWithCustomFlag(input.EndPoint) {
+			fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
+			if err != nil {
+				return output, err
+			}
+			fileNameList = append(fileNameList, fileName)
+		}
 	}
+
 	//fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	//if err != nil {
 	//	return output, err
