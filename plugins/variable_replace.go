@@ -63,11 +63,11 @@ type VariableReplaceInput struct {
 	// SecretKey    string `json:"secretKey,omitempty"`
 
 	//support aomp password encrypt
-	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
-	Seed                 string `json:"seed,omitempty"`
-	AppPublicKey         string `json:"appPublicKey,omitempty"`
-	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
-	FileReplacePrefix    string `json:"fileReplacePrefix,omitempty"`
+	// EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed              string `json:"seed,omitempty"`
+	AppPublicKey      string `json:"appPublicKey,omitempty"`
+	SysPrivateKey     string `json:"sysPrivateKey,omitempty"`
+	FileReplacePrefix string `json:"fileReplacePrefix,omitempty"`
 }
 
 // VariableReplaceOutputs .
