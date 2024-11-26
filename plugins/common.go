@@ -194,7 +194,7 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (st
 		return "", err
 	}
 
-	client := &http.Client{Timeout: 10 * time.Minute}
+	client := &http.Client{}
 	client.Transport = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
