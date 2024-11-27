@@ -36,6 +36,7 @@ type RunMysqlScriptInput struct {
 	CallBackParameter
 	EndPoint     string `json:"endpoint,omitempty"`
 	SqlFiles     string `json:"sql_files,omitempty"`
+	Sql          string `json:"sql,omitempty"`
 	Guid         string `json:"guid,omitempty"`
 	Seed         string `json:"seed,omitempty"`
 	Host         string `json:"host,omitempty"`
@@ -166,6 +167,22 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	}
 
 	var fileNameList []string
+
+	// add user input sql support
+	if input.Sql != "" {
+		tmpFile, err := os.CreateTemp(UPLOADS3FILE_DIR, fmt.Sprintf("%s-*.sql", input.Guid))
+		if err != nil {
+			return output, err
+		}
+		defer os.Remove(tmpFile.Name())
+
+		if err = writeStringToFile(input.Sql, tmpFile.Name()); err != nil {
+			return output, err
+		}
+
+		fileNameList = append(fileNameList, tmpFile.Name())
+	}
+
 	for _, v := range splitWithCustomFlag(input.EndPoint) {
 		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
 		if err != nil {

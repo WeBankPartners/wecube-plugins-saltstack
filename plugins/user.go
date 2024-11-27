@@ -170,7 +170,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			execArg += " --rwFile '" + input.RwFile + "'"
 		}
 
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, "", action.Language)
 		if err != nil {
 			log.Logger.Error("Add user action", log.Error(err))
 			output.Result.Code = RESULT_CODE_ERROR
@@ -300,7 +300,7 @@ func (action *DeleteUserAction) Do(input interface{}) (interface{}, error) {
 		}
 
 		execArg := fmt.Sprintf("--action remove --user %s ", input.UserName)
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, "", action.Language)
 		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
@@ -445,7 +445,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 
 		execArg += " --password '" + password + "'"
 
-		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, action.Language)
+		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, "", action.Language)
 		if err != nil {
 			output.Result.Code = RESULT_CODE_ERROR
 			output.Result.Message = err.Error()
