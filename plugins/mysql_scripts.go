@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
@@ -182,15 +183,12 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	// add user input sql support
 	var fileNameList []string
 	if input.SourceType == SOURCE_TYPE_USER_PARAM {
-		sqlFile, err := getTempFile()
-		if err != nil {
+		sqlFile := path.Join(UPLOADS3FILE_DIR, fmt.Sprintf("%s-%s.sql", input.Guid, getRandString()))
+		if err = writeStringToFile(input.Sql, sqlFile); err != nil {
 			return output, err
 		}
 		defer os.Remove(sqlFile)
 
-		if err = writeStringToFile(input.Sql, sqlFile); err != nil {
-			return output, err
-		}
 		fileNameList = append(fileNameList, sqlFile)
 	} else {
 		for _, v := range splitWithCustomFlag(input.EndPoint) {
