@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
@@ -15,7 +14,7 @@ func init() {
 	ApplyDeploymentActions["new"] = new(ApplyNewDeploymentAction)
 	ApplyDeploymentActions["update"] = new(ApplyUpdateDeploymentAction)
 	ApplyDeploymentActions["delete"] = new(ApplyDeleteDeploymentAction)
-	ApplyDeploymentActions["rollback"] = new(ApplyRollbackDeploymentAction)
+	//ApplyDeploymentActions["rollback"] = new(ApplyRollbackDeploymentAction)
 }
 
 type ApplyDeploymentPlugin struct {
@@ -343,9 +342,9 @@ type ApplyUpdateDeploymentInput struct {
 	LogFileMetric  string `json:"logFileMetric,omitempty"`
 	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 
-	AppBackUpEnabled string `json:"appBackUpEnabled,omitempty"`
-	AppBackUpPath    string `json:"appBackUpPath,omitempty"`
-	ExcludePath      string `json:"excludePath,omitempty"`
+	//AppBackUpEnabled string `json:"appBackUpEnabled,omitempty"`
+	//AppBackUpPath    string `json:"appBackUpPath,omitempty"`
+	//ExcludePath      string `json:"excludePath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -514,47 +513,47 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 
 	// backup dest dir to tar guid.tar.gz
 	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
-	if input.AppBackUpEnabled == "Y" && input.AppBackUpPath != "" {
-		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
-
-		// salt '*' file.mkdir {{.AppBackUpPath}}
-		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
-			Client:   "local",
-			Function: "file.mkdir",
-			Target:   input.Target,
-			Args:     []string{input.AppBackUpPath},
-		}, action.Language); saltErr != nil {
-			errMsg := fmt.Sprintf("Failed when mkdir [%s], %s\n", input.AppBackUpPath, saltErr.Error())
-			output.FileDetail = errMsg
-			return output, fmt.Errorf(errMsg)
-		}
-
-		// salt '*' archive.tar zcf {{.AppBackUpPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
-		// tar -zcvf tmp.tar.gz --exclude-vcs --exclude={.idea,venv,vendor,.github} .
-		cmdArgs := []string{
-			"zcf",
-			path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
-			fmt.Sprintf("cwd='%s'", input.DestinationPath),
-		}
-
-		// support exclude log dir when backup
-		if input.ExcludePath != "" {
-			cmdArgs = append(cmdArgs, fmt.Sprintf("--exclude={%s}", input.ExcludePath))
-		}
-		cmdArgs = append(cmdArgs, ".")
-
-		log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("cmdArgs", cmdArgs))
-		if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
-			Client:   "local",
-			Function: "archive.tar",
-			Target:   input.Target,
-			Args:     cmdArgs,
-		}, action.Language); saltErr != nil {
-			errMsg := fmt.Sprintf("Failed when archive %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
-			output.FileDetail = errMsg
-			return output, fmt.Errorf(errMsg)
-		}
-	}
+	//if input.AppBackUpEnabled == "Y" && input.AppBackUpPath != "" {
+	//	log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("input", input))
+	//
+	//	// salt '*' file.mkdir {{.AppBackUpPath}}
+	//	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//		Client:   "local",
+	//		Function: "file.mkdir",
+	//		Target:   input.Target,
+	//		Args:     []string{input.AppBackUpPath},
+	//	}, action.Language); saltErr != nil {
+	//		errMsg := fmt.Sprintf("Failed when mkdir [%s], %s\n", input.AppBackUpPath, saltErr.Error())
+	//		output.FileDetail = errMsg
+	//		return output, fmt.Errorf(errMsg)
+	//	}
+	//
+	//	// salt '*' archive.tar zcf {{.AppBackUpPath}}/{{.guid}}.tar.gz cwd='{{.SourcePath}}' .
+	//	// tar -zcvf tmp.tar.gz --exclude-vcs --exclude={.idea,venv,vendor,.github} .
+	//	cmdArgs := []string{
+	//		"zcf",
+	//		path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid)),
+	//		fmt.Sprintf("cwd='%s'", input.DestinationPath),
+	//	}
+	//
+	//	// support exclude log dir when backup
+	//	if input.ExcludePath != "" {
+	//		cmdArgs = append(cmdArgs, fmt.Sprintf("--exclude={%s}", input.ExcludePath))
+	//	}
+	//	cmdArgs = append(cmdArgs, ".")
+	//
+	//	log.Logger.Debug("App update", log.String("step", "backup"), log.JsonObj("cmdArgs", cmdArgs))
+	//	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//		Client:   "local",
+	//		Function: "archive.tar",
+	//		Target:   input.Target,
+	//		Args:     cmdArgs,
+	//	}, action.Language); saltErr != nil {
+	//		errMsg := fmt.Sprintf("Failed when archive %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+	//		output.FileDetail = errMsg
+	//		return output, fmt.Errorf(errMsg)
+	//	}
+	//}
 
 	// copy apply package
 	fileCopyRequest := FileCopyInputs{
@@ -713,25 +712,25 @@ func (action *ApplyRollbackDeploymentAction) applyRollbackDeployment(input Apply
 	log.Logger.Debug("App update", log.String("step", "extract backup file"), log.JsonObj("input", input))
 
 	// extract backup file
-	if input.AppBackUpEnabled != "Y" || input.AppBackUpPath == "" {
-		errMsg := fmt.Sprintf("rollback disabled, AppBackUpEnabled=%v, AppBackUpPath=%s", input.AppBackUpEnabled, input.AppBackUpPath)
-		output.FileDetail = errMsg
-		return output, fmt.Errorf(errMsg)
-	}
+	//if input.AppBackUpEnabled != "Y" || input.AppBackUpPath == "" {
+	//	errMsg := fmt.Sprintf("rollback disabled, AppBackUpEnabled=%v, AppBackUpPath=%s", input.AppBackUpEnabled, input.AppBackUpPath)
+	//	output.FileDetail = errMsg
+	//	return output, fmt.Errorf(errMsg)
+	//}
 
 	// salt '*' archive.tar zxf {{.AppBackUpPath}}/{{.guid}}.tar.gz dest='{{.SourcePath}}'
-	tarFile := path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid))
-	if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
-		Client:   "local",
-		Function: "archive.tar",
-		Target:   input.Target,
-		Args:     []string{"zxf", tarFile, fmt.Sprintf("dest='%s'", input.DestinationPath)},
-	}, action.Language); saltErr != nil {
-		errMsg := fmt.Sprintf("Failed when extract %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
-		output.FileDetail = errMsg
-		return output, fmt.Errorf(errMsg)
-	}
-	output.FileDetail += fmt.Sprintf("extract backup file success: %s -> %s", tarFile, input.DestinationPath)
+	//tarFile := path.Join(input.AppBackUpPath, fmt.Sprintf("%s.tar.gz", input.Guid))
+	//if _, saltErr := CallSaltApi("https://127.0.0.1:8080", SaltApiRequest{
+	//	Client:   "local",
+	//	Function: "archive.tar",
+	//	Target:   input.Target,
+	//	Args:     []string{"zxf", tarFile, fmt.Sprintf("dest='%s'", input.DestinationPath)},
+	//}, action.Language); saltErr != nil {
+	//	errMsg := fmt.Sprintf("Failed when extract %s to %s, %s\n", input.DestinationPath, input.AppBackUpPath, saltErr.Error())
+	//	output.FileDetail = errMsg
+	//	return output, fmt.Errorf(errMsg)
+	//}
+	//output.FileDetail += fmt.Sprintf("extract backup file success: %s -> %s", tarFile, input.DestinationPath)
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{

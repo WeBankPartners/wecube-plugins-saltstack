@@ -201,19 +201,23 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (st
 		},
 	}
 
-	bytesJson, err := json.Marshal(request)
+	bytesJson, jsonMarshalErr := json.Marshal(request)
+	if jsonMarshalErr != nil {
+		err = fmt.Errorf("json marshal request data fail,%s ", jsonMarshalErr.Error())
+		return "", err
+	}
 
-	req, err := http.NewRequest("POST", serviceUrl, bytes.NewBuffer(bytesJson))
-	if err != nil {
-		return "", fmt.Errorf("new salt api request meet error = %v", err)
+	req, newReqErr := http.NewRequest("POST", serviceUrl, bytes.NewBuffer(bytesJson))
+	if newReqErr != nil {
+		return "", fmt.Errorf("new salt api request meet error = %s", newReqErr.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Auth-Token", token)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("call salt api server meet error = %v", err)
+	resp, doHttpReqErr := client.Do(req)
+	if doHttpReqErr != nil {
+		return "", fmt.Errorf("call salt api server meet error = %s", doHttpReqErr.Error())
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -221,8 +225,12 @@ func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (st
 	log.Logger.Debug("Call salt api response", log.String("body", result))
 
 	apiResult := callSaltApiResults{}
-	if err := json.Unmarshal([]byte(result), &apiResult); err != nil {
-		log.Logger.Error("Call salt api unmarshal result error", log.Error(err))
+	if err = json.Unmarshal([]byte(result), &apiResult); err != nil {
+		if strings.Contains(result, "TimeoutError") {
+			err = fmt.Errorf("Call Timeout!! ")
+			return "", err
+		}
+		log.Logger.Error("Call salt api unmarshal result error", log.Error(err), log.String("body", result))
 		return "", err
 	}
 
