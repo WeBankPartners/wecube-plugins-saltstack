@@ -62,6 +62,7 @@ func init() {
 	registerPlugin("apply-deployment", new(ApplyDeploymentPlugin))
 	registerPlugin("web-console", new(WebConsolePlugin))
 	registerPlugin("password", new(PasswordPlugin))
+	registerPlugin("redis-user", new(RedisUserPlugin))
 }
 
 type PluginRequest struct {
