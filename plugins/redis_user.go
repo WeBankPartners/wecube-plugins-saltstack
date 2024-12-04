@@ -11,8 +11,8 @@ var RedisUserPluginActions = make(map[string]Action)
 func init() {
 	RedisUserPluginActions["add"] = new(AddRedisUserAction)
 	RedisUserPluginActions["delete"] = new(DeleteRedisUserAction)
+	RedisUserPluginActions["grant"] = new(GrantRedisUserAction)
 	/*
-		RedisUserPluginActions["grant"] = new(GrantRedisUserAction)
 		RedisUserPluginActions["revoke"] = new(RevokeRedisUserAction)
 	*/
 }
@@ -29,7 +29,7 @@ func (plugin *RedisUserPlugin) GetActionByName(actionName string) (Action, error
 	return action, nil
 }
 
-// AddRedisUserAction add redis user
+// AddRedisUserAction add redis user ------------------
 type AddRedisUserAction struct{ Language string }
 
 type AddRedisUserInputs struct {
@@ -46,11 +46,11 @@ type AddRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string `json:"userGuid,omitempty"`
-	UserName           string `json:"userName,omitempty"`
-	UserPassword       string `json:"userPassword,omitempty"`
-	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid           string   `json:"userGuid,omitempty"`
+	UserName           string   `json:"userName,omitempty"`
+	UserPassword       string   `json:"userPassword,omitempty"`
+	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
 }
 
 type AddRedisUserOutputs struct {
@@ -322,6 +322,144 @@ func (action *DeleteRedisUserAction) Do(input interface{}) (interface{}, error) 
 		output, err := action.DeleteRedisUser(&inputData)
 		if err != nil {
 			log.Logger.Error("delete redis user action failed", log.Error(err))
+			finalErr = err
+		}
+
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+	return outputs, finalErr
+}
+
+// GrantRedisUserAction grant redis user
+type GrantRedisUserAction struct{ Language string }
+
+type GrantRedisUserInputs struct {
+	Inputs []GrantRedisUserInput `json:"inputs,omitempty"`
+}
+
+type GrantRedisUserInput struct {
+	CallBackParameter
+	Guid          string `json:"guid,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	Host          string `json:"host,omitempty"`
+	Port          string `json:"port,omitempty"`
+	AdminUserName string `json:"adminUserName,omitempty"`
+	AdminPassword string `json:"adminPassword,omitempty"`
+
+	//user info
+	UserGuid           string   `json:"userGuid,omitempty"`
+	UserName           string   `json:"userName,omitempty"`
+	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
+}
+
+type GrantRedisUserOutputs struct {
+	Outputs []GrantRedisUserOutput `json:"outputs,omitempty"`
+}
+
+type GrantRedisUserOutput struct {
+	CallBackParameter
+	Result
+	UserGuid string `json:"userGuid,omitempty"`
+}
+
+func (action *GrantRedisUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *GrantRedisUserAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs GrantRedisUserInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *GrantRedisUserAction) checkAddRedisUser(input *GrantRedisUserInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+
+	if input.Host == "" {
+		return getParamEmptyError(action.Language, "host")
+	}
+	if input.Port == "" {
+		return getParamEmptyError(action.Language, "port")
+	}
+
+	if input.AdminUserName == "" {
+		return getParamEmptyError(action.Language, "adminUserName")
+	}
+	if input.AdminPassword == "" {
+		return getParamEmptyError(action.Language, "adminPassword")
+	}
+
+	if input.UserGuid == "" {
+		return getParamEmptyError(action.Language, "userGuid")
+	}
+	if input.UserName == "" {
+		return getParamEmptyError(action.Language, "userName")
+	}
+
+	return nil
+}
+
+func (action *GrantRedisUserAction) grantRedisUser(input *GrantRedisUserInput) (output GrantRedisUserOutput, err error) {
+	defer func() {
+		output.UserGuid = input.UserGuid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = action.checkAddRedisUser(input); err != nil {
+		return
+	}
+
+	//get admin password
+	input.Seed = getEncryptSeed(input.Seed)
+	adminPassword, err := AesDePassword(input.Guid, input.Seed, input.AdminPassword)
+	if err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode admin password fail,%s ", err.Error()))
+		return
+	}
+
+	// check whether redis user is existed
+	isExisted, err := redisCheckUserExistedOrNot(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName)
+	if err != nil {
+		return
+	}
+	if !isExisted {
+		err = getRedisGrantUserError(action.Language, input.UserName, "user is not existed")
+		return
+	}
+
+	err = redisGrantReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
+	if err != nil {
+		err = getRedisGrantUserError(action.Language, input.UserName, err.Error())
+		return
+	}
+	return
+}
+
+func (action *GrantRedisUserAction) Do(input interface{}) (interface{}, error) {
+	outputs := GrantRedisUserOutputs{}
+	var finalErr error
+
+	inputs, isOk := input.(GrantRedisUserInputs)
+	if !isOk {
+		finalErr = fmt.Errorf("input:%v is not the type: GrantRedisUserInputs", input)
+		return outputs, finalErr
+	}
+
+	for _, inputData := range inputs.Inputs {
+		output, err := action.grantRedisUser(&inputData)
+		if err != nil {
+			log.Logger.Error("grant redis user action failed", log.Error(err))
 			finalErr = err
 		}
 
