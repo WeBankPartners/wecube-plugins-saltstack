@@ -10,8 +10,8 @@ var RedisUserPluginActions = make(map[string]Action)
 
 func init() {
 	RedisUserPluginActions["add"] = new(AddRedisUserAction)
+	RedisUserPluginActions["delete"] = new(DeleteRedisUserAction)
 	/*
-		RedisUserPluginActions["delete"] = new(DeleteRedisUserAction)
 		RedisUserPluginActions["grant"] = new(GrantRedisUserAction)
 		RedisUserPluginActions["revoke"] = new(RevokeRedisUserAction)
 	*/
@@ -194,5 +194,138 @@ func (action *AddRedisUserAction) Do(input interface{}) (interface{}, error) {
 	return outputs, finalErr
 }
 
-// DeleteRedisUserAction delete redis user
+// DeleteRedisUserAction delete redis user -----------------
 type DeleteRedisUserAction struct{ Language string }
+
+type DeleteRedisUserInputs struct {
+	Inputs []DeleteRedisUserInput `json:"inputs,omitempty"`
+}
+
+type DeleteRedisUserInput struct {
+	CallBackParameter
+	Guid          string `json:"guid,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	Host          string `json:"host,omitempty"`
+	Port          string `json:"port,omitempty"`
+	AdminUserName string `json:"adminUserName,omitempty"`
+	AdminPassword string `json:"adminPassword,omitempty"`
+
+	//user info
+	UserGuid string `json:"userGuid,omitempty"`
+	UserName string `json:"userName,omitempty"`
+}
+
+type DeleteRedisUserOutputs struct {
+	Outputs []DeleteRedisUserOutput `json:"outputs,omitempty"`
+}
+
+type DeleteRedisUserOutput struct {
+	CallBackParameter
+	Result
+	UserGuid string `json:"userGuid,omitempty"`
+}
+
+func (action *DeleteRedisUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *DeleteRedisUserAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs DeleteRedisUserInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *DeleteRedisUserAction) checkDeleteRedisUser(input *DeleteRedisUserInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+
+	if input.Host == "" {
+		return getParamEmptyError(action.Language, "host")
+	}
+	if input.Port == "" {
+		return getParamEmptyError(action.Language, "port")
+	}
+
+	if input.AdminUserName == "" {
+		return getParamEmptyError(action.Language, "adminUserName")
+	}
+	if input.AdminPassword == "" {
+		return getParamEmptyError(action.Language, "adminPassword")
+	}
+
+	if input.UserGuid == "" {
+		return getParamEmptyError(action.Language, "userGuid")
+	}
+	if input.UserName == "" {
+		return getParamEmptyError(action.Language, "userName")
+	}
+
+	return nil
+}
+
+func (action *DeleteRedisUserAction) DeleteRedisUser(input *DeleteRedisUserInput) (output DeleteRedisUserOutput, err error) {
+	defer func() {
+		output.UserGuid = input.UserGuid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = action.checkDeleteRedisUser(input); err != nil {
+		return
+	}
+
+	//get admin password
+	input.Seed = getEncryptSeed(input.Seed)
+	adminPassword, err := AesDePassword(input.Guid, input.Seed, input.AdminPassword)
+	if err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode admin password fail,%s ", err.Error()))
+		return
+	}
+
+	// check whether redis user is existed
+	isExisted, err := redisCheckUserExistedOrNot(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName)
+	if err != nil {
+		return
+	}
+	if !isExisted {
+		err = getRedisDeleteUserError(action.Language, input.UserName, "user is not existed")
+		return
+	}
+
+	err = redisDeleteUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName)
+	if err != nil {
+		err = getRedisDeleteUserError(action.Language, input.UserName, err.Error())
+		return
+	}
+	return
+}
+
+func (action *DeleteRedisUserAction) Do(input interface{}) (interface{}, error) {
+	outputs := DeleteRedisUserOutputs{}
+	var finalErr error
+
+	inputs, isOk := input.(DeleteRedisUserInputs)
+	if !isOk {
+		finalErr = fmt.Errorf("input:%v is not the type: DeleteRedisUserInputs", input)
+		return outputs, finalErr
+	}
+
+	for _, inputData := range inputs.Inputs {
+		output, err := action.DeleteRedisUser(&inputData)
+		if err != nil {
+			log.Logger.Error("delete redis user action failed", log.Error(err))
+			finalErr = err
+		}
+
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+	return outputs, finalErr
+}
