@@ -216,7 +216,7 @@ func redisCreateUser(host, port, adminUser, adminPassword, userName, password st
 		"on", ">" + password,
 	}
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, "grant")
+	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
 	if tmpErr != nil {
 		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
 		return
@@ -261,7 +261,7 @@ func redisGrantReadWritePermission(host, port, adminUser, adminPassword, userNam
 		"ACL", "SETUSER", userName,
 	}
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, "grant")
+	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
 	if tmpErr != nil {
 		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
 		return
@@ -291,7 +291,7 @@ func redisRevokeReadWritePermission(host, port, adminUser, adminPassword, userNa
 		"ACL", "SETUSER", userName,
 	}
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, "revoke")
+	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisRevokeOp)
 	if tmpErr != nil {
 		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
 		return
