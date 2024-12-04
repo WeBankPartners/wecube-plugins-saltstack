@@ -38,19 +38,19 @@ type AddRedisUserInputs struct {
 
 type AddRedisUserInput struct {
 	CallBackParameter
-	Guid     string `json:"guid,omitempty"`
-	Seed     string `json:"seed,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     string `json:"port,omitempty"`
-	UserName string `json:"userName,omitempty"`
-	Password string `json:"password,omitempty"`
+	Guid          string `json:"guid,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	Host          string `json:"host,omitempty"`
+	Port          string `json:"port,omitempty"`
+	AdminUserName string `json:"adminUserName,omitempty"`
+	AdminPassword string `json:"adminPassword,omitempty"`
 
-	//new user info
-	NewUserGuid           string `json:"newUserGuid,omitempty"`
-	NewUserName           string `json:"newUserName,omitempty"`
-	NewUserPassword       string `json:"newUserPassword,omitempty"`
-	NewUserReadKeyPrefix  string `json:"newUserReadKeyPrefix,omitempty"`
-	NewUserWriteKeyPrefix string `json:"newUserWriteKeyPrefix,omitempty"`
+	//user info
+	UserGuid           string `json:"userGuid,omitempty"`
+	UserName           string `json:"userName,omitempty"`
+	UserPassword       string `json:"userPassword,omitempty"`
+	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
 }
 
 type AddRedisUserOutputs struct {
@@ -60,8 +60,8 @@ type AddRedisUserOutputs struct {
 type AddRedisUserOutput struct {
 	CallBackParameter
 	Result
-	NewUserGuid     string `json:"newUserGuid,omitempty"`
-	NewUserPassword string `json:"newUserPassword,omitempty"`
+	UserGuid     string `json:"userGuid,omitempty"`
+	UserPassword string `json:"userPassword,omitempty"`
 }
 
 func (action *AddRedisUserAction) SetAcceptLanguage(language string) {
@@ -88,18 +88,18 @@ func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) er
 		return getParamEmptyError(action.Language, "port")
 	}
 
-	if input.UserName == "" {
-		return getParamEmptyError(action.Language, "userName")
+	if input.AdminUserName == "" {
+		return getParamEmptyError(action.Language, "adminUserName")
 	}
-	if input.Password == "" {
-		return getParamEmptyError(action.Language, "password")
+	if input.AdminPassword == "" {
+		return getParamEmptyError(action.Language, "adminPassword")
 	}
 
-	if input.NewUserGuid == "" {
-		return getParamEmptyError(action.Language, "newUserGuid")
+	if input.UserGuid == "" {
+		return getParamEmptyError(action.Language, "userGuid")
 	}
-	if input.NewUserName == "" {
-		return getParamEmptyError(action.Language, "newUserName")
+	if input.UserName == "" {
+		return getParamEmptyError(action.Language, "userName")
 	}
 	/*
 		if input.NewUserPassword == "" {
@@ -111,7 +111,7 @@ func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) er
 
 func (action *AddRedisUserAction) addRedisUser(input *AddRedisUserInput) (output AddRedisUserOutput, err error) {
 	defer func() {
-		output.NewUserGuid = input.NewUserGuid
+		output.UserGuid = input.UserGuid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
 		if err == nil {
 			output.Result.Code = RESULT_CODE_SUCCESS
@@ -122,65 +122,70 @@ func (action *AddRedisUserAction) addRedisUser(input *AddRedisUserInput) (output
 	}()
 
 	if err = action.checkAddRedisUser(input); err != nil {
-		return output, err
+		return
 	}
 
-	//get login password
+	//get admin password
 	input.Seed = getEncryptSeed(input.Seed)
-	loginPassword, err := AesDePassword(input.Guid, input.Seed, input.Password)
+	adminPassword, err := AesDePassword(input.Guid, input.Seed, input.AdminPassword)
 	if err != nil {
-		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode manage password fail,%s ", err.Error()))
-		return output, err
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode admin password fail,%s ", err.Error()))
+		return
 	}
 
-	newUserPassword, decodeErr := AesDePassword(input.NewUserGuid, input.Seed, input.NewUserPassword)
+	userPassword, decodeErr := AesDePassword(input.UserGuid, input.Seed, input.UserPassword)
 	if decodeErr != nil {
 		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode user password fail,%s ", decodeErr.Error()))
-		return output, err
+		return
 	}
 
-	// check redis user whether is existed.
-	isExist, err := redisCheckUserExistOrNot(input.Host, input.Port, input.UserName, loginPassword, input.NewUserName)
+	// check whether redis user is existed
+	isExisted, err := redisCheckUserExistedOrNot(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName)
 	if err != nil {
-		return output, err
+		return
 	}
-	if isExist {
-		err = getRedisAddUserError(action.Language, input.NewUserName, "user already exist")
-		return output, err
+	if isExisted {
+		err = getRedisAddUserError(action.Language, input.UserName, "user already existed")
+		return
 	}
 
 	//create user
 	//userPassword := input.DatabaseUserPassword
-	if newUserPassword == "" {
-		newUserPassword = createRandomPassword()
+	if userPassword == "" {
+		userPassword = createRandomPassword()
 	}
 
-	// create encrypt password
-	encryptPassword, encodeErr := AesEnPassword(input.NewUserGuid, input.Seed, newUserPassword, DEFALT_CIPHER)
+	// create encrypt user password
+	encryptUserPassword, encodeErr := AesEnPassword(input.UserGuid, input.Seed, userPassword, DEFALT_CIPHER)
 	if encodeErr != nil {
 		err = getPasswordEncodeError(action.Language, encodeErr)
-		return output, err
+		return
 	}
 
-	err = redisCreateUser(input.Host, input.Port, input.UserName, loginPassword, input.NewUserName, newUserPassword, input.NewUserReadKeyPrefix, input.NewUserWriteKeyPrefix)
+	err = redisCreateUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userPassword, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
 	if err != nil {
-		err = getRedisAddUserError(action.Language, input.NewUserName, err.Error())
-		return output, err
+		err = getRedisAddUserError(action.Language, input.UserName, err.Error())
+		return
 	}
 
-	output.NewUserPassword = encryptPassword
-	return output, err
+	output.UserPassword = encryptUserPassword
+	return
 }
 
 func (action *AddRedisUserAction) Do(input interface{}) (interface{}, error) {
-	inputs, _ := input.(AddRedisUserInputs)
 	outputs := AddRedisUserOutputs{}
 	var finalErr error
+
+	inputs, isOk := input.(AddRedisUserInputs)
+	if !isOk {
+		finalErr = fmt.Errorf("input:%v is not the type: AddRedisUserInputs", input)
+		return outputs, finalErr
+	}
 
 	for _, inputData := range inputs.Inputs {
 		output, err := action.addRedisUser(&inputData)
 		if err != nil {
-			log.Logger.Error("Add redis user action", log.Error(err))
+			log.Logger.Error("add redis user action failed", log.Error(err))
 			finalErr = err
 		}
 
@@ -191,5 +196,3 @@ func (action *AddRedisUserAction) Do(input interface{}) (interface{}, error) {
 
 // DeleteRedisUserAction delete redis user
 type DeleteRedisUserAction struct{ Language string }
-
-// todo implement function
