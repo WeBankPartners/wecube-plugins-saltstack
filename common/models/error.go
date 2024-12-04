@@ -28,4 +28,5 @@ type ErrorMessageObj struct {
 	MysqlCreateUserError     string `json:"mysql_create_user_error"`
 	RunRemoteScriptError     string `json:"run_remote_script_error"`
 	RedisAddUserError        string `json:"redis_add_user_error"`
+	RedisDeleteUserError     string `json:"redis_delete_user_error"`
 }

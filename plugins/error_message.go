@@ -169,3 +169,7 @@ func getRunRemoteScriptError(language, target, output string, err error) error {
 func getRedisAddUserError(language, user, message string) error {
 	return fmt.Errorf(getMessageMap(language).RedisAddUserError, user, message)
 }
+
+func getRedisDeleteUserError(language, user, message string) error {
+	return fmt.Errorf(getMessageMap(language).RedisDeleteUserError, user, message)
+}
