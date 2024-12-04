@@ -12,9 +12,7 @@ func init() {
 	RedisUserPluginActions["add"] = new(AddRedisUserAction)
 	RedisUserPluginActions["delete"] = new(DeleteRedisUserAction)
 	RedisUserPluginActions["grant"] = new(GrantRedisUserAction)
-	/*
-		RedisUserPluginActions["revoke"] = new(RevokeRedisUserAction)
-	*/
+	RedisUserPluginActions["revoke"] = new(RevokeRedisUserAction)
 }
 
 type RedisUserPlugin struct {
@@ -330,7 +328,7 @@ func (action *DeleteRedisUserAction) Do(input interface{}) (interface{}, error) 
 	return outputs, finalErr
 }
 
-// GrantRedisUserAction grant redis user
+// GrantRedisUserAction grant redis user ----------------------------
 type GrantRedisUserAction struct{ Language string }
 
 type GrantRedisUserInputs struct {
@@ -458,6 +456,144 @@ func (action *GrantRedisUserAction) Do(input interface{}) (interface{}, error) {
 
 	for _, inputData := range inputs.Inputs {
 		output, err := action.grantRedisUser(&inputData)
+		if err != nil {
+			log.Logger.Error("grant redis user action failed", log.Error(err))
+			finalErr = err
+		}
+
+		outputs.Outputs = append(outputs.Outputs, output)
+	}
+	return outputs, finalErr
+}
+
+// RevokeRedisUserAction revoke redis user ----------------------------
+type RevokeRedisUserAction struct{ Language string }
+
+type RevokeRedisUserInputs struct {
+	Inputs []RevokeRedisUserInput `json:"inputs,omitempty"`
+}
+
+type RevokeRedisUserInput struct {
+	CallBackParameter
+	Guid          string `json:"guid,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	Host          string `json:"host,omitempty"`
+	Port          string `json:"port,omitempty"`
+	AdminUserName string `json:"adminUserName,omitempty"`
+	AdminPassword string `json:"adminPassword,omitempty"`
+
+	//user info
+	UserGuid           string   `json:"userGuid,omitempty"`
+	UserName           string   `json:"userName,omitempty"`
+	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
+}
+
+type RevokeRedisUserOutputs struct {
+	Outputs []RevokeRedisUserOutput `json:"outputs,omitempty"`
+}
+
+type RevokeRedisUserOutput struct {
+	CallBackParameter
+	Result
+	UserGuid string `json:"userGuid,omitempty"`
+}
+
+func (action *RevokeRedisUserAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *RevokeRedisUserAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs RevokeRedisUserInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *RevokeRedisUserAction) checkRevokeRedisUser(input *RevokeRedisUserInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+
+	if input.Host == "" {
+		return getParamEmptyError(action.Language, "host")
+	}
+	if input.Port == "" {
+		return getParamEmptyError(action.Language, "port")
+	}
+
+	if input.AdminUserName == "" {
+		return getParamEmptyError(action.Language, "adminUserName")
+	}
+	if input.AdminPassword == "" {
+		return getParamEmptyError(action.Language, "adminPassword")
+	}
+
+	if input.UserGuid == "" {
+		return getParamEmptyError(action.Language, "userGuid")
+	}
+	if input.UserName == "" {
+		return getParamEmptyError(action.Language, "userName")
+	}
+
+	return nil
+}
+
+func (action *RevokeRedisUserAction) revokeRedisUser(input *RevokeRedisUserInput) (output RevokeRedisUserOutput, err error) {
+	defer func() {
+		output.UserGuid = input.UserGuid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	if err = action.checkRevokeRedisUser(input); err != nil {
+		return
+	}
+
+	//get admin password
+	input.Seed = getEncryptSeed(input.Seed)
+	adminPassword, err := AesDePassword(input.Guid, input.Seed, input.AdminPassword)
+	if err != nil {
+		err = getPasswordDecodeError(action.Language, fmt.Errorf("aes decode admin password fail,%s ", err.Error()))
+		return
+	}
+
+	// check whether redis user is existed
+	isExisted, err := redisCheckUserExistedOrNot(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName)
+	if err != nil {
+		return
+	}
+	if !isExisted {
+		err = getRedisRevokeUserError(action.Language, input.UserName, "user is not existed")
+		return
+	}
+
+	err = redisRevokeReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
+	if err != nil {
+		err = getRedisRevokeUserError(action.Language, input.UserName, err.Error())
+		return
+	}
+	return
+}
+
+func (action *RevokeRedisUserAction) Do(input interface{}) (interface{}, error) {
+	outputs := RevokeRedisUserOutputs{}
+	var finalErr error
+
+	inputs, isOk := input.(RevokeRedisUserInputs)
+	if !isOk {
+		finalErr = fmt.Errorf("input:%v is not the type: RevokeRedisUserInputs", input)
+		return outputs, finalErr
+	}
+
+	for _, inputData := range inputs.Inputs {
+		output, err := action.revokeRedisUser(&inputData)
 		if err != nil {
 			log.Logger.Error("grant redis user action failed", log.Error(err))
 			finalErr = err
