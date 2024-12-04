@@ -21,14 +21,14 @@ func runRedisCli(args ...string) (string, error) {
 }
 
 // 检查redis用户是否存在
-func redisCheckUserExistOrNot(host, port, loginUser, loginPwd, userName string) (isExisted bool, err error) {
+func redisCheckUserExistedOrNot(host, port, adminUser, adminPassword, userName string) (isExisted bool, err error) {
 	isExisted = false
 
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "GETUSER", userName}
 
 	output, tmpErr := runRedisCli(args...)
@@ -44,12 +44,12 @@ func redisCheckUserExistOrNot(host, port, loginUser, loginPwd, userName string) 
 }
 
 // 创建redis用户
-func redisCreateUser(host, port, loginUser, loginPwd, userName, password, userReadKeyPrefix, userWriteKeyPrefix string) (err error) {
+func redisCreateUser(host, port, adminUser, adminPassword, userName, password, userReadKeyPrefix, userWriteKeyPrefix string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "SETUSER", userName,
 		"on", ">" + password,
 	}
@@ -70,12 +70,12 @@ func redisCreateUser(host, port, loginUser, loginPwd, userName, password, userRe
 }
 
 // 删除redis用户
-func redisDeleteUser(host, port, loginUser, loginPwd, userName string) (err error) {
+func redisDeleteUser(host, port, adminUser, adminPassword, userName string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "DELUSER", userName,
 	}
 
@@ -88,12 +88,12 @@ func redisDeleteUser(host, port, loginUser, loginPwd, userName string) (err erro
 }
 
 // 授予redis用户读权限
-func redisGrantReadPermission(host, port, loginUser, loginPwd, userName, keyPrefix string) (err error) {
+func redisGrantReadPermission(host, port, adminUser, adminPassword, userName, keyPrefix string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "SETUSER", userName,
 		"+get", "+mget",
 		"~" + keyPrefix + "*",
@@ -108,12 +108,12 @@ func redisGrantReadPermission(host, port, loginUser, loginPwd, userName, keyPref
 }
 
 // 撤销redis用户读权限
-func redisRevokeReadPermission(host, port, loginUser, loginPwd, userName, keyPrefix string) (err error) {
+func redisRevokeReadPermission(host, port, adminUser, adminPassword, userName, keyPrefix string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "SETUSER", userName,
 		"-get", "-mget",
 		"~" + keyPrefix + "*",
@@ -128,12 +128,12 @@ func redisRevokeReadPermission(host, port, loginUser, loginPwd, userName, keyPre
 }
 
 // 授予redis用户写权限
-func redisGrantWritePermission(host, port, loginUser, loginPwd, userName, keyPrefix string) (err error) {
+func redisGrantWritePermission(host, port, adminUser, adminPassword, userName, keyPrefix string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "SETUSER", userName,
 		"+set", "+hset", "+lpush", "+rpush",
 		"~" + keyPrefix + "*",
@@ -148,12 +148,12 @@ func redisGrantWritePermission(host, port, loginUser, loginPwd, userName, keyPre
 }
 
 // 撤销redis用户写权限
-func redisRevokeWritePermission(host, port, loginUser, loginPwd, userName, keyPrefix string) (err error) {
+func redisRevokeWritePermission(host, port, adminUser, adminPassword, userName, keyPrefix string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", loginUser,
-		"-a", loginPwd,
+		"-u", adminUser,
+		"-a", adminPassword,
 		"ACL", "SETUSER", userName,
 		"-set", "-hset", "-lpush", "-rpush",
 		"~" + keyPrefix + "*",
