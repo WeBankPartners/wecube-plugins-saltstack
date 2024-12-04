@@ -173,3 +173,7 @@ func getRedisAddUserError(language, user, message string) error {
 func getRedisDeleteUserError(language, user, message string) error {
 	return fmt.Errorf(getMessageMap(language).RedisDeleteUserError, user, message)
 }
+
+func getRedisGrantUserError(language, user, message string) error {
+	return fmt.Errorf(getMessageMap(language).RedisGrantUserError, user, message)
+}

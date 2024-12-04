@@ -25,5 +25,6 @@
   "mysql_create_user_error": "Failed to Add mysql user:%s, %s",
   "run_remote_script_error": "Failed to run script to target %s, output=%s, err=%s",
   "redis_add_user_error": "Failed to add redis user:%s, %s",
-  "redis_delete_user_error": "Failed to delete redis user:%s, %s"
+  "redis_delete_user_error": "Failed to delete redis user:%s, %s",
+  "redis_grant_user_error": "Failed to grant redis user:%s, %s"
 }
