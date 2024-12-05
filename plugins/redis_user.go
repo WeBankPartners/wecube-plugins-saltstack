@@ -44,11 +44,11 @@ type AddRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string `json:"userGuid,omitempty"`
-	UserName           string `json:"userName,omitempty"`
-	UserPassword       string `json:"userPassword,omitempty"`
-	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid            string `json:"userGuid,omitempty"`
+	UserName            string `json:"userName,omitempty"`
+	UserPassword        string `json:"userPassword,omitempty"`
+	UserReadKeyPattern  string `json:"userReadKeyPattern,omitempty"`
+	UserWriteKeyPattern string `json:"userWriteKeyPattern,omitempty"`
 }
 
 type AddRedisUserOutputs struct {
@@ -161,9 +161,9 @@ func (action *AddRedisUserAction) addRedisUser(input *AddRedisUserInput) (output
 		return
 	}
 
-	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
-	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
-	err = redisCreateUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userPassword, userReadKeyPrefixes, userWriteKeyPrefixes)
+	userReadKeyPatterns := splitWithCustomFlag(input.UserReadKeyPattern)
+	userWriteKeyPatterns := splitWithCustomFlag(input.UserWriteKeyPattern)
+	err = redisCreateUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userPassword, userReadKeyPatterns, userWriteKeyPatterns)
 	if err != nil {
 		err = getRedisAddUserError(action.Language, input.UserName, err.Error())
 		return
@@ -349,10 +349,10 @@ type GrantRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string `json:"userGuid,omitempty"`
-	UserName           string `json:"userName,omitempty"`
-	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid            string `json:"userGuid,omitempty"`
+	UserName            string `json:"userName,omitempty"`
+	UserReadKeyPattern  string `json:"userReadKeyPattern,omitempty"`
+	UserWriteKeyPattern string `json:"userWriteKeyPattern,omitempty"`
 }
 
 type GrantRedisUserOutputs struct {
@@ -441,9 +441,9 @@ func (action *GrantRedisUserAction) grantRedisUser(input *GrantRedisUserInput) (
 		return
 	}
 
-	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
-	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
-	err = redisGrantReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPrefixes, userWriteKeyPrefixes)
+	userReadKeyPatterns := splitWithCustomFlag(input.UserReadKeyPattern)
+	userWriteKeyPatterns := splitWithCustomFlag(input.UserWriteKeyPattern)
+	err = redisGrantKeyPattern(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPatterns, userWriteKeyPatterns)
 	if err != nil {
 		err = getRedisGrantUserError(action.Language, input.UserName, err.Error())
 		return
@@ -490,10 +490,10 @@ type RevokeRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string `json:"userGuid,omitempty"`
-	UserName           string `json:"userName,omitempty"`
-	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid            string `json:"userGuid,omitempty"`
+	UserName            string `json:"userName,omitempty"`
+	UserReadKeyPattern  string `json:"userReadKeyPattern,omitempty"`
+	UserWriteKeyPattern string `json:"userWriteKeyPattern,omitempty"`
 }
 
 type RevokeRedisUserOutputs struct {
@@ -582,9 +582,9 @@ func (action *RevokeRedisUserAction) revokeRedisUser(input *RevokeRedisUserInput
 		return
 	}
 
-	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
-	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
-	err = redisRevokeReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPrefixes, userWriteKeyPrefixes)
+	userReadKeyPatterns := splitWithCustomFlag(input.UserReadKeyPattern)
+	userWriteKeyPatterns := splitWithCustomFlag(input.UserWriteKeyPattern)
+	err = redisRevokeKeyPattern(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPatterns, userWriteKeyPatterns)
 	if err != nil {
 		err = getRedisRevokeUserError(action.Language, input.UserName, err.Error())
 		return
