@@ -174,8 +174,7 @@ var (
 		"DEL", "EXPIRE", "PEXPIRE", "RENAME",
 	}
 
-	redisGrantOp  = "grant"
-	redisRevokeOp = "revoke"
+	redisGrantOp = "grant"
 )
 
 func redisGetReadWriteCmdArgs(operation string) (cmdArgs []string, err error) {
@@ -184,10 +183,8 @@ func redisGetReadWriteCmdArgs(operation string) (cmdArgs []string, err error) {
 	var operator string
 	if operation == redisGrantOp {
 		operator = "+"
-	} else if operation == redisRevokeOp {
-		operator = "-"
 	} else {
-		err = fmt.Errorf("operation should be [%s, %s]", redisGrantOp, redisRevokeOp)
+		err = fmt.Errorf("operation should be [%s]", redisGrantOp)
 		return
 	}
 
@@ -223,21 +220,38 @@ func redisCreateUser(host, port, adminUser, adminPassword, userName, password st
 		args = append(args, "--user", adminUser)
 	}
 
-	args = append(args, "ACL", "SETUSER", userName, "on", ">"+password)
+	args = append(args, "ACL", "SETUSER", userName)
 
-	cmdArgs, tmpErr := redisGetReadWriteCmdArgs(redisGrantOp)
+	// check whether redis user is existed
+	isExisted, tmpErr := redisCheckUserExistedOrNot(host, port, adminUser, adminPassword, userName)
 	if tmpErr != nil {
-		err = fmt.Errorf("redis get read write cmd args failed:%s", tmpErr.Error())
+		err = fmt.Errorf("redis check whether user:%s is existed failed: %s", userName, tmpErr.Error())
 		return
 	}
-	if len(cmdArgs) > 0 {
-		args = append(args, cmdArgs...)
+
+	var doArgs []string
+	// 用户未存在
+	if !isExisted {
+		doArgs = append(doArgs, "on", ">"+password)
+		cmdArgs, tmpErr := redisGetReadWriteCmdArgs(redisGrantOp)
+		if tmpErr != nil {
+			err = fmt.Errorf("redis get read write cmd args failed:%s", tmpErr.Error())
+			return
+		}
+		if len(cmdArgs) > 0 {
+			doArgs = append(doArgs, cmdArgs...)
+		}
 	}
 
 	keyPatternArgs := redisGetKeyPatternArgs(userReadKeyPatterns, userWriteKeyPatterns)
 	if len(keyPatternArgs) > 0 {
-		args = append(args, keyPatternArgs...)
+		doArgs = append(doArgs, keyPatternArgs...)
 	}
+
+	if len(doArgs) == 0 {
+		return
+	}
+	args = append(args, doArgs...)
 
 	output, tmpErr := runRedisCli(args...)
 	if tmpErr != nil {
@@ -269,6 +283,7 @@ func redisDeleteUser(host, port, adminUser, adminPassword, userName string) (err
 }
 
 // 授予redis用户 keyPattern 的读/写权限
+/*
 func redisGrantKeyPattern(host, port, adminUser, adminPassword, userName string, userReadKeyPatterns, userWriteKeyPatterns []string) (err error) {
 	args := []string{
 		"-h", host,
@@ -296,26 +311,4 @@ func redisGrantKeyPattern(host, port, adminUser, adminPassword, userName string,
 	}
 	return
 }
-
-// 撤销redis用户 keyPattern 的读/写权限
-func redisRevokeKeyPattern(host, port, adminUser, adminPassword, userName string, userReadKeyPatterns, userWriteKeyPatterns []string) (err error) {
-	args := []string{
-		"-h", host,
-		"-p", port,
-		"-a", adminPassword,
-	}
-	if adminUser != "" {
-		args = append(args, "--user", adminUser)
-	}
-
-	args = append(args, "ACL", "SETUSER", userName)
-
-	// todo revoke user keyPatterns with resetkeys cmd
-
-	output, tmpErr := runRedisCli(args...)
-	if tmpErr != nil {
-		err = fmt.Errorf("output:%s, error:%s", output, tmpErr.Error())
-		return
-	}
-	return
-}
+*/
