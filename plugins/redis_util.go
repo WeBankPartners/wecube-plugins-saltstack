@@ -178,8 +178,8 @@ var (
 	redisRevokeOp = "revoke"
 )
 
-func redisGetReadWriteArgs(readKeyPrefixList []string, writeKeyPrefixList []string, operation string) (permissionArgs []string, err error) {
-	permissionArgs = []string{}
+func redisGetReadWriteCmdArgs(operation string) (cmdArgs []string, err error) {
+	cmdArgs = []string{}
 
 	var operator string
 	if operation == redisGrantOp {
@@ -191,40 +191,29 @@ func redisGetReadWriteArgs(readKeyPrefixList []string, writeKeyPrefixList []stri
 		return
 	}
 
-	readKeyPrefixMap := make(map[string]struct{})
-	for _, keyPrefix := range readKeyPrefixList {
-		if keyPrefix != "" {
-			readKeyPrefixMap[keyPrefix] = struct{}{}
-		}
-	}
-	if len(readKeyPrefixMap) > 0 {
-		for keyPrefix := range readKeyPrefixMap {
-			for _, cmd := range redisReadCmds {
-				permissionArgs = append(permissionArgs, operator+cmd+"|"+keyPrefix+"*")
-			}
-			permissionArgs = append(permissionArgs, "~"+keyPrefix+"*")
-		}
+	for _, cmd := range redisReadCmds {
+		cmdArgs = append(cmdArgs, operator+cmd)
 	}
 
-	writeKeyPrefixMap := make(map[string]struct{})
-	for _, keyPrefix := range writeKeyPrefixList {
-		if keyPrefix != "" {
-			writeKeyPrefixMap[keyPrefix] = struct{}{}
-		}
+	for _, cmd := range redisWriteCmds {
+		cmdArgs = append(cmdArgs, operator+cmd)
 	}
-	if len(writeKeyPrefixMap) > 0 {
-		for keyPrefix := range writeKeyPrefixMap {
-			for _, cmd := range redisWriteCmds {
-				permissionArgs = append(permissionArgs, operator+cmd+"|"+keyPrefix+"*")
-			}
-			permissionArgs = append(permissionArgs, "~"+keyPrefix+"*")
-		}
+	return
+}
+
+func redisGetKeyPatternArgs(readKeyPatterns, writeKeyPatterns []string) (keyPatternArgs []string) {
+	keyPatternArgs = []string{}
+	for _, pattern := range readKeyPatterns {
+		keyPatternArgs = append(keyPatternArgs, "%R~"+pattern)
+	}
+	for _, pattern := range writeKeyPatterns {
+		keyPatternArgs = append(keyPatternArgs, "%W~"+pattern)
 	}
 	return
 }
 
 // 创建redis用户
-func redisCreateUser(host, port, adminUser, adminPassword, userName, password string, userReadKeyPrefix, userWriteKeyPrefix []string) (err error) {
+func redisCreateUser(host, port, adminUser, adminPassword, userName, password string, userReadKeyPatterns, userWriteKeyPatterns []string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
@@ -236,13 +225,18 @@ func redisCreateUser(host, port, adminUser, adminPassword, userName, password st
 
 	args = append(args, "ACL", "SETUSER", userName, "on", ">"+password)
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
+	cmdArgs, tmpErr := redisGetReadWriteCmdArgs(redisGrantOp)
 	if tmpErr != nil {
-		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
+		err = fmt.Errorf("redis get read write cmd args failed:%s", tmpErr.Error())
 		return
 	}
-	if len(permissionArgs) > 0 {
-		args = append(args, permissionArgs...)
+	if len(cmdArgs) > 0 {
+		args = append(args, cmdArgs...)
+	}
+
+	keyPatternArgs := redisGetKeyPatternArgs(userReadKeyPatterns, userWriteKeyPatterns)
+	if len(keyPatternArgs) > 0 {
+		args = append(args, keyPatternArgs...)
 	}
 
 	output, tmpErr := runRedisCli(args...)
@@ -274,8 +268,8 @@ func redisDeleteUser(host, port, adminUser, adminPassword, userName string) (err
 	return
 }
 
-// 授予redis用户读/写权限
-func redisGrantReadWritePermission(host, port, adminUser, adminPassword, userName string, userReadKeyPrefix, userWriteKeyPrefix []string) (err error) {
+// 授予redis用户 keyPattern 的读/写权限
+func redisGrantKeyPattern(host, port, adminUser, adminPassword, userName string, userReadKeyPatterns, userWriteKeyPatterns []string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
@@ -287,15 +281,11 @@ func redisGrantReadWritePermission(host, port, adminUser, adminPassword, userNam
 
 	args = append(args, "ACL", "SETUSER", userName)
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
-	if tmpErr != nil {
-		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
-		return
-	}
-	if len(permissionArgs) > 0 {
-		args = append(args, permissionArgs...)
+	keyPatternArgs := redisGetKeyPatternArgs(userReadKeyPatterns, userWriteKeyPatterns)
+	if len(keyPatternArgs) > 0 {
+		args = append(args, keyPatternArgs...)
 	} else {
-		// 无读/写权限需要授予
+		// 无读/写 keyPattern 需要 grant
 		return
 	}
 
@@ -307,8 +297,8 @@ func redisGrantReadWritePermission(host, port, adminUser, adminPassword, userNam
 	return
 }
 
-// 撤销redis用户读/写权限
-func redisRevokeReadWritePermission(host, port, adminUser, adminPassword, userName string, userReadKeyPrefix, userWriteKeyPrefix []string) (err error) {
+// 撤销redis用户 keyPattern 的读/写权限
+func redisRevokeKeyPattern(host, port, adminUser, adminPassword, userName string, userReadKeyPatterns, userWriteKeyPatterns []string) (err error) {
 	args := []string{
 		"-h", host,
 		"-p", port,
@@ -320,17 +310,7 @@ func redisRevokeReadWritePermission(host, port, adminUser, adminPassword, userNa
 
 	args = append(args, "ACL", "SETUSER", userName)
 
-	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisRevokeOp)
-	if tmpErr != nil {
-		err = fmt.Errorf("redis get read write args failed:%s", tmpErr.Error())
-		return
-	}
-	if len(permissionArgs) > 0 {
-		args = append(args, permissionArgs...)
-	} else {
-		// 无读/写权限需要撤销
-		return
-	}
+	// todo revoke user keyPatterns with resetkeys cmd
 
 	output, tmpErr := runRedisCli(args...)
 	if tmpErr != nil {
