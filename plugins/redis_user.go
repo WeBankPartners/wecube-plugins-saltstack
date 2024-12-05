@@ -44,11 +44,11 @@ type AddRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string   `json:"userGuid,omitempty"`
-	UserName           string   `json:"userName,omitempty"`
-	UserPassword       string   `json:"userPassword,omitempty"`
-	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid           string `json:"userGuid,omitempty"`
+	UserName           string `json:"userName,omitempty"`
+	UserPassword       string `json:"userPassword,omitempty"`
+	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
 }
 
 type AddRedisUserOutputs struct {
@@ -85,10 +85,11 @@ func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) er
 	if input.Port == "" {
 		return getParamEmptyError(action.Language, "port")
 	}
-
-	if input.AdminUserName == "" {
-		return getParamEmptyError(action.Language, "adminUserName")
-	}
+	/*
+		if input.AdminUserName == "" {
+			return getParamEmptyError(action.Language, "adminUserName")
+		}
+	*/
 	if input.AdminPassword == "" {
 		return getParamEmptyError(action.Language, "adminPassword")
 	}
@@ -160,7 +161,9 @@ func (action *AddRedisUserAction) addRedisUser(input *AddRedisUserInput) (output
 		return
 	}
 
-	err = redisCreateUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userPassword, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
+	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
+	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
+	err = redisCreateUser(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userPassword, userReadKeyPrefixes, userWriteKeyPrefixes)
 	if err != nil {
 		err = getRedisAddUserError(action.Language, input.UserName, err.Error())
 		return
@@ -246,10 +249,11 @@ func (action *DeleteRedisUserAction) checkDeleteRedisUser(input *DeleteRedisUser
 	if input.Port == "" {
 		return getParamEmptyError(action.Language, "port")
 	}
-
-	if input.AdminUserName == "" {
-		return getParamEmptyError(action.Language, "adminUserName")
-	}
+	/*
+		if input.AdminUserName == "" {
+			return getParamEmptyError(action.Language, "adminUserName")
+		}
+	*/
 	if input.AdminPassword == "" {
 		return getParamEmptyError(action.Language, "adminPassword")
 	}
@@ -345,10 +349,10 @@ type GrantRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string   `json:"userGuid,omitempty"`
-	UserName           string   `json:"userName,omitempty"`
-	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid           string `json:"userGuid,omitempty"`
+	UserName           string `json:"userName,omitempty"`
+	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
 }
 
 type GrantRedisUserOutputs struct {
@@ -384,10 +388,11 @@ func (action *GrantRedisUserAction) checkAddRedisUser(input *GrantRedisUserInput
 	if input.Port == "" {
 		return getParamEmptyError(action.Language, "port")
 	}
-
-	if input.AdminUserName == "" {
-		return getParamEmptyError(action.Language, "adminUserName")
-	}
+	/*
+		if input.AdminUserName == "" {
+			return getParamEmptyError(action.Language, "adminUserName")
+		}
+	*/
 	if input.AdminPassword == "" {
 		return getParamEmptyError(action.Language, "adminPassword")
 	}
@@ -436,7 +441,9 @@ func (action *GrantRedisUserAction) grantRedisUser(input *GrantRedisUserInput) (
 		return
 	}
 
-	err = redisGrantReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
+	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
+	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
+	err = redisGrantReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPrefixes, userWriteKeyPrefixes)
 	if err != nil {
 		err = getRedisGrantUserError(action.Language, input.UserName, err.Error())
 		return
@@ -483,10 +490,10 @@ type RevokeRedisUserInput struct {
 	AdminPassword string `json:"adminPassword,omitempty"`
 
 	//user info
-	UserGuid           string   `json:"userGuid,omitempty"`
-	UserName           string   `json:"userName,omitempty"`
-	UserReadKeyPrefix  []string `json:"userReadKeyPrefix,omitempty"`
-	UserWriteKeyPrefix []string `json:"userWriteKeyPrefix,omitempty"`
+	UserGuid           string `json:"userGuid,omitempty"`
+	UserName           string `json:"userName,omitempty"`
+	UserReadKeyPrefix  string `json:"userReadKeyPrefix,omitempty"`
+	UserWriteKeyPrefix string `json:"userWriteKeyPrefix,omitempty"`
 }
 
 type RevokeRedisUserOutputs struct {
@@ -522,10 +529,11 @@ func (action *RevokeRedisUserAction) checkRevokeRedisUser(input *RevokeRedisUser
 	if input.Port == "" {
 		return getParamEmptyError(action.Language, "port")
 	}
-
-	if input.AdminUserName == "" {
-		return getParamEmptyError(action.Language, "adminUserName")
-	}
+	/*
+		if input.AdminUserName == "" {
+			return getParamEmptyError(action.Language, "adminUserName")
+		}
+	*/
 	if input.AdminPassword == "" {
 		return getParamEmptyError(action.Language, "adminPassword")
 	}
@@ -574,7 +582,9 @@ func (action *RevokeRedisUserAction) revokeRedisUser(input *RevokeRedisUserInput
 		return
 	}
 
-	err = redisRevokeReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, input.UserReadKeyPrefix, input.UserWriteKeyPrefix)
+	userReadKeyPrefixes := splitWithCustomFlag(input.UserReadKeyPrefix)
+	userWriteKeyPrefixes := splitWithCustomFlag(input.UserWriteKeyPrefix)
+	err = redisRevokeReadWritePermission(input.Host, input.Port, input.AdminUserName, adminPassword, input.UserName, userReadKeyPrefixes, userWriteKeyPrefixes)
 	if err != nil {
 		err = getRedisRevokeUserError(action.Language, input.UserName, err.Error())
 		return
