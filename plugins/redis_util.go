@@ -1,9 +1,10 @@
 package plugins
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os/exec"
-	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
@@ -27,19 +28,36 @@ func redisCheckUserExistedOrNot(host, port, adminUser, adminPassword, userName s
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", adminUser,
 		"-a", adminPassword,
-		"ACL", "GETUSER", userName}
+	}
+	if adminUser != "" {
+		args = append(args, "--user", adminUser)
+	}
+
+	args = append(args, "ACL", "USERS")
 
 	output, tmpErr := runRedisCli(args...)
 	if tmpErr != nil {
-		if strings.Contains(output, "no such user") {
-			return
-		}
 		err = fmt.Errorf("output:%s, error:%s", output, err.Error())
 		return
 	}
-	isExisted = true
+
+	// 解析输出，检查用户名是否存在
+	// 输出格式类似于：
+	// Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\ndefault\ntest1\ntestuser1\n
+	scanner := bufio.NewScanner(bytes.NewReader([]byte(output)))
+	for scanner.Scan() {
+		user := scanner.Text()
+		if user == userName {
+			isExisted = true
+			return
+		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		err = fmt.Errorf("handle get users output failed: %v", err)
+		return
+	}
 	return
 }
 
@@ -210,11 +228,13 @@ func redisCreateUser(host, port, adminUser, adminPassword, userName, password st
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", adminUser,
 		"-a", adminPassword,
-		"ACL", "SETUSER", userName,
-		"on", ">" + password,
 	}
+	if adminUser != "" {
+		args = append(args, "--user", adminUser)
+	}
+
+	args = append(args, "ACL", "SETUSER", userName, "on", ">"+password)
 
 	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
 	if tmpErr != nil {
@@ -238,10 +258,13 @@ func redisDeleteUser(host, port, adminUser, adminPassword, userName string) (err
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", adminUser,
 		"-a", adminPassword,
-		"ACL", "DELUSER", userName,
 	}
+	if adminUser != "" {
+		args = append(args, "--user", adminUser)
+	}
+
+	args = append(args, "ACL", "DELUSER", userName)
 
 	output, tmpErr := runRedisCli(args...)
 	if tmpErr != nil {
@@ -256,10 +279,13 @@ func redisGrantReadWritePermission(host, port, adminUser, adminPassword, userNam
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", adminUser,
 		"-a", adminPassword,
-		"ACL", "SETUSER", userName,
 	}
+	if adminUser != "" {
+		args = append(args, "--user", adminUser)
+	}
+
+	args = append(args, "ACL", "SETUSER", userName)
 
 	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisGrantOp)
 	if tmpErr != nil {
@@ -286,10 +312,13 @@ func redisRevokeReadWritePermission(host, port, adminUser, adminPassword, userNa
 	args := []string{
 		"-h", host,
 		"-p", port,
-		"-u", adminUser,
 		"-a", adminPassword,
-		"ACL", "SETUSER", userName,
 	}
+	if adminUser != "" {
+		args = append(args, "--user", adminUser)
+	}
+
+	args = append(args, "ACL", "SETUSER", userName)
 
 	permissionArgs, tmpErr := redisGetReadWriteArgs(userReadKeyPrefix, userWriteKeyPrefix, redisRevokeOp)
 	if tmpErr != nil {
