@@ -1,4 +1,4 @@
-FROM  ccr.ccs.tencentyun.com/webankpartners/wecube-saltstack:v1.8
+FROM  ccr.ccs.tencentyun.com/webankpartners/wecube-saltstack:v1.9
 
 ENV LANG=en_US.utf8
 ENV APP_HOME=/home/app/wecube-plugins-saltstack
