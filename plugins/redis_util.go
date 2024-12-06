@@ -18,6 +18,7 @@ func runRedisCli(args ...string) (string, error) {
 		log.Logger.Debug("Run redis command", log.StringList("command", args), log.String("output", string(output)), log.Error(err))
 	}
 
+	// log.Logger.Info("Run redis command", log.StringList("command", args), log.String("output", string(output)), log.Error(err))
 	return string(output), err
 }
 
@@ -249,6 +250,7 @@ func redisCreateUser(host, port, adminUser, adminPassword, userName, password st
 	}
 
 	if len(doArgs) == 0 {
+		log.Logger.Info("redis does not have any cmd needed to do")
 		return
 	}
 	args = append(args, doArgs...)

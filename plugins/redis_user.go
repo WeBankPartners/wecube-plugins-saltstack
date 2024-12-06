@@ -99,8 +99,8 @@ func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) er
 		return getParamEmptyError(action.Language, "userName")
 	}
 	/*
-		if input.NewUserPassword == "" {
-			return getParamEmptyError(action.Language, "newUserPassword")
+		if input.UserPassword == "" {
+			return getParamEmptyError(action.Language, "userPassword")
 		}
 	*/
 	return nil
