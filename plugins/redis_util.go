@@ -39,7 +39,7 @@ func redisCheckUserExistedOrNot(host, port, adminUser, adminPassword, userName s
 
 	output, tmpErr := runRedisCli(args...)
 	if tmpErr != nil {
-		err = fmt.Errorf("output:%s, error:%s", output, err.Error())
+		err = fmt.Errorf("output:%s, error:%s", output, tmpErr.Error())
 		return
 	}
 
