@@ -670,7 +670,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 			if k == "" || v == "" {
 				continue
 			}
-			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, "")
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, "")
 			if err != nil {
 				log.Logger.Error(fmt.Sprintf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err))
 				return err
