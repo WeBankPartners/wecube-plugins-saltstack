@@ -63,11 +63,11 @@ type VariableReplaceInput struct {
 	// SecretKey    string `json:"secretKey,omitempty"`
 
 	//support aomp password encrypt
-	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
-	Seed                 string `json:"seed,omitempty"`
-	AppPublicKey         string `json:"appPublicKey,omitempty"`
-	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
-	FileReplacePrefix    string `json:"fileReplacePrefix,omitempty"`
+	// EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed              string `json:"seed,omitempty"`
+	AppPublicKey      string `json:"appPublicKey,omitempty"`
+	SysPrivateKey     string `json:"sysPrivateKey,omitempty"`
+	FileReplacePrefix string `json:"fileReplacePrefix,omitempty"`
 }
 
 // VariableReplaceOutputs .
@@ -165,7 +165,11 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		output.NewS3PkgPath = input.EndPoint
 		return output, err
 	}
-
+	if input.AppPublicKey != "" {
+		if !strings.HasPrefix(input.AppPublicKey, "-----BEGIN PUBLIC KEY-----") {
+			input.AppPublicKey = fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----", input.AppPublicKey)
+		}
+	}
 	suffix, err := getCompressFileSuffix(input.EndPoint)
 	if err != nil {
 		err = getDecompressSuffixError(action.Language, input.EndPoint)
@@ -666,7 +670,7 @@ func replaceFileVar(keyMap map[string]string, filepath, seed, publicKey, private
 			if k == "" || v == "" {
 				continue
 			}
-			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, "")
+			sourceFile, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, "")
 			if err != nil {
 				log.Logger.Error(fmt.Sprintf("VariableReplaceAction downloadS3File get replace source file s3Path=%s,fullPath=%s,err=%v", v, sourceFile, err))
 				return err

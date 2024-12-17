@@ -6,7 +6,7 @@ APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
 PORT_BINDING={{ALLOCATE_PORT}}:8082
 
 fmt:
-	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) -w /go/src/github.com/WeBankPartners/$(project_name)/  golang:1.12.5 go fmt ./...
+	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) -w /go/src/github.com/WeBankPartners/$(project_name)/  golang:1.19.1 go fmt ./...
 
 clean:
 	rm -rf $(project_name)
@@ -15,7 +15,7 @@ clean:
 
 build: clean
 	chmod +x ./build/*.sh
-	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) golang:1.12.5 /bin/bash /go/src/github.com/WeBankPartners/$(project_name)/build/build.sh 
+	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) golang:1.19.1 /bin/bash /go/src/github.com/WeBankPartners/$(project_name)/build/build.sh
 
 image: build
 	docker build -t $(project_name):$(version) .

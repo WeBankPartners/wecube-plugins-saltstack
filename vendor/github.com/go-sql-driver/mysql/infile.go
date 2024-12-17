@@ -23,17 +23,16 @@ var (
 	readerRegisterLock sync.RWMutex
 )
 
-// RegisterLocalFile adds the given file to the file whitelist,
+// RegisterLocalFile adds the given file to the file allowlist,
 // so that it can be used by "LOAD DATA LOCAL INFILE <filepath>".
 // Alternatively you can allow the use of all local files with
 // the DSN parameter 'allowAllFiles=true'
 //
-//  filePath := "/home/gopher/data.csv"
-//  mysql.RegisterLocalFile(filePath)
-//  err := db.Exec("LOAD DATA LOCAL INFILE '" + filePath + "' INTO TABLE foo")
-//  if err != nil {
-//  ...
-//
+//	filePath := "/home/gopher/data.csv"
+//	mysql.RegisterLocalFile(filePath)
+//	err := db.Exec("LOAD DATA LOCAL INFILE '" + filePath + "' INTO TABLE foo")
+//	if err != nil {
+//	...
 func RegisterLocalFile(filePath string) {
 	fileRegisterLock.Lock()
 	// lazy map init
@@ -45,7 +44,7 @@ func RegisterLocalFile(filePath string) {
 	fileRegisterLock.Unlock()
 }
 
-// DeregisterLocalFile removes the given filepath from the whitelist.
+// DeregisterLocalFile removes the given filepath from the allowlist.
 func DeregisterLocalFile(filePath string) {
 	fileRegisterLock.Lock()
 	delete(fileRegister, strings.Trim(filePath, `"`))
@@ -58,15 +57,14 @@ func DeregisterLocalFile(filePath string) {
 // If the handler returns a io.ReadCloser Close() is called when the
 // request is finished.
 //
-//  mysql.RegisterReaderHandler("data", func() io.Reader {
-//  	var csvReader io.Reader // Some Reader that returns CSV data
-//  	... // Open Reader here
-//  	return csvReader
-//  })
-//  err := db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE foo")
-//  if err != nil {
-//  ...
-//
+//	mysql.RegisterReaderHandler("data", func() io.Reader {
+//		var csvReader io.Reader // Some Reader that returns CSV data
+//		... // Open Reader here
+//		return csvReader
+//	})
+//	err := db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE foo")
+//	if err != nil {
+//	...
 func RegisterReaderHandler(name string, handler func() io.Reader) {
 	readerRegisterLock.Lock()
 	// lazy map init
@@ -93,9 +91,15 @@ func deferredClose(err *error, closer io.Closer) {
 	}
 }
 
-func (mc *mysqlConn) handleInFileRequest(name string) (err error) {
+const defaultPacketSize = 16 * 1024 // 16KB is small enough for disk readahead and large enough for TCP
+
+func (mc *okHandler) handleInFileRequest(name string) (err error) {
 	var rdr io.Reader
 	var data []byte
+	packetSize := defaultPacketSize
+	if mc.maxWriteSize < packetSize {
+		packetSize = mc.maxWriteSize
+	}
 
 	if idx := strings.Index(name, "Reader::"); idx == 0 || (idx > 0 && name[idx-1] == '/') { // io.Reader
 		// The server might return an an absolute path. See issue #355.
@@ -108,23 +112,21 @@ func (mc *mysqlConn) handleInFileRequest(name string) (err error) {
 		if inMap {
 			rdr = handler()
 			if rdr != nil {
-				data = make([]byte, 4+mc.maxWriteSize)
-
 				if cl, ok := rdr.(io.Closer); ok {
 					defer deferredClose(&err, cl)
 				}
 			} else {
-				err = fmt.Errorf("Reader '%s' is <nil>", name)
+				err = fmt.Errorf("reader '%s' is <nil>", name)
 			}
 		} else {
-			err = fmt.Errorf("Reader '%s' is not registered", name)
+			err = fmt.Errorf("reader '%s' is not registered", name)
 		}
 	} else { // File
 		name = strings.Trim(name, `"`)
 		fileRegisterLock.RLock()
 		fr := fileRegister[name]
 		fileRegisterLock.RUnlock()
-		if mc.cfg.allowAllFiles || fr {
+		if mc.cfg.AllowAllFiles || fr {
 			var file *os.File
 			var fi os.FileInfo
 
@@ -134,27 +136,25 @@ func (mc *mysqlConn) handleInFileRequest(name string) (err error) {
 				// get file size
 				if fi, err = file.Stat(); err == nil {
 					rdr = file
-					if fileSize := int(fi.Size()); fileSize <= mc.maxWriteSize {
-						data = make([]byte, 4+fileSize)
-					} else if fileSize <= mc.maxPacketAllowed {
-						data = make([]byte, 4+mc.maxWriteSize)
-					} else {
-						err = fmt.Errorf("Local File '%s' too large: Size: %d, Max: %d", name, fileSize, mc.maxPacketAllowed)
+					if fileSize := int(fi.Size()); fileSize < packetSize {
+						packetSize = fileSize
 					}
 				}
 			}
 		} else {
-			err = fmt.Errorf("Local File '%s' is not registered. Use the DSN parameter 'allowAllFiles=true' to allow all files", name)
+			err = fmt.Errorf("local file '%s' is not registered", name)
 		}
 	}
 
 	// send content packets
-	if err == nil {
+	// if packetSize == 0, the Reader contains no data
+	if err == nil && packetSize > 0 {
+		data := make([]byte, 4+packetSize)
 		var n int
 		for err == nil {
 			n, err = rdr.Read(data[4:])
 			if n > 0 {
-				if ioErr := mc.writePacket(data[:4+n]); ioErr != nil {
+				if ioErr := mc.conn().writePacket(data[:4+n]); ioErr != nil {
 					return ioErr
 				}
 			}
@@ -168,15 +168,15 @@ func (mc *mysqlConn) handleInFileRequest(name string) (err error) {
 	if data == nil {
 		data = make([]byte, 4)
 	}
-	if ioErr := mc.writePacket(data[:4]); ioErr != nil {
+	if ioErr := mc.conn().writePacket(data[:4]); ioErr != nil {
 		return ioErr
 	}
 
 	// read OK packet
 	if err == nil {
 		return mc.readResultOK()
-	} else {
-		mc.readPacket()
 	}
+
+	mc.conn().readPacket()
 	return err
 }

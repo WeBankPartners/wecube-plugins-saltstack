@@ -36,6 +36,7 @@ type RunMysqlScriptInput struct {
 	CallBackParameter
 	EndPoint     string `json:"endpoint,omitempty"`
 	SqlFiles     string `json:"sql_files,omitempty"`
+	Sql          string `json:"sql,omitempty"`
 	Guid         string `json:"guid,omitempty"`
 	Seed         string `json:"seed,omitempty"`
 	Host         string `json:"host,omitempty"`
@@ -150,6 +151,7 @@ func execSqlScript(hostName string, port string, userName string, password strin
 }
 
 func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (output RunMysqlScriptOutput, err error) {
+
 	defer func() {
 		output.Guid = input.Guid
 		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
@@ -166,8 +168,24 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 	}
 
 	var fileNameList []string
+
+	// add user input sql support
+	if input.Sql != "" {
+		tmpFile, err := os.CreateTemp(UPLOADS3FILE_DIR, fmt.Sprintf("%s-*.sql", input.Guid))
+		if err != nil {
+			return output, err
+		}
+		defer os.Remove(tmpFile.Name())
+
+		if err = writeStringToFile(input.Sql, tmpFile.Name()); err != nil {
+			return output, err
+		}
+
+		fileNameList = append(fileNameList, tmpFile.Name())
+	}
+
 	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, false, action.Language)
+		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
 		if err != nil {
 			return output, err
 		}
@@ -186,7 +204,7 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 	// new dir to place all *.sql
 	Info := strings.Split(fileNameList[0], "/")
-	newDir := strings.Join(Info[0:len(Info)-2], "/") + "/sql"
+	newDir := strings.Join(Info[0:len(Info)-2], "/") + "/mysql_script_run_" + getRandString()
 	err = ensureDirExist(newDir)
 	if err != nil {
 		return output, err

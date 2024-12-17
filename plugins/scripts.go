@@ -146,7 +146,7 @@ func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 	return fullPath, err
 }
 
-func executeS3Script(fileName string, target string, runAs string, execArg string, language string) (string, error) {
+func executeS3Script(fileName string, target string, runAs string, execArg string, cwd string, language string) (string, error) {
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
@@ -161,6 +161,11 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 	if len(runAs) > 0 {
 		request.Args = append(request.Args, "runas="+runAs)
 	}
+
+	if len(cwd) > 0 {
+		request.Args = append(request.Args, "cwd="+cwd)
+	}
+
 	if !SaltResetEnv {
 		request.Args = append(request.Args, "reset_system_locale=False")
 	}
@@ -369,7 +374,7 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 			break
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
-		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg, language)
+		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg, input.WorkDir, language)
 		//os.Remove(scriptPath)
 		if err != nil {
 			return "", getRunRemoteScriptError(language, input.Target, result, err)
