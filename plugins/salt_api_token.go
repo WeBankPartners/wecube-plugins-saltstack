@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
