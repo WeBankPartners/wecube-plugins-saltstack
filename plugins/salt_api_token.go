@@ -43,8 +43,6 @@ var (
 	saltToken  SaltApiToken
 )
 
-//{"return": [{"perms": [".*"], "start": 1557300494.752942, ***REMOVED***, "expire": 1557343694.752943, "user": "saltapi", "eauth": "pam"}]}
-
 type SaltApiTokenResult struct {
 	Token  string  `json:"token"`
 	Start  float64 `json:"start"`
