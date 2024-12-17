@@ -4,13 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -41,8 +41,6 @@ var (
 	tokenMutex sync.Mutex
 	saltToken  SaltApiToken
 )
-
-//{"return": [{"perms": [".*"], "start": 1557300494.752942, ***REMOVED***, "expire": 1557343694.752943, "user": "saltapi", "eauth": "pam"}]}
 
 type SaltApiTokenResult struct {
 	Token  string  `json:"token"`
