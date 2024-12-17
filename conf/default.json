@@ -13,5 +13,6 @@
   },
   "default_language": "en",
   "install_minion_timeout": 300,
-  "exec_remote_command_timeout": 300
+  "exec_remote_command_timeout": 300,
+  "salt_api_pwd": "saltapi"
 }

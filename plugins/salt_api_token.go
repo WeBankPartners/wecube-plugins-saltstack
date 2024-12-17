@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -54,7 +56,7 @@ type NewSaltApiTokenRsp struct {
 func newSaltApiToken() error {
 	urlPath := "https://127.0.0.1:8080"
 	userName := "saltapi"
-	***REMOVED***
+	passwd := models.Config.SaltApiPwd
 
 	if urlPath == "" || userName == "" || passwd == "" {
 		return fmt.Errorf("newSaltApiToken:meet empty env param")
