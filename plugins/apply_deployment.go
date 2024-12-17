@@ -45,13 +45,13 @@ type ApplyNewDeploymentInput struct {
 	StartScriptPath  string `json:"startScript,omitempty"`
 	// AccessKey    string `json:"accessKey,omitempty"`
 	// SecretKey    string `json:"secretKey,omitempty"`
-	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
-	Seed                 string `json:"seed,omitempty"`
-	AppPublicKey         string `json:"appPublicKey,omitempty"`
-	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
-	Password             string `json:"password,omitempty"`
-	RwDir                string `json:"rwDir,omitempty"`
-	RwFile               string `json:"rwFile,omitempty"`
+	// EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	AppPublicKey  string `json:"appPublicKey,omitempty"`
+	SysPrivateKey string `json:"sysPrivateKey,omitempty"`
+	Password      string `json:"password,omitempty"`
+	RwDir         string `json:"rwDir,omitempty"`
+	RwFile        string `json:"rwFile,omitempty"`
 
 	LogFileTrade   string `json:"logFileTrade,omitempty"`
 	LogFileTrace   string `json:"logFileTrace,omitempty"`
@@ -194,14 +194,14 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:                 input.Guid,
-					EndPoint:             input.EndPoint,
-					FilePath:             input.VariableFilePath,
-					VariableList:         input.VariableList,
-					EncryptVariblePrefix: input.EncryptVariblePrefix,
-					Seed:                 input.Seed,
-					AppPublicKey:         input.AppPublicKey,
-					SysPrivateKey:        input.SysPrivateKey,
+					Guid:         input.Guid,
+					EndPoint:     input.EndPoint,
+					FilePath:     input.VariableFilePath,
+					VariableList: input.VariableList,
+					// EncryptVariblePrefix: input.EncryptVariblePrefix,
+					Seed:          input.Seed,
+					AppPublicKey:  input.AppPublicKey,
+					SysPrivateKey: input.SysPrivateKey,
 				},
 			},
 		}
@@ -332,10 +332,10 @@ type ApplyUpdateDeploymentInput struct {
 	StopScriptPath   string `json:"stopScript,omitempty"`
 	StartScriptPath  string `json:"startScript,omitempty"`
 
-	EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
-	Seed                 string `json:"seed,omitempty"`
-	AppPublicKey         string `json:"appPublicKey,omitempty"`
-	SysPrivateKey        string `json:"sysPrivateKey,omitempty"`
+	// EncryptVariblePrefix string `json:"encryptVariblePrefix,omitempty"`
+	Seed          string `json:"seed,omitempty"`
+	AppPublicKey  string `json:"appPublicKey,omitempty"`
+	SysPrivateKey string `json:"sysPrivateKey,omitempty"`
 
 	LogFileTrade   string `json:"logFileTrade,omitempty"`
 	LogFileTrace   string `json:"logFileTrace,omitempty"`
@@ -489,14 +489,14 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
 				VariableReplaceInput{
-					Guid:                 input.Guid,
-					EndPoint:             input.EndPoint,
-					FilePath:             input.VariableFilePath,
-					VariableList:         input.VariableList,
-					EncryptVariblePrefix: input.EncryptVariblePrefix,
-					Seed:                 input.Seed,
-					AppPublicKey:         input.AppPublicKey,
-					SysPrivateKey:        input.SysPrivateKey,
+					Guid:         input.Guid,
+					EndPoint:     input.EndPoint,
+					FilePath:     input.VariableFilePath,
+					VariableList: input.VariableList,
+					// EncryptVariblePrefix: input.EncryptVariblePrefix,
+					Seed:          input.Seed,
+					AppPublicKey:  input.AppPublicKey,
+					SysPrivateKey: input.SysPrivateKey,
 				},
 			},
 		}

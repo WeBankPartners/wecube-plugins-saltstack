@@ -1,44 +1,45 @@
 package models
 
 import (
-	"log"
 	"encoding/json"
-	"os"
-	"io/ioutil"
-	"strings"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
 )
 
 type HttpConfig struct {
-	Port  string  `json:"port"`
-	Token  string  `json:"token"`
+	Port  string `json:"port"`
+	Token string `json:"token"`
 }
 
 type LogConfig struct {
-	Level   string  `json:"level"`
-	File    string  `json:"file"`
-	ArchiveMaxSize int `json:"archive_max_size"`
-	ArchiveMaxBackup int `json:"archive_max_backup"`
-	ArchiveMaxDay int `json:"archive_max_day"`
-	Compress  bool  `json:"compress"`
+	Level            string `json:"level"`
+	File             string `json:"file"`
+	ArchiveMaxSize   int    `json:"archive_max_size"`
+	ArchiveMaxBackup int    `json:"archive_max_backup"`
+	ArchiveMaxDay    int    `json:"archive_max_day"`
+	Compress         bool   `json:"compress"`
 }
 
 type CoreJwtToken struct {
-	User    string    `json:"user"`
-	Expire  int64     `json:"expire"`
-	Roles   []string  `json:"roles"`
+	User   string   `json:"user"`
+	Expire int64    `json:"expire"`
+	Roles  []string `json:"roles"`
 }
 
 type GlobalConfig struct {
-	Http  HttpConfig  `json:"http"`
-	Log   LogConfig     `json:"log"`
-	DefaultLanguage  string  `json:"default_language"`
-	InstallMinionTimeout int `json:"install_minion_timeout"`
-	ExecRemoteCommandTimeout int `json:"exec_remote_command_timeout"`
+	Http                     HttpConfig `json:"http"`
+	Log                      LogConfig  `json:"log"`
+	DefaultLanguage          string     `json:"default_language"`
+	InstallMinionTimeout     int        `json:"install_minion_timeout"`
+	ExecRemoteCommandTimeout int        `json:"exec_remote_command_timeout"`
+	SaltApiPwd               string     `json:"salt_api_pwd"`
 }
 
 var (
-	Config  *GlobalConfig
+	Config     *GlobalConfig
 	CoreJwtKey string
 )
 
@@ -51,7 +52,7 @@ func InitConfig(cfg string) error {
 	if os.IsExist(err) {
 		return fmt.Errorf("config file not found")
 	}
-	b,err := ioutil.ReadFile(cfg)
+	b, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		return fmt.Errorf("read file %s error %v", cfg, err)
 	}
