@@ -118,8 +118,12 @@ func (action *FileCopyAction) changeDirectoryOwner(input *FileCopyInput) error {
 	} else {
 		return fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
 	}
-	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
-	cmdRun := "chown -R " + input.FileOwner + "  " + directory
+	directory = strings.TrimSpace(directory)
+	if directory == "" {
+		return fmt.Errorf("changeDirectoryOwner destinationPath can not empty")
+	}
+	//cmdRun := "chown -R " + input.FileOwner + "  " + directory
+	cmdRun := "chown -R " + input.FileOwner + "  " + directory + "/ && chown -R " + input.FileOwner + "  " + directory
 	request.Args = append(request.Args, cmdRun)
 
 	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
