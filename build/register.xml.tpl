@@ -368,7 +368,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>
             </interface>
-             <interface action="change-password" path="/saltstack/v1/mysql-user/change-password" filterRule="">
+            <interface action="change-password" path="/saltstack/v1/mysql-user/change-password" filterRule="">
                 <inputParameters>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
@@ -411,6 +411,8 @@
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrace</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileMetric</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileKeyword</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileSrc</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileDst</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -445,6 +447,8 @@
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileTrace</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileMetric</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileKeyword</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileSrc</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileDst</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>

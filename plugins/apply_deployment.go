@@ -58,8 +58,8 @@ type ApplyNewDeploymentInput struct {
 	LogFileMetric  string `json:"logFileMetric,omitempty"`
 	LogFileKeyword string `json:"logFileKeyword,omitempty"`
 
-	SignFileSrc string `json:"SignFileSrc,omitempty"`
-	SignFileDst string `json:"SignFileDst,omitempty"`
+	SignFileSrc string `json:"signFileSrc,omitempty"`
+	SignFileDst string `json:"signFileDst,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -372,8 +372,8 @@ type ApplyUpdateDeploymentInput struct {
 	//AppBackUpPath    string `json:"appBackUpPath,omitempty"`
 	//ExcludePath      string `json:"excludePath,omitempty"`
 
-	SignFileSrc string `json:"SignFileSrc,omitempty"`
-	SignFileDst string `json:"SignFileDst,omitempty"`
+	SignFileSrc string `json:"signFileSrc,omitempty"`
+	SignFileDst string `json:"signFileDst,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
