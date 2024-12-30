@@ -57,6 +57,9 @@ type ApplyNewDeploymentInput struct {
 	LogFileTrace   string `json:"logFileTrace,omitempty"`
 	LogFileMetric  string `json:"logFileMetric,omitempty"`
 	LogFileKeyword string `json:"logFileKeyword,omitempty"`
+
+	SignFileSrc string `json:"SignFileSrc,omitempty"`
+	SignFileDst string `json:"SignFileDst,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -237,6 +240,29 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	}
 	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
 
+	// copy apply package's sign file from s3 to dst
+	if input.SignFileSrc != "" && input.SignFileDst != "" {
+		signFileCopyRequest := FileCopyInputs{
+			Inputs: []FileCopyInput{
+				{
+					EndPoint:        input.SignFileSrc,
+					Guid:            input.Guid,
+					Target:          input.Target,
+					DestinationPath: input.SignFileDst,
+					Unpack:          "false",
+					FileOwner:       input.UserName,
+				},
+			},
+		}
+
+		log.Logger.Debug("App deploy", log.String("step", "sign file copy"), log.JsonObj("param", signFileCopyRequest))
+		signFileCopyOutputs, err := copyApplyFile(signFileCopyRequest)
+		if err != nil {
+			return output, fmt.Errorf("Copy app package's sign file to target fail,%s ", err.Error())
+		}
+		output.FileDetail = signFileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	}
+
 	// start apply script
 	runScriptRequest := RunScriptInputs{
 		Inputs: []RunScriptInput{
@@ -345,6 +371,9 @@ type ApplyUpdateDeploymentInput struct {
 	//AppBackUpEnabled string `json:"appBackUpEnabled,omitempty"`
 	//AppBackUpPath    string `json:"appBackUpPath,omitempty"`
 	//ExcludePath      string `json:"excludePath,omitempty"`
+
+	SignFileSrc string `json:"SignFileSrc,omitempty"`
+	SignFileDst string `json:"SignFileDst,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -575,6 +604,29 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
 	output.FileDetail += fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+
+	// copy apply package's sign file from s3 to dst
+	if input.SignFileSrc != "" && input.SignFileDst != "" {
+		signFileCopyRequest := FileCopyInputs{
+			Inputs: []FileCopyInput{
+				{
+					EndPoint:        input.SignFileSrc,
+					Guid:            input.Guid,
+					Target:          input.Target,
+					DestinationPath: input.SignFileDst,
+					Unpack:          "false",
+					FileOwner:       input.UserName,
+				},
+			},
+		}
+
+		log.Logger.Debug("App deploy", log.String("step", "sign file copy"), log.JsonObj("param", signFileCopyRequest))
+		signFileCopyOutputs, err := copyApplyFile(signFileCopyRequest)
+		if err != nil {
+			return output, fmt.Errorf("Copy app package's sign file to target fail,%s ", err.Error())
+		}
+		output.FileDetail = signFileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	}
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{
