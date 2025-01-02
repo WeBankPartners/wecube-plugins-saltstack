@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -14,8 +15,8 @@ var FileActions = make(map[string]Action)
 
 func init() {
 	FileActions["copy"] = new(FileCopyAction)
-	FileActions["find"] = new(FileCopyAction)
-	FileActions["create"] = new(FileCopyAction)
+	FileActions["find"] = new(FileFindAction)
+	FileActions["create"] = new(FileCreateAction)
 }
 
 type FilePlugin struct {
@@ -327,7 +328,6 @@ type FileCreateInput struct {
 	Target          string `json:"target,omitempty"`
 	FileContent     string `json:"fileContent,omitempty"`
 	DestinationPath string `json:"destinationPath,omitempty"`
-	Unpack          string `json:"unpack,omitempty"`
 	FileOwner       string `json:"fileOwner,omitempty"`
 }
 
@@ -373,11 +373,6 @@ func (action *FileCreateAction) CheckParam(input FileCreateInput) error {
 	if input.DestinationPath == "" {
 		return getParamEmptyError(action.Language, "destinationPath")
 	}
-	if input.Unpack == "true" {
-		if input.FileOwner == "" {
-			return getParamEmptyError(action.Language, "fileOwner")
-		}
-	}
 
 	return nil
 }
@@ -407,7 +402,7 @@ func (action *FileCreateAction) Do(input interface{}) (interface{}, error) {
 		}
 		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
-			log.Logger.Error("File copy action", log.Error(tmpOutput.Err))
+			log.Logger.Error("File create action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
@@ -433,70 +428,41 @@ func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileC
 		return output, err
 	}
 
-	//if input.FileOwner != "" {
-	//	userExist, errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language)
-	//	if !userExist {
-	//		err = fmt.Errorf(errOut)
-	//		return output, err
-	//	}
-	//}
-	//
-	//fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
-	//if tmpErr != nil {
-	//	log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
-	//	err = tmpErr
-	//	return output, err
-	//}
-	//
-	//input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
-	//
-	//savePath, tmpErr := saveFileToSaltMasterBaseDir(fileName)
-	//os.Remove(fileName)
-	//if tmpErr != nil {
-	//	err = getS3DownloadError(action.Language, input.EndPoint, fmt.Sprintf("move download file to salt-dir error:%s", tmpErr.Error()))
-	//	return output, err
-	//}
-	//
-	////copy file
-	//copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
-	//_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
-	//os.Remove(savePath)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//md5SumRequest, _ := action.deriveMd5SumRequest(input)
-	//md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//var unpackRequest *SaltApiRequest
-	//if input.Unpack == "true" {
-	//	unpackRequest, err = action.deriveUnpackRequest(input)
-	//	if err != nil {
-	//		return output, err
-	//	}
-	//	unpackOutput, unpackErr := CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language)
-	//	if unpackErr != nil {
-	//		err = unpackErr
-	//		return output, err
-	//	}
-	//	if strings.Contains(unpackOutput, "'archive.cmd_unzip' not found") || strings.Contains(unpackOutput, "'archive.tar' not found") {
-	//		err = fmt.Errorf("can not find unzip or tar command in target host")
-	//		return output, err
-	//	}
-	//	if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language); err != nil {
-	//		return output, err
-	//	}
-	//}
-	//if input.FileOwner != "" {
-	//	if err = action.changeDirectoryOwner(input); err != nil {
-	//		return output, err
-	//	}
-	//}
-	//
-	//output.Detail = md5sum
+	// Check user if not exist
+	if input.FileOwner != "" {
+		if userExist, errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language); !userExist {
+			return output, fmt.Errorf(errOut)
+		}
+	}
+
+	// Write content to tmp file in salt base dir
+	tmpBaseDir := path.Join(SCRIPT_SAVE_PATH, input.Target)
+	tmpFile, err := os.CreateTemp(tmpBaseDir, "fast-tmp-")
+	if err != nil {
+		return output, fmt.Errorf("new tmp file error, %s", err.Error())
+	}
+	log.Logger.Debug("Create tmp file success", log.String("tmpBaseDir", tmpBaseDir),
+		log.String("file", tmpFile.Name()))
+
+	defer func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+	}()
+
+	if _, err = tmpFile.Write([]byte(input.FileContent)); err != nil {
+		return output, fmt.Errorf("write fileContent to tmp file error, %s", err.Error())
+	}
+	log.Logger.Debug("Write fileContent to tmp file success", log.String("file", tmpFile.Name()))
+
+	// Convert path such as /srv/salt/base/target/t1 -> salt://base/target/t1
+	paths := strings.Split(tmpFile.Name(), "base")
+	saltPath := fmt.Sprintf("salt://base%s", paths[1])
+	md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
+	if err != nil {
+		return output, fmt.Errorf("send tmp file error,%s ", err.Error())
+	}
+	output.Detail = md5sum
+
 	return output, err
 }
 
@@ -586,7 +552,7 @@ func (action *FileFindAction) Do(input interface{}) (interface{}, error) {
 		}
 		tmpOutput := <-outputChan
 		if tmpOutput.Err != nil {
-			log.Logger.Error("File copy action", log.Error(tmpOutput.Err))
+			log.Logger.Error("File find action", log.Error(tmpOutput.Err))
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
@@ -612,69 +578,13 @@ func (action *FileFindAction) findFile(input *FileFindInput) (output FileFindOut
 		return output, err
 	}
 
-	//if input.FileOwner != "" {
-	//	userExist, errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language)
-	//	if !userExist {
-	//		err = fmt.Errorf(errOut)
-	//		return output, err
-	//	}
-	//}
-	//
-	//fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
-	//if tmpErr != nil {
-	//	log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
-	//	err = tmpErr
-	//	return output, err
-	//}
-	//
-	//input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
-	//
-	//savePath, tmpErr := saveFileToSaltMasterBaseDir(fileName)
-	//os.Remove(fileName)
-	//if tmpErr != nil {
-	//	err = getS3DownloadError(action.Language, input.EndPoint, fmt.Sprintf("move download file to salt-dir error:%s", tmpErr.Error()))
-	//	return output, err
-	//}
-	//
-	////copy file
-	//copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
-	//_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
-	//os.Remove(savePath)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//md5SumRequest, _ := action.deriveMd5SumRequest(input)
-	//md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//var unpackRequest *SaltApiRequest
-	//if input.Unpack == "true" {
-	//	unpackRequest, err = action.deriveUnpackRequest(input)
-	//	if err != nil {
-	//		return output, err
-	//	}
-	//	unpackOutput, unpackErr := CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language)
-	//	if unpackErr != nil {
-	//		err = unpackErr
-	//		return output, err
-	//	}
-	//	if strings.Contains(unpackOutput, "'archive.cmd_unzip' not found") || strings.Contains(unpackOutput, "'archive.tar' not found") {
-	//		err = fmt.Errorf("can not find unzip or tar command in target host")
-	//		return output, err
-	//	}
-	//	if _, err = CallSaltApi("https://127.0.0.1:8080", *unpackRequest, action.Language); err != nil {
-	//		return output, err
-	//	}
-	//}
-	//if input.FileOwner != "" {
-	//	if err = action.changeDirectoryOwner(input); err != nil {
-	//		return output, err
-	//	}
-	//}
-	//
-	//output.Detail = md5sum
+	log.Logger.Debug("findFile in "+input.FilePath, log.String("pattern", input.FilePattern))
+	ret, err := FindGlobFiles(input.FilePath, input.FilePattern, input.Target)
+	if err != nil {
+		return output, err
+	}
+
+	log.Logger.Debug("findFile in "+input.FilePath, log.String("files", ret))
+	output.Files = ret
 	return output, err
 }
