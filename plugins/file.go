@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -437,7 +438,8 @@ func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileC
 
 	// Write content to tmp file in salt base dir
 	tmpBaseDir := path.Join(SCRIPT_SAVE_PATH, input.Target)
-	tmpFile, err := os.CreateTemp(tmpBaseDir, "fast-tmp-")
+	//tmpFile, err := os.CreateTemp(tmpBaseDir, "fast-tmp-")
+	tmpFile, err := ioutil.TempFile(tmpBaseDir, "fast-tmp-")
 	if err != nil {
 		return output, fmt.Errorf("new tmp file error, %s", err.Error())
 	}
