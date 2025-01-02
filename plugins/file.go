@@ -411,6 +411,65 @@ func (action *FileCreateAction) Do(input interface{}) (interface{}, error) {
 	return &outputs, finalErr
 }
 
+func (action *FileCreateAction) deriveMd5SumRequest(input *FileCreateInput) (*SaltApiRequest, error) {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "file.get_hash"
+	request.Args = append(request.Args, input.DestinationPath)
+	request.Args = append(request.Args, "md5")
+
+	return &request, nil
+}
+
+func (action *FileCreateAction) deriveCopyFileRequest(basePath string, input *FileCreateInput) (*SaltApiRequest, error) {
+
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "cp.get_file"
+
+	request.Args = append(request.Args, basePath)
+	request.Args = append(request.Args, input.DestinationPath)
+	request.Args = append(request.Args, "makedirs=true")
+	request.Args = append(request.Args, "gzip=5")
+
+	return &request, nil
+}
+
+func (action *FileCreateAction) changeDirectoryOwner(input *FileCreateInput) error {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "cmd.run"
+	if !strings.Contains(input.FileOwner, ":") {
+		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
+	}
+	directory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		directory = input.DestinationPath[0:lastIndex]
+	} else {
+		return fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	cmdRun := "chown -R " + input.FileOwner + "  " + directory
+	request.Args = append(request.Args, cmdRun)
+
+	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
+	if err != nil {
+		return err
+	}
+	log.Logger.Debug("Change dir owner", log.String("command", cmdRun), log.String("output", output))
+	if strings.Contains(output, "chown") {
+		return fmt.Errorf(output)
+	}
+
+	return nil
+}
+
 func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileCreateOutput, err error) {
 	defer func() {
 		output.Guid = input.Guid
@@ -458,10 +517,31 @@ func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileC
 	// Convert path such as /srv/salt/base/target/t1 -> salt://base/target/t1
 	paths := strings.Split(tmpFile.Name(), "base")
 	saltPath := fmt.Sprintf("salt://base%s", paths[1])
-	md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
+
+	//md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
+	//if err != nil {
+	//	return output, fmt.Errorf("send tmp file error,%s ", err.Error())
+	//}
+
+	//copy file
+	copyRequest, err := action.deriveCopyFileRequest(saltPath, input)
+	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
 	if err != nil {
-		return output, fmt.Errorf("send tmp file error,%s ", err.Error())
+		return output, err
 	}
+
+	md5SumRequest, _ := action.deriveMd5SumRequest(input)
+	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
+	if err != nil {
+		return output, err
+	}
+
+	if input.FileOwner != "" {
+		if err = action.changeDirectoryOwner(input); err != nil {
+			return output, err
+		}
+	}
+
 	output.Detail = md5sum
 
 	return output, err
@@ -489,7 +569,7 @@ type FileFindOutput struct {
 	CallBackParameter
 	Result
 	Guid   string `json:"guid,omitempty"`
-	Files  string `json:"files,omitempty"`
+	Files  string `json:"files"`
 	Detail string `json:"detail,omitempty"`
 }
 
