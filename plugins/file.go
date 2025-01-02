@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -437,13 +436,13 @@ func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileC
 	}
 
 	// Write content to tmp file in salt base dir
-	tmpBaseDir := path.Join(SCRIPT_SAVE_PATH, input.Target)
+	//tmpBaseDir := path.Join(SCRIPT_SAVE_PATH, input.Target)
 	//tmpFile, err := os.CreateTemp(tmpBaseDir, "fast-tmp-")
-	tmpFile, err := ioutil.TempFile(tmpBaseDir, "fast-tmp-")
+	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "fast-tmp-")
 	if err != nil {
 		return output, fmt.Errorf("new tmp file error, %s", err.Error())
 	}
-	log.Logger.Debug("Create tmp file success", log.String("tmpBaseDir", tmpBaseDir),
+	log.Logger.Debug("Create tmp file success", log.String("tmpBaseDir", SCRIPT_SAVE_PATH),
 		log.String("file", tmpFile.Name()))
 
 	defer func() {
