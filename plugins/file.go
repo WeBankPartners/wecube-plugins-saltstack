@@ -518,29 +518,29 @@ func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileC
 	paths := strings.Split(tmpFile.Name(), "base")
 	saltPath := fmt.Sprintf("salt://base%s", paths[1])
 
-	md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
-	if err != nil {
-		return output, fmt.Errorf("send tmp file error,%s ", err.Error())
-	}
+	//md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
+	//if err != nil {
+	//	return output, fmt.Errorf("send tmp file error,%s ", err.Error())
+	//}
 
 	//copy file
-	//copyRequest, err := action.deriveCopyFileRequest(saltPath, input)
-	//_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//md5SumRequest, _ := action.deriveMd5SumRequest(input)
-	//md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
-	//if err != nil {
-	//	return output, err
-	//}
-	//
-	//if input.FileOwner != "" {
-	//	if err = action.changeDirectoryOwner(input); err != nil {
-	//		return output, err
-	//	}
-	//}
+	copyRequest, err := action.deriveCopyFileRequest(saltPath, input)
+	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
+	if err != nil {
+		return output, err
+	}
+
+	md5SumRequest, _ := action.deriveMd5SumRequest(input)
+	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
+	if err != nil {
+		return output, err
+	}
+
+	if input.FileOwner != "" {
+		if err = action.changeDirectoryOwner(input); err != nil {
+			return output, err
+		}
+	}
 
 	output.Detail = md5sum
 
