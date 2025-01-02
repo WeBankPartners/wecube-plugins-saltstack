@@ -352,7 +352,7 @@ type FileCreateThreadObj struct {
 type FileCreateAction struct{ Language string }
 
 func (action *FileCreateAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs FileFindInputs
+	var inputs FileCreateInputs
 	err := UnmarshalJson(param, &inputs)
 	if err != nil {
 		return nil, err
