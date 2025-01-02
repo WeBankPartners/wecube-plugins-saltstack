@@ -88,8 +88,8 @@ func SendFile(src, dest, owner, target string) (string, error) {
 		Function: "file.manage_file",
 		Target:   target,
 		Args: []string{
-			dest, "", "{}", src, "{hash_type: 'md5', 'hsum': <md5sum>}",
-			owner, owner, "755", "", "base", "", "mkdirs",
+			dest, `""`, `"{}"`, src, `"{hash_type: 'md5', 'hsum': <md5sum>}"`,
+			owner, owner, `"755"`, `""`, "base", `""`, "mkdirs",
 		},
 	}
 
