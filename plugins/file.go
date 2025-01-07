@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,8 @@ var FileActions = make(map[string]Action)
 
 func init() {
 	FileActions["copy"] = new(FileCopyAction)
+	FileActions["find"] = new(FileFindAction)
+	FileActions["create"] = new(FileCreateAction)
 }
 
 type FilePlugin struct {
@@ -315,4 +318,358 @@ func (action *FileCopyAction) Do(input interface{}) (interface{}, error) {
 	}
 
 	return &outputs, finalErr
+}
+
+// Create file plugin
+
+type FileCreateInputs struct {
+	Inputs []FileCreateInput `json:"inputs,omitempty"`
+}
+
+type FileCreateInput struct {
+	CallBackParameter
+	Guid            string `json:"guid,omitempty"`
+	Target          string `json:"target,omitempty"`
+	FileContent     string `json:"fileContent,omitempty"`
+	DestinationPath string `json:"destinationPath,omitempty"`
+	FileOwner       string `json:"fileOwner,omitempty"`
+}
+
+type FileCreateOutputs struct {
+	Outputs []FileCreateOutput `json:"outputs,omitempty"`
+}
+
+type FileCreateOutput struct {
+	CallBackParameter
+	Result
+	Guid   string `json:"guid,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+type FileCreateThreadObj struct {
+	Data  FileCreateOutput
+	Err   error
+	Index int
+}
+
+type FileCreateAction struct{ Language string }
+
+func (action *FileCreateAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs FileCreateInputs
+	err := UnmarshalJson(param, &inputs)
+	if err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *FileCreateAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *FileCreateAction) CheckParam(input FileCreateInput) error {
+	if input.Target == "" {
+		return getParamEmptyError(action.Language, "target")
+	}
+	if input.FileContent == "" {
+		return getParamEmptyError(action.Language, "fileContent")
+	}
+	if input.DestinationPath == "" {
+		return getParamEmptyError(action.Language, "destinationPath")
+	}
+
+	return nil
+}
+
+func (action *FileCreateAction) Do(input interface{}) (interface{}, error) {
+	files, _ := input.(FileCreateInputs)
+	outputs := FileCreateOutputs{}
+	var finalErr error
+	outputChan := make(chan FileCreateThreadObj, len(files.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, file := range files.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput FileCreateInput, index int) {
+			output, err := action.createFile(&tmpInput)
+			outputChan <- FileCreateThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+			<-concurrentChan
+		}(file, i)
+		outputs.Outputs = append(outputs.Outputs, FileCreateOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
+		}
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("File create action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+	}
+
+	return &outputs, finalErr
+}
+
+func (action *FileCreateAction) deriveMd5SumRequest(input *FileCreateInput) (*SaltApiRequest, error) {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "file.get_hash"
+	request.Args = append(request.Args, input.DestinationPath)
+	request.Args = append(request.Args, "md5")
+
+	return &request, nil
+}
+
+func (action *FileCreateAction) deriveCopyFileRequest(basePath string, input *FileCreateInput) (*SaltApiRequest, error) {
+
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "cp.get_file"
+
+	request.Args = append(request.Args, basePath)
+	request.Args = append(request.Args, input.DestinationPath)
+	request.Args = append(request.Args, "makedirs=true")
+	request.Args = append(request.Args, "gzip=5")
+
+	return &request, nil
+}
+
+func (action *FileCreateAction) changeDirectoryOwner(input *FileCreateInput) error {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = input.Target
+	request.Function = "cmd.run"
+	if !strings.Contains(input.FileOwner, ":") {
+		input.FileOwner = fmt.Sprintf("%s:%s", input.FileOwner, input.FileOwner)
+	}
+	directory := ""
+	if lastIndex := strings.LastIndex(input.DestinationPath, "/"); lastIndex >= 0 {
+		directory = input.DestinationPath[0:lastIndex]
+	} else {
+		return fmt.Errorf("destinationPath:%s illegal with absolute path check ", input.DestinationPath)
+	}
+	//directory := input.DestinationPath[0:strings.LastIndex(input.DestinationPath, "/")]
+	cmdRun := "chown -R " + input.FileOwner + "  " + directory
+	request.Args = append(request.Args, cmdRun)
+
+	output, err := CallSaltApi("https://127.0.0.1:8080", request, action.Language)
+	if err != nil {
+		return err
+	}
+	log.Logger.Debug("Change dir owner", log.String("command", cmdRun), log.String("output", output))
+	if strings.Contains(output, "chown") {
+		return fmt.Errorf(output)
+	}
+
+	return nil
+}
+
+func (action *FileCreateAction) createFile(input *FileCreateInput) (output FileCreateOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	// Check user if not exist
+	if input.FileOwner != "" {
+		if userExist, errOut := checkRunUserIsExists(input.Target, input.FileOwner, action.Language); !userExist {
+			return output, fmt.Errorf(errOut)
+		}
+	}
+
+	// Write content to tmp file in salt base dir
+	//tmpBaseDir := path.Join(SCRIPT_SAVE_PATH, input.Target)
+	//tmpFile, err := os.CreateTemp(tmpBaseDir, "fast-tmp-")
+	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "fast-tmp-")
+	if err != nil {
+		return output, fmt.Errorf("new tmp file error, %s", err.Error())
+	}
+	log.Logger.Debug("Create tmp file success", log.String("tmpBaseDir", SCRIPT_SAVE_PATH),
+		log.String("file", tmpFile.Name()))
+
+	defer func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+	}()
+
+	if _, err = tmpFile.Write([]byte(input.FileContent)); err != nil {
+		return output, fmt.Errorf("write fileContent to tmp file error, %s", err.Error())
+	}
+	log.Logger.Debug("Write fileContent to tmp file success", log.String("file", tmpFile.Name()))
+
+	// Convert path such as /srv/salt/base/target/t1 -> salt://base/target/t1
+	paths := strings.Split(tmpFile.Name(), "base")
+	saltPath := fmt.Sprintf("salt://base%s", paths[1])
+
+	//md5sum, err := SendFile(saltPath, input.DestinationPath, input.FileOwner, input.Target)
+	//if err != nil {
+	//	return output, fmt.Errorf("send tmp file error,%s ", err.Error())
+	//}
+
+	//copy file
+	copyRequest, err := action.deriveCopyFileRequest(saltPath, input)
+	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
+	if err != nil {
+		return output, err
+	}
+
+	md5SumRequest, _ := action.deriveMd5SumRequest(input)
+	md5sum, err := CallSaltApi("https://127.0.0.1:8080", *md5SumRequest, action.Language)
+	if err != nil {
+		return output, err
+	}
+
+	if input.FileOwner != "" {
+		if err = action.changeDirectoryOwner(input); err != nil {
+			return output, err
+		}
+	}
+
+	output.Detail = md5sum
+
+	return output, err
+}
+
+// Find file plugin
+
+type FileFindInputs struct {
+	Inputs []FileFindInput `json:"inputs,omitempty"`
+}
+
+type FileFindInput struct {
+	CallBackParameter
+	Guid        string `json:"guid,omitempty"`
+	Target      string `json:"target,omitempty"`
+	FilePath    string `json:"filePath,omitempty"`
+	FilePattern string `json:"filePattern,omitempty"`
+}
+
+type FileFindOutputs struct {
+	Outputs []FileFindOutput `json:"outputs,omitempty"`
+}
+
+type FileFindOutput struct {
+	CallBackParameter
+	Result
+	Guid   string `json:"guid,omitempty"`
+	Files  string `json:"files"`
+	Detail string `json:"detail,omitempty"`
+}
+
+type FileFindThreadObj struct {
+	Data  FileFindOutput
+	Err   error
+	Index int
+}
+
+type FileFindAction struct{ Language string }
+
+func (action *FileFindAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs FileFindInputs
+	err := UnmarshalJson(param, &inputs)
+	if err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *FileFindAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *FileFindAction) CheckParam(input FileFindInput) error {
+	if input.Target == "" {
+		return getParamEmptyError(action.Language, "target")
+	}
+	if input.FilePath == "" {
+		return getParamEmptyError(action.Language, "filePath")
+	}
+	if input.FilePattern == "" {
+		return getParamEmptyError(action.Language, "FilePattern")
+	}
+
+	return nil
+}
+
+func (action *FileFindAction) Do(input interface{}) (interface{}, error) {
+	files, _ := input.(FileFindInputs)
+	outputs := FileFindOutputs{}
+	var finalErr error
+	outputChan := make(chan FileFindThreadObj, len(files.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, file := range files.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput FileFindInput, index int) {
+			output, err := action.findFile(&tmpInput)
+			outputChan <- FileFindThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+			<-concurrentChan
+		}(file, i)
+		outputs.Outputs = append(outputs.Outputs, FileFindOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
+		}
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("File find action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
+	}
+
+	return &outputs, finalErr
+}
+
+func (action *FileFindAction) findFile(input *FileFindInput) (output FileFindOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	log.Logger.Debug("findFile in "+input.FilePath, log.String("pattern", input.FilePattern))
+	ret, err := FindGlobFiles(input.FilePath, input.FilePattern, input.Target)
+	if err != nil {
+		return output, err
+	}
+
+	log.Logger.Debug("findFile in "+input.FilePath, log.String("files", ret))
+	output.Files = ret
+	return output, err
 }
