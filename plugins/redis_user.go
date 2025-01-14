@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
@@ -72,6 +73,21 @@ func (action *AddRedisUserAction) ReadParam(param interface{}) (interface{}, err
 	return inputs, nil
 }
 
+// ValidateChinesePunctuation 校验字符串是否包含常见的中文标点符号
+
+func ValidateChinesePunctuation(str string) bool {
+	// 匹配范围包含：
+	// 1. CJK 符号和标点 (U+3000 ~ U+303F), 表示Unicode编码范围内的中文标点符号
+	// 2. 全角 ASCII 字符 (U+FF00 ~ U+FFEF) 内也包含了部分中文标点，如 "，", "。", "！" 等, 表示Unicode编码范围内的全角字符
+	// 也可以补充或移除其它常见符号，比如书名号《》等
+	var reZhPunc = regexp.MustCompile("[\u3000-\u303F\uFF00-\uFFEF]")
+
+	if reZhPunc.MatchString(str) {
+		return true
+	}
+	return false
+}
+
 func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) error {
 	if input.Guid == "" {
 		return getParamEmptyError(action.Language, "guid")
@@ -103,6 +119,12 @@ func (action *AddRedisUserAction) checkAddRedisUser(input *AddRedisUserInput) er
 			return getParamEmptyError(action.Language, "userPassword")
 		}
 	*/
+	if ValidateChinesePunctuation(input.UserReadKeyPattern) {
+		return getParamValidateError(action.Language, "userReadKeyPattern", "Contains illegal character")
+	}
+	if ValidateChinesePunctuation(input.UserWriteKeyPattern) {
+		return getParamValidateError(action.Language, "userWriteKeyPattern", "Contains illegal character")
+	}
 	return nil
 }
 
