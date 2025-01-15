@@ -278,13 +278,14 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 	log.Logger.Info("Sql file list", log.StringList("file", files))
 	// run sql scripts foreach
-	for _, file := range files {
-		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
-		if err != nil {
-			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, err.Error())
+	for i, file := range files {
+		execOutput, execErr := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
+		if execErr != nil {
+			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, execErr.Error())
 			os.RemoveAll(newDir)
 			return output, err
 		}
+		output.Detail += fmt.Sprintf("sql_%d_output:%s  ", i, execOutput)
 	}
 
 	for _, v := range fileNameList {
