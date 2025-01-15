@@ -99,8 +99,8 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if checkIllegalParam(input.Password) {
 		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
-	if input.EndPoint == "" {
-		return getParamEmptyError(action.Language, "endpoint")
+	if input.EndPoint == "" && input.Sql == "" {
+		return getParamEmptyError(action.Language, "endpoint or sql")
 	}
 
 	if input.Port == "" {
@@ -182,14 +182,14 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 
 		fileNameList = append(fileNameList, tmpFile.Name())
-	}
-
-	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
-		if err != nil {
-			return output, err
+	} else {
+		for _, v := range splitWithCustomFlag(input.EndPoint) {
+			fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
+			if err != nil {
+				return output, err
+			}
+			fileNameList = append(fileNameList, fileName)
 		}
-		fileNameList = append(fileNameList, fileName)
 	}
 	//fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	//if err != nil {
