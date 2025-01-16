@@ -102,6 +102,13 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if input.EndPoint == "" && input.Sql == "" {
 		return getParamEmptyError(action.Language, "endpoint or sql")
 	}
+	if input.Sql != "" {
+		input.Sql = strings.ReplaceAll(input.Sql, ";", "")
+		tmpSql := strings.TrimSpace(strings.ToLower(input.Sql))
+		if (!strings.HasPrefix(tmpSql, "select ") && !strings.HasPrefix(tmpSql, "show ")) || strings.Contains(tmpSql, "--") {
+			return getParamValidateError(action.Language, "sql", "sql illegal")
+		}
+	}
 
 	if input.Port == "" {
 		input.Port = "3306"
