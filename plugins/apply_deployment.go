@@ -57,6 +57,9 @@ type ApplyNewDeploymentInput struct {
 	LogFileTrace   string `json:"logFileTrace,omitempty"`
 	LogFileMetric  string `json:"logFileMetric,omitempty"`
 	LogFileKeyword string `json:"logFileKeyword,omitempty"`
+
+	SignFileSrc string `json:"signFileSrc,omitempty"`
+	SignFileDst string `json:"signFileDst,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -237,6 +240,34 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	}
 	output.FileDetail = fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
 
+	// copy apply package's sign file from s3 to dst
+	if input.SignFileSrc != "" && input.SignFileDst != "" {
+		var destSignFilePath string
+		destSignFilePath, err = handleSignFileDestPath(input.SignFileDst, input.DestinationPath, input.Target, input.UserName)
+		if err != nil {
+			return output, err
+		}
+		signFileCopyRequest := FileCopyInputs{
+			Inputs: []FileCopyInput{
+				{
+					EndPoint:        input.SignFileSrc,
+					Guid:            input.Guid,
+					Target:          input.Target,
+					DestinationPath: destSignFilePath,
+					Unpack:          "false",
+					FileOwner:       input.UserName,
+				},
+			},
+		}
+
+		log.Logger.Debug("App deploy", log.String("step", "sign file copy"), log.JsonObj("param", signFileCopyRequest))
+		signFileCopyOutputs, err := copyApplyFile(signFileCopyRequest)
+		if err != nil {
+			return output, fmt.Errorf("Copy app package's sign file to target fail,%s ", err.Error())
+		}
+		output.FileDetail = signFileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	}
+
 	// start apply script
 	runScriptRequest := RunScriptInputs{
 		Inputs: []RunScriptInput{
@@ -345,6 +376,9 @@ type ApplyUpdateDeploymentInput struct {
 	//AppBackUpEnabled string `json:"appBackUpEnabled,omitempty"`
 	//AppBackUpPath    string `json:"appBackUpPath,omitempty"`
 	//ExcludePath      string `json:"excludePath,omitempty"`
+
+	SignFileSrc string `json:"signFileSrc,omitempty"`
+	SignFileDst string `json:"signFileDst,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -575,6 +609,34 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		return output, fmt.Errorf("Copy file to target fail,%s ", err.Error())
 	}
 	output.FileDetail += fileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+
+	// copy apply package's sign file from s3 to dst
+	if input.SignFileSrc != "" && input.SignFileDst != "" {
+		var destSignFilePath string
+		destSignFilePath, err = handleSignFileDestPath(input.SignFileDst, input.DestinationPath, input.Target, input.UserName)
+		if err != nil {
+			return output, err
+		}
+		signFileCopyRequest := FileCopyInputs{
+			Inputs: []FileCopyInput{
+				{
+					EndPoint:        input.SignFileSrc,
+					Guid:            input.Guid,
+					Target:          input.Target,
+					DestinationPath: destSignFilePath,
+					Unpack:          "false",
+					FileOwner:       input.UserName,
+				},
+			},
+		}
+
+		log.Logger.Debug("App deploy", log.String("step", "sign file copy"), log.JsonObj("param", signFileCopyRequest))
+		signFileCopyOutputs, err := copyApplyFile(signFileCopyRequest)
+		if err != nil {
+			return output, fmt.Errorf("Copy app package's sign file to target fail,%s ", err.Error())
+		}
+		output.FileDetail = signFileCopyOutputs.(*FileCopyOutputs).Outputs[0].Detail
+	}
 
 	// start apply script
 	runStartScriptRequest := RunScriptInputs{
@@ -1006,4 +1068,35 @@ func (action *ApplyDeleteDeploymentAction) Do(input interface{}) (interface{}, e
 	}
 
 	return &outputs, finalErr
+}
+
+func handleSignFileDestPath(inputSignFilePath, destinationPath, targetHost, appUser string) (destSignFilePath string, err error) {
+	destSignFilePath = inputSignFilePath
+	if !strings.HasPrefix(destSignFilePath, "/") {
+		if !strings.HasSuffix(destinationPath, "/") {
+			destSignFilePath = destinationPath + "/" + destSignFilePath
+		} else {
+			destSignFilePath = destinationPath + destSignFilePath
+		}
+	}
+	if lastPathIndex := strings.LastIndex(destSignFilePath, "/"); lastPathIndex > 0 {
+		destSignDir := destSignFilePath[:lastPathIndex]
+		if destSignDir == "" || destSignDir == "/" {
+			err = fmt.Errorf("SignFileDst:%s illegal", inputSignFilePath)
+			return
+		}
+		mkSignDirRequest := SaltApiRequest{}
+		mkSignDirRequest.Client = "local"
+		mkSignDirRequest.TargetType = "ipcidr"
+		mkSignDirRequest.Target = targetHost
+		mkSignDirRequest.Function = "cmd.run"
+		mkSignDirRequest.FullReturn = false
+		cmdRun := fmt.Sprintf("/bin/bash -c 'mkdir -p %s && chown -R %s %s'", destSignDir, appUser, destSignDir)
+		mkSignDirRequest.Args = append(mkSignDirRequest.Args, cmdRun)
+		_, mkSignDirErr := CallSaltApi("https://127.0.0.1:8080", mkSignDirRequest, "en")
+		if mkSignDirErr != nil {
+			err = fmt.Errorf("Try to mkdir for sign dir:%s error:%s ", destSignDir, mkSignDirErr.Error())
+		}
+	}
+	return
 }

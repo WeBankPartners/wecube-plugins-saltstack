@@ -99,8 +99,8 @@ func (action *RunMysqlScriptAction) runMysqlScriptCheckParam(input RunMysqlScrip
 	if checkIllegalParam(input.Password) {
 		return getParamValidateError(action.Language, "password", "Contains illegal character")
 	}
-	if input.EndPoint == "" {
-		return getParamEmptyError(action.Language, "endpoint")
+	if input.EndPoint == "" && input.Sql == "" {
+		return getParamEmptyError(action.Language, "endpoint or sql")
 	}
 
 	if input.Port == "" {
@@ -182,14 +182,14 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 		}
 
 		fileNameList = append(fileNameList, tmpFile.Name())
-	}
-
-	for _, v := range splitWithCustomFlag(input.EndPoint) {
-		fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
-		if err != nil {
-			return output, err
+	} else {
+		for _, v := range splitWithCustomFlag(input.EndPoint) {
+			fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
+			if err != nil {
+				return output, err
+			}
+			fileNameList = append(fileNameList, fileName)
 		}
-		fileNameList = append(fileNameList, fileName)
 	}
 	//fileName, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, false)
 	//if err != nil {
@@ -278,13 +278,14 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 	log.Logger.Info("Sql file list", log.StringList("file", files))
 	// run sql scripts foreach
-	for _, file := range files {
-		_, err = execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
-		if err != nil {
-			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, err.Error())
+	for i, file := range files {
+		execOutput, execErr := execSqlScript(input.Host, input.Port, input.UserName, password, input.DatabaseName, file)
+		if execErr != nil {
+			err = getRunMysqlScriptError(action.Language, file, input.Host, input.DatabaseName, execErr.Error())
 			os.RemoveAll(newDir)
 			return output, err
 		}
+		output.Detail += fmt.Sprintf("sql_%d_output:%s  ", i, execOutput)
 	}
 
 	for _, v := range fileNameList {
