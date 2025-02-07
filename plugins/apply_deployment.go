@@ -379,6 +379,7 @@ type ApplyUpdateDeploymentInput struct {
 
 	SignFileSrc string `json:"signFileSrc,omitempty"`
 	SignFileDst string `json:"signFileDst,omitempty"`
+	ClearPath   string `json:"clearPath,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -588,6 +589,27 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	//		return output, fmt.Errorf(errMsg)
 	//	}
 	//}
+
+	// clear dir
+	if input.ClearPath != "" {
+		FileDeleteRequest := FileDeleteInputs{
+			Inputs: []FileDeleteInput{
+				FileDeleteInput{
+					Guid:       input.Guid,
+					Host:       input.Target,
+					BaseDir:    input.DestinationPath,
+					TargetPath: input.ClearPath,
+				},
+			},
+		}
+
+		log.Logger.Debug("App update", log.String("step", "clear dir"), log.JsonObj("param", FileDeleteRequest))
+		_, clearErr := clearDir(FileDeleteRequest)
+		if clearErr != nil {
+			err = clearErr
+			return output, fmt.Errorf("Clear dir to target fail,%s ", err.Error())
+		}
+	}
 
 	// copy apply package
 	fileCopyRequest := FileCopyInputs{
@@ -905,6 +927,18 @@ func copyApplyFile(input interface{}) (interface{}, error) {
 	}
 
 	return fileCopyOutputs, nil
+}
+
+func clearDir(input interface{}) (interface{}, error) {
+	fileDeleteAction := new(FileDeleteAction)
+
+	fileDeleteOutputs, err := fileDeleteAction.Do(input)
+	if err != nil {
+		log.Logger.Error("Clear dir file fail", log.Error(err))
+		return nil, err
+	}
+
+	return fileDeleteOutputs, nil
 }
 
 func runApplyScript(input interface{}) (interface{}, error) {

@@ -229,6 +229,19 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">files</parameter>
                 </outputParameters>
             </interface>
+            <interface action="delete" path="/saltstack/v1/host-file/delete" filterRule="">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">baseDir</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">targetPath</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
         </plugin>
         <plugin name="host-info" targetPackage="" targetEntity="" registerName="" targetEntityFilterRule="">
             <interface action="query" path="/saltstack/v1/host-info/query" filterRule="">
@@ -493,6 +506,7 @@
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">logFileKeyword</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileSrc</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">signFileDst</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">clearPath</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
