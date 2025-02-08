@@ -772,8 +772,14 @@ func (action *FileDeleteAction) deleteFile(input *FileDeleteInput) (output FileD
 
 	targetPathList := splitWithCustomFlag(input.TargetPath)
 	if input.BaseDir != "" {
+		if !strings.HasSuffix(input.BaseDir, "/") {
+			input.BaseDir = input.BaseDir + "/"
+		}
 		var newPathList []string
 		for _, v := range targetPathList {
+			if strings.HasPrefix(v, "/") {
+				v = v[1:]
+			}
 			newPathList = append(newPathList, input.BaseDir+v)
 		}
 		targetPathList = newPathList
