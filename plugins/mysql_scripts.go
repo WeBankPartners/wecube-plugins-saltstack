@@ -14,6 +14,7 @@ var MysqlScriptPluginActions = make(map[string]Action)
 
 func init() {
 	MysqlScriptPluginActions["run"] = new(RunMysqlScriptAction)
+	MysqlScriptPluginActions["run-custom-sql"] = new(RunMysqlScriptAction)
 }
 
 type MysqlScriptPlugin struct {

@@ -17,6 +17,7 @@ func init() {
 	FileActions["copy"] = new(FileCopyAction)
 	FileActions["find"] = new(FileFindAction)
 	FileActions["create"] = new(FileCreateAction)
+	FileActions["delete"] = new(FileDeleteAction)
 }
 
 type FilePlugin struct {
@@ -671,5 +672,139 @@ func (action *FileFindAction) findFile(input *FileFindInput) (output FileFindOut
 
 	log.Logger.Debug("findFile in "+input.FilePath, log.String("files", ret))
 	output.Files = ret
+	return output, err
+}
+
+// File delete
+
+type FileDeleteAction struct{ Language string }
+
+type FileDeleteInputs struct {
+	Inputs []FileDeleteInput `json:"inputs,omitempty"`
+}
+
+type FileDeleteInput struct {
+	CallBackParameter
+	Guid       string `json:"guid,omitempty"`
+	Host       string `json:"host"`
+	BaseDir    string `json:"baseDir"`
+	TargetPath string `json:"targetPath"`
+}
+
+type FileDeleteOutputs struct {
+	Outputs []FileDeleteOutput `json:"outputs,omitempty"`
+}
+
+type FileDeleteOutput struct {
+	CallBackParameter
+	Result
+	Guid   string `json:"guid,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+func (action *FileDeleteAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs FileDeleteInputs
+	err := UnmarshalJson(param, &inputs)
+	if err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *FileDeleteAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *FileDeleteAction) CheckParam(input FileDeleteInput) error {
+	if input.Host == "" {
+		return getParamEmptyError(action.Language, "host")
+	}
+	if input.TargetPath == "" {
+		return getParamEmptyError(action.Language, "target")
+	}
+	return nil
+}
+
+func (action *FileDeleteAction) Do(actionInput interface{}) (interface{}, error) {
+	param, _ := actionInput.(FileDeleteInputs)
+	outputs := FileDeleteOutputs{}
+	var finalErr error
+	for _, input := range param.Inputs {
+		fileDeleteOutput, err := action.deleteFile(&input)
+		if err != nil {
+			log.Logger.Error("File delete action", log.Error(err))
+			finalErr = err
+		}
+		outputs.Outputs = append(outputs.Outputs, fileDeleteOutput)
+	}
+
+	return &outputs, finalErr
+}
+
+func (action *FileDeleteAction) deleteTargetPath(targetHost, targetPath string) (output string, err error) {
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = targetHost
+	request.Function = "cmd.run"
+	cmdRun := "rm -rf " + targetPath
+	request.Args = append(request.Args, cmdRun)
+	output, err = CallSaltApi("https://127.0.0.1:8080", request, action.Language)
+	return
+}
+
+func (action *FileDeleteAction) deleteFile(input *FileDeleteInput) (output FileDeleteOutput, err error) {
+	defer func() {
+		output.Guid = input.Guid
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		if err == nil {
+			output.Result.Code = RESULT_CODE_SUCCESS
+		} else {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+		}
+	}()
+
+	err = action.CheckParam(*input)
+	if err != nil {
+		return output, err
+	}
+
+	targetPathList := splitWithCustomFlag(input.TargetPath)
+	if input.BaseDir != "" {
+		if !strings.HasSuffix(input.BaseDir, "/") {
+			input.BaseDir = input.BaseDir + "/"
+		}
+		var newPathList []string
+		for _, v := range targetPathList {
+			if strings.HasPrefix(v, "/") {
+				v = v[1:]
+			}
+			newPathList = append(newPathList, input.BaseDir+v)
+		}
+		targetPathList = newPathList
+	}
+	var newPathList []string
+	for _, v := range targetPathList {
+		tmpPath := strings.TrimSpace(v)
+		if tmpPath == "/" || strings.Contains(tmpPath, "..") {
+			err = fmt.Errorf("path illegal")
+			return output, err
+		}
+		if strings.HasSuffix(tmpPath, "/") {
+			tmpPath = tmpPath + "*"
+		}
+		newPathList = append(newPathList, tmpPath)
+	}
+
+	for _, v := range newPathList {
+		tmpOutput, tmpErr := action.deleteTargetPath(input.Host, v)
+		if tmpErr != nil {
+			err = tmpErr
+			output.Detail = fmt.Sprintf("try to delete %s from host:%s fail,%s ", v, input.Host, tmpOutput)
+			return output, err
+		}
+	}
+
 	return output, err
 }

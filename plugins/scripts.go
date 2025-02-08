@@ -27,6 +27,9 @@ var ScriptPluginActions = make(map[string]Action)
 func init() {
 	ScriptPluginActions["run"] = new(RunScriptAction)
 	ScriptPluginActions["ssh-run"] = new(SSHRunScriptAction)
+	ScriptPluginActions["run-local"] = new(RunScriptAction)
+	ScriptPluginActions["run-s3"] = new(RunScriptAction)
+	ScriptPluginActions["run-user-param"] = new(RunScriptAction)
 }
 
 type ScriptPlugin struct {
