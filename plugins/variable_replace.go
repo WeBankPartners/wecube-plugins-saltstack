@@ -330,6 +330,7 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	//need to decode
 	afterDecode, err := AesDePassword(values[1], seed, values[0])
 	if err != nil {
+		err = fmt.Errorf("Decode key=%v value=%s password fail,%s ", key, value, err.Error())
 		log.Logger.Error("GetRawKey fail,decode password error", log.Error(err))
 	}
 	return key, afterDecode, err
