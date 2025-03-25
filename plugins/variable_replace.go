@@ -323,6 +323,9 @@ func getRawKeyValue(key, value, seed string) (string, string, error) {
 	if len(values) == 1 {
 		return key, values[0], nil
 	}
+	if len(values) == 2 && values[0] == "" {
+		return key, "", nil
+	}
 	if len(values) != 2 || values[1] == "" {
 		return key, "", fmt.Errorf("GetRawKeyValue key=%v,value=%v format error,encrypt value should contain guid message", key, value)
 	}
