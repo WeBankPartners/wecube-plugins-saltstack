@@ -116,6 +116,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="ssh-run" path="/saltstack/v1/host-script/ssh-run" filterRule="">
@@ -134,6 +135,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-local" path="/saltstack/v1/host-script/run-local" filterRule="">
@@ -150,6 +152,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-s3" path="/saltstack/v1/host-script/run-s3" filterRule="">
@@ -166,6 +169,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-user-param" path="/saltstack/v1/host-script/run-user-param" filterRule="">
@@ -182,6 +186,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
         </plugin>

@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -371,9 +372,9 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 			}
 			if v.RetCode != 0 {
 				err = fmt.Errorf("Script run ip[%s] meet error = %v ", k, v.RetDetail)
-				return k + ": " + v.RetDetail, err
+				return v.RetDetail, err
 			}
-			output = k + ": " + v.RetDetail
+			output = v.RetDetail
 			break
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
@@ -482,9 +483,11 @@ func (action *RunScriptAction) runScript(input *RunScriptInput) (output RunScrip
 	var stdOut string
 	for i, v := range scriptPathList {
 		stdOut, err = runScript(v, *input, action.Language)
-		stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
-		if i < len(scriptPathList)-1 {
-			stdOut += " | "
+		if len(scriptPathList) > 1 {
+			stdOut = fmt.Sprintf("script %d result: %s ", i+1, stdOut)
+			if i < len(scriptPathList)-1 {
+				stdOut += " | "
+			}
 		}
 		output.Detail += stdOut
 		if err != nil {
