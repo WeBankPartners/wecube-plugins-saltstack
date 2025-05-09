@@ -150,6 +150,7 @@ func execRemote(user, password, host, command, port, passwordType string) (outpu
 	auth := make([]gossh.AuthMethod, 0)
 	if passwordType == "key" {
 		log.Logger.Debug("Exec remote ssh key ", log.String("key", password))
+		password = replaceLF(password)
 		// 2. 解析私钥
 		privateKeyBytes := []byte(password)
 		privateKey, parseErr := gossh.ParsePrivateKey(privateKeyBytes)
@@ -158,13 +159,7 @@ func execRemote(user, password, host, command, port, passwordType string) (outpu
 			return
 		}
 
-		// 3. 创建 Signer
-		signer, newSignerErr := gossh.NewSignerFromKey(privateKey)
-		if newSignerErr != nil {
-			err = fmt.Errorf("Failed to create signer from private key: %v", newSignerErr)
-			return
-		}
-		auth = append(auth, gossh.PublicKeys(signer))
+		auth = append(auth, gossh.PublicKeys(privateKey))
 	} else {
 		auth = append(auth, gossh.Password(password))
 	}
@@ -290,7 +285,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	}
 
 	if input.Command != "" {
-		tmpParam := ExecRemoteParam{User: input.User, Password: input.Password, Host: input.Host, Port: input.Port, Command: input.Command, Timeout: models.Config.ExecRemoteCommandTimeout}
+		tmpParam := ExecRemoteParam{User: input.User, Password: password, PasswordType: input.PasswordType, Host: input.Host, Port: input.Port, Command: input.Command, Timeout: models.Config.ExecRemoteCommandTimeout}
 		execRemoteWithTimeout(&tmpParam)
 		cmdOutString := tmpParam.Output
 		err = tmpParam.Err
