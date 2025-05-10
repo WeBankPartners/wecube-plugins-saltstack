@@ -34,6 +34,7 @@
         <systemParameter name="SALTSTACK_API_CONCURRENT_NUM" scopeType="global" defaultValue="5"/>
         <systemParameter name="SALTSTACK_VARIABLE_NULL_CHECK" scopeType="global" defaultValue="N"/>
         <systemParameter name="SALTSTACK_AUTH_TYPE_KEY" scopeType="global" defaultValue="key"/>
+        <systemParameter name="SALTSTACK_AUTH_KEY_NAME" scopeType="global" defaultValue=""/>
     </systemParameters>
 
     <!-- 5.权限设定 -->

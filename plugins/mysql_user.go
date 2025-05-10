@@ -148,6 +148,9 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 	// grant permission
 	if input.DatabaseName != "" {
 		permission := "ALL PRIVILEGES"
+		if input.DatabaseName == "mysql" {
+			permission = "SELECT"
+		}
 		cmd = fmt.Sprintf("GRANT %s ON %s.* TO %s ", permission, input.DatabaseName, input.DatabaseUserName)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 			err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
