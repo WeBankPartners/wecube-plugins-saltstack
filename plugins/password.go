@@ -241,7 +241,7 @@ func (action *PasswordSSHKeyGenAction) CheckParam(input *PasswordSSHKeyGenInput)
 }
 
 func (action *PasswordSSHKeyGenAction) ReadParam(param interface{}) (interface{}, error) {
-	var inputs PasswordEncodeInputs
+	var inputs PasswordSSHKeyGenInputs
 	if err := UnmarshalJson(param, &inputs); err != nil {
 		return nil, err
 	}
