@@ -6,8 +6,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"strconv"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var MysqlScriptPluginActions = make(map[string]Action)
@@ -191,6 +192,9 @@ func (action *RunMysqlScriptAction) runMysqlScript(input *RunMysqlScriptInput) (
 
 		fileNameList = append(fileNameList, tmpFile.Name())
 	} else {
+		if input.SqlFiles == "" {
+			return output, err
+		}
 		for _, v := range splitWithCustomFlag(input.EndPoint) {
 			fileName, err := downloadS3File(v, DefaultS3Key, DefaultS3Password, true, action.Language)
 			if err != nil {
