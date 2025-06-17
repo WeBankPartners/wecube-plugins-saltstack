@@ -33,6 +33,8 @@
         <systemParameter name="SALTSTACK_RESET_ENV" scopeType="global" defaultValue="Y"/>
         <systemParameter name="SALTSTACK_API_CONCURRENT_NUM" scopeType="global" defaultValue="5"/>
         <systemParameter name="SALTSTACK_VARIABLE_NULL_CHECK" scopeType="global" defaultValue="N"/>
+        <systemParameter name="SALTSTACK_AUTH_TYPE_KEY" scopeType="global" defaultValue="key"/>
+        <systemParameter name="SALTSTACK_AUTH_KEY_NAME" scopeType="global" defaultValue=""/>
     </systemParameters>
 
     <!-- 5.权限设定 -->
@@ -58,6 +60,7 @@
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">user</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">command</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="SALTSTACK_AGENT_INSTALL_LOCAL" >method</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">passwordType</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -73,6 +76,7 @@
                     <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="entity" mappingEntityExpression="">password</parameter>
                     <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">host</parameter>
                     <parameter datatype="string" required="N" sensitiveData="N" mappingType="entity" mappingEntityExpression="">port</parameter>
+                    <parameter datatype="string" required="N" sensitiveData="N" mappingType="constant">passwordType</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
@@ -116,6 +120,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="ssh-run" path="/saltstack/v1/host-script/ssh-run" filterRule="">
@@ -134,6 +139,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-local" path="/saltstack/v1/host-script/run-local" filterRule="">
@@ -150,6 +156,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-s3" path="/saltstack/v1/host-script/run-s3" filterRule="">
@@ -166,6 +173,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
             <interface action="run-user-param" path="/saltstack/v1/host-script/run-user-param" filterRule="">
@@ -182,6 +190,7 @@
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">detail</parameter>
                 </outputParameters>
             </interface>
         </plugin>
@@ -558,6 +567,21 @@
                 <outputParameters>
                     <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">password</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
+                </outputParameters>
+            </interface>
+             <interface action="sshkeygen" path="/saltstack/v1/password/sshkeygen" filterRule="">
+                <inputParameters>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="Y" mappingType="system_variable" mappingSystemVariableName="ENCRYPT_SEED" >seed</parameter>
+                    <parameter datatype="string" required="Y" sensitiveData="N" mappingType="entity" mappingEntityExpression="">keyName</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string" sensitiveData="N" mappingType="entity" mappingEntityExpression="">guid</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">keyName</parameter>
+                    <parameter datatype="string" sensitiveData="Y" mappingType="context">privateKey</parameter>
+                    <parameter datatype="string" sensitiveData="N" mappingType="context">publicKey</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorCode</parameter>
                     <parameter datatype="string" sensitiveData="N" mappingType="context">errorMessage</parameter>
                 </outputParameters>

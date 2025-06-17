@@ -27,5 +27,6 @@
   "redis_add_user_error": "Failed to add redis user:%s, %s",
   "redis_delete_user_error": "Failed to delete redis user:%s, %s",
   "redis_grant_user_error": "Failed to grant redis user:%s, %s",
-  "redis_revoke_user_error": "Failed to revoke redis user:%s, %s"
+  "redis_revoke_user_error": "Failed to revoke redis user:%s, %s",
+  "gen_ssh_key_error": "Gen ssh key failed, details: %s"
 }

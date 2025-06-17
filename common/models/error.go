@@ -31,4 +31,5 @@ type ErrorMessageObj struct {
 	RedisDeleteUserError     string `json:"redis_delete_user_error"`
 	RedisGrantUserError      string `json:"redis_grant_user_error"`
 	RedisRevokeUserError     string `json:"redis_revoke_user_error"`
+	GenSSHKeyError           string `json:"gen_ssh_key_error"`
 }

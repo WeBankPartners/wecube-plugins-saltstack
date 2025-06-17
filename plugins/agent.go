@@ -2,14 +2,15 @@ package plugins
 
 import (
 	"fmt"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
-	gossh "golang.org/x/crypto/ssh"
 	"net"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 var AgentActions = make(map[string]Action)
@@ -37,14 +38,15 @@ type AgentInstallInputs struct {
 
 type AgentInstallInput struct {
 	CallBackParameter
-	Guid     string `json:"guid,omitempty"`
-	Seed     string `json:"seed,omitempty"`
-	Password string `json:"password,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     string `json:"port,omitempty"`
-	User     string `json:"user,omitempty"`
-	Command  string `json:"command,omitempty"`
-	Method   string `json:"method,omitempty"`
+	Guid         string `json:"guid,omitempty"`
+	Seed         string `json:"seed,omitempty"`
+	Password     string `json:"password,omitempty"`
+	Host         string `json:"host,omitempty"`
+	Port         string `json:"port,omitempty"`
+	User         string `json:"user,omitempty"`
+	Command      string `json:"command,omitempty"`
+	Method       string `json:"method,omitempty"`
+	PasswordType string `json:"passwordType,omitempty"`
 }
 
 type AgentInstallOutputs struct {
@@ -89,12 +91,13 @@ type AgentUninstallInputs struct {
 
 type AgentUninstallInput struct {
 	CallBackParameter
-	Guid     string `json:"guid,omitempty"`
-	Seed     string `json:"seed,omitempty"`
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     string `json:"port,omitempty"`
+	Guid         string `json:"guid,omitempty"`
+	Seed         string `json:"seed,omitempty"`
+	User         string `json:"user,omitempty"`
+	Password     string `json:"password,omitempty"`
+	Host         string `json:"host,omitempty"`
+	Port         string `json:"port,omitempty"`
+	PasswordType string `json:"passwordType,omitempty"`
 }
 
 type AgentUninstallOutputs struct {
@@ -108,21 +111,22 @@ type AgentUninstallOutput struct {
 }
 
 type ExecRemoteParam struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
-	Command  string
-	Output   string
-	Err      error
-	Timeout  int
-	DoneChan chan int
+	User         string
+	Password     string
+	Host         string
+	Port         string
+	Command      string
+	Output       string
+	Err          error
+	Timeout      int
+	DoneChan     chan int
+	PasswordType string
 }
 
 func execRemoteWithTimeout(param *ExecRemoteParam) {
 	param.DoneChan = make(chan int)
 	go func(gParam *ExecRemoteParam) {
-		tmpOutput, tmpError := execRemote(gParam.User, gParam.Password, gParam.Host, gParam.Command, gParam.Port)
+		tmpOutput, tmpError := execRemote(gParam.User, gParam.Password, gParam.Host, gParam.Command, gParam.Port, gParam.PasswordType)
 		gParam.Output = string(tmpOutput)
 		gParam.Err = tmpError
 		gParam.DoneChan <- 1
@@ -135,7 +139,7 @@ func execRemoteWithTimeout(param *ExecRemoteParam) {
 	}
 }
 
-func execRemote(user, password, host, command, port string) (output []byte, err error) {
+func execRemote(user, password, host, command, port, passwordType string) (output []byte, err error) {
 	var (
 		client  *gossh.Client
 		session *gossh.Session
@@ -144,7 +148,21 @@ func execRemote(user, password, host, command, port string) (output []byte, err 
 		port = "22"
 	}
 	auth := make([]gossh.AuthMethod, 0)
-	auth = append(auth, gossh.Password(password))
+	if passwordType == "key" {
+		log.Logger.Debug("Exec remote ssh key ", log.String("key", password))
+		password = replaceLF(password)
+		// 2. 解析私钥
+		privateKeyBytes := []byte(password)
+		privateKey, parseErr := gossh.ParsePrivateKey(privateKeyBytes)
+		if parseErr != nil {
+			err = fmt.Errorf("Failed to parse private key: %v", parseErr)
+			return
+		}
+
+		auth = append(auth, gossh.PublicKeys(privateKey))
+	} else {
+		auth = append(auth, gossh.Password(password))
+	}
 	clientConfig := &gossh.ClientConfig{
 		User: user,
 		Auth: auth,
@@ -267,7 +285,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	}
 
 	if input.Command != "" {
-		tmpParam := ExecRemoteParam{User: input.User, Password: input.Password, Host: input.Host, Port: input.Port, Command: input.Command, Timeout: models.Config.ExecRemoteCommandTimeout}
+		tmpParam := ExecRemoteParam{User: input.User, Password: password, PasswordType: input.PasswordType, Host: input.Host, Port: input.Port, Command: input.Command, Timeout: models.Config.ExecRemoteCommandTimeout}
 		execRemoteWithTimeout(&tmpParam)
 		cmdOutString := tmpParam.Output
 		err = tmpParam.Err
@@ -277,7 +295,7 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 			return output, err
 		}
 	}
-	execParam := ExecRemoteParam{User: input.User, Password: password, Host: input.Host, Port: input.Port, Timeout: models.Config.InstallMinionTimeout, Command: fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh > /tmp/minion_install.sh && bash /tmp/minion_install.sh %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
+	execParam := ExecRemoteParam{User: input.User, Password: password, PasswordType: input.PasswordType, Host: input.Host, Port: input.Port, Timeout: models.Config.InstallMinionTimeout, Command: fmt.Sprintf("curl http://%s:9099/salt-minion/minion_install.sh > /tmp/minion_install.sh && bash /tmp/minion_install.sh %s %s %s", MasterHostIp, MasterHostIp, input.Host, input.Method)}
 	execRemoteWithTimeout(&execParam)
 	outString := execParam.Output
 	err = execParam.Err
@@ -358,7 +376,7 @@ func (action *MinionUninstallAction) agentUninstall(input *AgentUninstallInput) 
 	}
 
 	var cmdOut []byte
-	cmdOut, err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp), input.Port)
+	cmdOut, err = execRemote(input.User, password, input.Host, fmt.Sprintf("curl http://%s:9099/salt-minion/minion_uninstall.sh | bash ", MasterHostIp), input.Port, input.PasswordType)
 	log.Logger.Debug("Uninstall minion", log.String("host", input.Host), log.String("output", string(cmdOut)))
 	if err != nil {
 		err = getUninstallMinionError(action.Language, input.Host, string(cmdOut), err)

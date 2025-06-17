@@ -181,3 +181,7 @@ func getRedisGrantUserError(language, user, message string) error {
 func getRedisRevokeUserError(language, user, message string) error {
 	return fmt.Errorf(getMessageMap(language).RedisRevokeUserError, user, message)
 }
+
+func getGenSSHKeyError(language string, err error) error {
+	return fmt.Errorf(getMessageMap(language).GenSSHKeyError, err.Error())
+}
