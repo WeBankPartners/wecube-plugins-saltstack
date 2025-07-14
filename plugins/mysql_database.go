@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
@@ -171,7 +172,8 @@ func (action *AddMysqlDatabaseAction) addMysqlDatabaseAndUser(input *AddMysqlDat
 			dbOwnerPassword = createRandomPassword()
 		}
 		// create user
-		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, dbOwnerPassword)
+		safePassword := strings.ReplaceAll(dbOwnerPassword, "'", "''")
+		cmd = fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseOwnerName, safePassword)
 		if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 			err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 			return output, err
