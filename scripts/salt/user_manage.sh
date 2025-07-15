@@ -140,18 +140,18 @@ addUser(){
 
 	group=""
         if [[ -n $GROUP ]]; then
-            group="-g \"$GROUP\""
+            group="-g $GROUP"
 	    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
         fi 
 
         uid=""
         if [[ -n $USER_ID ]]; then
-            uid="-u \"$USER_ID\""
+            uid="-u $USER_ID"
         fi 
 
         home=""
         if [[ -n $USER_HOME ]]; then
-            home="-d \"$USER_HOME\""
+            home="-d $USER_HOME"
             if [ ! -d $USER_HOME ];then
             mkdir -p $USER_HOME
             fi
