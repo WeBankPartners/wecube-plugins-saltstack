@@ -6,9 +6,25 @@ import (
 	"os/exec"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+// 安全处理 MySQL 密码中的特殊字符
+func escapeMysqlPassword(password string) string {
+	// 按照 MySQL 的转义规则处理特殊字符
+	password = strings.ReplaceAll(password, "\\", "\\\\")  // 反斜杠必须最先处理
+	password = strings.ReplaceAll(password, "'", "\\'")    // 单引号
+	password = strings.ReplaceAll(password, "\"", "\\\"")  // 双引号
+	password = strings.ReplaceAll(password, "\n", "\\n")   // 换行符
+	password = strings.ReplaceAll(password, "\r", "\\r")   // 回车符
+	password = strings.ReplaceAll(password, "\t", "\\t")   // 制表符
+	password = strings.ReplaceAll(password, "\b", "\\b")   // 退格符
+	password = strings.ReplaceAll(password, "\f", "\\f")   // 换页符
+	password = strings.ReplaceAll(password, "\v", "\\v")   // 垂直制表符
+	password = strings.ReplaceAll(password, "\000", "\\0") // 空字符
+	return password
+}
 
 var DB *sql.DB
 

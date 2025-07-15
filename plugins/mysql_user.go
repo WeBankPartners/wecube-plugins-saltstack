@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
@@ -140,8 +139,8 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 		userPassword = createRandomPassword()
 	}
 
-	// 转义单引号，防止 SQL 语法错误
-	safePassword := strings.ReplaceAll(userPassword, "'", "''")
+	// 安全处理密码中的特殊字符
+	safePassword := escapeMysqlPassword(userPassword)
 
 	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, safePassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
@@ -411,8 +410,8 @@ func (action *ChangeMysqlDatabaseUserPwdAction) changeUserPassword(input *Change
 		return output, err
 	}
 
-	// 转义单引号，防止 SQL 语法错误
-	safePassword := strings.ReplaceAll(newPassword, "'", "''")
+	// 安全处理密码中的特殊字符
+	safePassword := escapeMysqlPassword(newPassword)
 
 	// check database user whether is existed.
 	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName, action.Language)
