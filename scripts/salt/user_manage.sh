@@ -157,7 +157,7 @@ addUser(){
             fi
         fi 
 
-        useradd $USER_NAME  $uid $home -m -p $(printf "%s" "$USER_PWD" | openssl passwd -1 -stdin) $group
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group
     fi   
 }
 
