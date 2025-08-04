@@ -14,7 +14,7 @@ Usage:
 "
 
 log(){
-    echo $(date +"[%Y%m%d %H:%M:%S]: ") $1
+    echo $(date +"[%Y%m%d %H:%M:%S]: ") $1 >&2
 }
 
 # 检测并处理 base64 编码的密码
@@ -31,19 +31,19 @@ decode_password(){
         if [[ $decoded_password =~ ^[[:print:]]*$ ]]; then
             # 双向验证：重新编码后应该与原密码一致
             # shellcheck disable=SC2155
-            local original_encoded=$(echo "$decoded_password" | base64 2>/dev/null)
+            local original_encoded=$(echo -n "$decoded_password" | base64 2>/dev/null)
             if [[ "$original_encoded" == "$password" ]]; then
-                log "Password detected as base64 encoded, decoding successfully"
+                log "Password detected as base64 encoded, decoding successfully" >&2
                 echo "$decoded_password"
                 return 0
             else
-                log "WARNING: Password looks like base64 but re-encoding doesn't match original, using original password"
+                log "WARNING: Password looks like base64 but re-encoding doesn't match original, using original password" >&2
             fi
         else
-            log "WARNING: Password base64 decoded but contains non-printable characters, using original password"
+            log "WARNING: Password base64 decoded but contains non-printable characters, using original password" >&2
         fi
     else
-        log "INFO: Password is not base64 encoded or decode failed, using original password"
+        log "INFO: Password is not base64 encoded or decode failed, using original password" >&2
     fi
     
     # 解码失败或验证不通过，返回原密码
@@ -157,7 +157,7 @@ addUser(){
             fi
         fi 
 
-        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group
+        useradd $USER_NAME  $uid $home -m -p "$USER_PWD" $group
     fi   
 }
 
@@ -169,7 +169,7 @@ addGroup(){
 }
 
 changePassword(){
-    echo $USER_PWD | passwd --stdin $USER_NAME
+    printf "%s" "$USER_PWD" | passwd --stdin $USER_NAME
 }
 
 removeUser(){
