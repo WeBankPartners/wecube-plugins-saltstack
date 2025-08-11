@@ -139,7 +139,10 @@ func (action *AddMysqlDatabaseUserAction) createUserForExistedDatabase(input *Ad
 		userPassword = createRandomPassword()
 	}
 
-	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, userPassword)
+	// 安全处理密码中的特殊字符
+	safePassword := escapeMysqlPassword(userPassword)
+
+	cmd := fmt.Sprintf("CREATE USER %s IDENTIFIED BY '%s' ", input.DatabaseUserName, safePassword)
 	if err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); err != nil {
 		err = getRunMysqlCommnandError(action.Language, cmd, err.Error())
 		return output, err
@@ -407,6 +410,9 @@ func (action *ChangeMysqlDatabaseUserPwdAction) changeUserPassword(input *Change
 		return output, err
 	}
 
+	// 安全处理密码中的特殊字符
+	safePassword := escapeMysqlPassword(newPassword)
+
 	// check database user whether is existed.
 	isExist, err := checkUserExistOrNot(input.Host, input.Port, input.UserName, password, input.DatabaseUserName, action.Language)
 	if err != nil {
@@ -418,10 +424,10 @@ func (action *ChangeMysqlDatabaseUserPwdAction) changeUserPassword(input *Change
 	}
 
 	// modify password
-	cmd := fmt.Sprintf("set password for '%s'@'%%'=password('%s')", input.DatabaseUserName, newPassword)
+	cmd := fmt.Sprintf("set password for '%s'@'%%'=password('%s')", input.DatabaseUserName, safePassword)
 	if resetErr := runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd); resetErr != nil {
 		log.Logger.Warn("Change mysql user password action fail with set password command", log.Error(resetErr))
-		cmd = fmt.Sprintf("alter user '%s'@'%%' identified by '%s'", input.DatabaseUserName, newPassword)
+		cmd = fmt.Sprintf("alter user '%s'@'%%' identified by '%s'", input.DatabaseUserName, safePassword)
 		err = runDatabaseCommand(input.Host, input.Port, input.UserName, password, cmd)
 		if err != nil {
 			log.Logger.Warn("Change mysql user password action fail with alter user command", log.Error(err))

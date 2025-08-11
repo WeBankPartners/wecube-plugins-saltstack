@@ -13,6 +13,8 @@ func init() {
 	PasswordPluginActions["encode"] = new(PasswordEncodeAction)
 	PasswordPluginActions["decode"] = new(PasswordDecodeAction)
 	PasswordPluginActions["sshkeygen"] = new(PasswordSSHKeyGenAction)
+	PasswordPluginActions["rsakeygen"] = new(RsaKeyGenAction)
+	PasswordPluginActions["randpassgen"] = new(RandPasswordGenAction)
 }
 
 type PasswordPlugin struct {
@@ -95,6 +97,49 @@ type PasswordSSHKeyGenOutput struct {
 	PublicKey  string `json:"publicKey,omitempty"`
 }
 
+type RsaKeyGenInputs struct {
+	Inputs []*RsaKeyGenInput `json:"inputs,omitempty"`
+}
+
+type RsaKeyGenInput struct {
+	CallBackParameter
+	Guid string `json:"guid,omitempty"`
+	Seed string `json:"seed,omitempty"`
+}
+
+type RsaKeyGenOutputs struct {
+	Outputs []*RsaKeyGenOutput `json:"outputs,omitempty"`
+}
+
+type RsaKeyGenOutput struct {
+	CallBackParameter
+	Result
+	Guid       string `json:"guid,omitempty"`
+	PrivateKey string `json:"privateKey,omitempty"`
+	PublicKey  string `json:"publicKey,omitempty"`
+}
+
+type RandPasswordGenInputs struct {
+	Inputs []*RandPasswordGenInput `json:"inputs,omitempty"`
+}
+
+type RandPasswordGenInput struct {
+	CallBackParameter
+	Guid string `json:"guid,omitempty"`
+	Seed string `json:"seed,omitempty"`
+}
+
+type RandPasswordGenOutputs struct {
+	Outputs []*RandPasswordGenOutput `json:"outputs,omitempty"`
+}
+
+type RandPasswordGenOutput struct {
+	CallBackParameter
+	Result
+	Guid     string `json:"guid,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
 type PasswordEncodeAction struct {
 	Language string
 }
@@ -104,6 +149,14 @@ type PasswordDecodeAction struct {
 }
 
 type PasswordSSHKeyGenAction struct {
+	Language string
+}
+
+type RsaKeyGenAction struct {
+	Language string
+}
+
+type RandPasswordGenAction struct {
 	Language string
 }
 
@@ -317,4 +370,146 @@ func (action *PasswordSSHKeyGenAction) GenSSHKey(input *PasswordSSHKeyGenInput) 
 	}
 	publicKey = string(pubBytes)
 	return
+}
+
+func (action *RsaKeyGenAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *RsaKeyGenAction) CheckParam(input *RsaKeyGenInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+	return nil
+}
+
+func (action *RsaKeyGenAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs RsaKeyGenInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *RsaKeyGenAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(RsaKeyGenInputs)
+	outputs := RsaKeyGenOutputs{Outputs: []*RsaKeyGenOutput{}}
+	var finalErr error
+	for _, input := range inputs.Inputs {
+		output := RsaKeyGenOutput{
+			Guid: input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+		if err := action.CheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, &output)
+			continue
+		}
+		input.Seed = getEncryptSeed(input.Seed)
+		privateKey, publicKey, err := action.GenSSHKey(input)
+		if err != nil {
+			err = getGenSSHKeyError(action.Language, err)
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, &output)
+			continue
+		}
+		output.PrivateKey, err = AesEnPassword(input.Guid, input.Seed, privateKey, DEFALT_CIPHER)
+		if err != nil {
+			err = getPasswordEncodeError(action.Language, err)
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, &output)
+			continue
+		}
+		output.PublicKey = publicKey
+		outputs.Outputs = append(outputs.Outputs, &output)
+	}
+	return &outputs, finalErr
+}
+
+func (action *RsaKeyGenAction) GenSSHKey(input *RsaKeyGenInput) (privateKey, publicKey string, err error) {
+	workDir := "/tmp/rsagen_" + getRandString()
+	if err = os.MkdirAll(workDir, 0755); err != nil {
+		err = fmt.Errorf("mkdir for ssh key gen fail,%s ", err.Error())
+		return
+	}
+	defer os.RemoveAll(workDir)
+	_, err = runBashScript("/home/app/wecube-plugins-saltstack/scripts/rsa_gen.sh", []string{workDir, "app"})
+	if err != nil {
+		err = fmt.Errorf("exec rsakeygen fail,%s ", err.Error())
+		return
+	}
+	priBytes, readPriErr := os.ReadFile(workDir + "/app.pem")
+	if readPriErr != nil {
+		err = fmt.Errorf("read private key from %s/app.pem fail,%s ", workDir, readPriErr.Error())
+		return
+	}
+	privateKey = formatRsaKeyToString(priBytes)
+	pubBytes, readPubErr := os.ReadFile(workDir + "/app_pub.pem")
+	if readPubErr != nil {
+		err = fmt.Errorf("read public key from %s/app_pub.pem fail,%s ", workDir, readPubErr.Error())
+		return
+	}
+	publicKey = formatRsaKeyToString(pubBytes)
+	return
+}
+
+func formatRsaKeyToString(inputBytes []byte) (output string) {
+	for _, v := range strings.Split(string(inputBytes), "\n") {
+		if strings.HasPrefix(v, "-----") || v == "" {
+			continue
+		}
+		output = output + v
+	}
+	return
+}
+
+func (action *RandPasswordGenAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *RandPasswordGenAction) CheckParam(input *RandPasswordGenInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+	return nil
+}
+
+func (action *RandPasswordGenAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs RsaKeyGenInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *RandPasswordGenAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(RandPasswordGenInputs)
+	outputs := RandPasswordGenOutputs{Outputs: []*RandPasswordGenOutput{}}
+	var finalErr error
+	for _, input := range inputs.Inputs {
+		output := RandPasswordGenOutput{
+			Guid: input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+		if err := action.CheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, &output)
+			continue
+		}
+		input.Seed = getEncryptSeed(input.Seed)
+		tmpRandPwd := createRandomPassword()
+		output.Password, _ = AesEnPassword(input.Guid, input.Seed, tmpRandPwd, DEFALT_CIPHER)
+		outputs.Outputs = append(outputs.Outputs, &output)
+	}
+	return &outputs, finalErr
 }

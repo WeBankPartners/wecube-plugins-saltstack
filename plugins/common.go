@@ -26,6 +26,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
@@ -186,8 +187,22 @@ type callSaltApiResults struct {
 	Results []map[string]interface{} `json:"return,omitempty"`
 }
 
-func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (string, error) {
-	log.Logger.Debug("Call salt api request", log.String("serviceUrl", serviceUrl), log.JsonObj("param", request))
+func CallSaltApi(serviceUrl string, request SaltApiRequest, language string) (output string, err error) {
+	for i := 1; i <= 3; i++ {
+		output, err = doCallSaltApi(serviceUrl, request, language, i)
+		if err != nil {
+			if strings.Contains(err.Error(), "Cannot connect to target") {
+				time.Sleep(10 * time.Second)
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+func doCallSaltApi(serviceUrl string, request SaltApiRequest, language string, tryIndex int) (string, error) {
+	log.Logger.Debug("Call salt api request", log.Int("tryCount", tryIndex), log.String("serviceUrl", serviceUrl), log.JsonObj("param", request))
 
 	token, err := getSaltApiToken()
 	if err != nil {

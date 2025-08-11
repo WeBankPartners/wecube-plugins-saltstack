@@ -151,6 +151,10 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err != nil {
 		return output, err
 	}
+	if input.FilePath == "" || input.VariableList == "" {
+		output.NewS3PkgPath = input.EndPoint
+		return output, err
+	}
 	input.Seed = getEncryptSeed(input.Seed)
 	if input.AppPublicKey, err = AesDePassword(input.Guid, input.Seed, input.AppPublicKey); err != nil {
 		err = getPasswordDecodeError(action.Language, fmt.Errorf("decode appPlubicKey fail,%s ", err.Error()))
@@ -161,10 +165,6 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 		return output, err
 	}
 
-	if input.FilePath == "" || input.VariableList == "" {
-		output.NewS3PkgPath = input.EndPoint
-		return output, err
-	}
 	if input.AppPublicKey != "" {
 		if !strings.HasPrefix(input.AppPublicKey, "-----BEGIN PUBLIC KEY-----") {
 			input.AppPublicKey = fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----", input.AppPublicKey)
