@@ -14,6 +14,7 @@ func init() {
 	PasswordPluginActions["decode"] = new(PasswordDecodeAction)
 	PasswordPluginActions["sshkeygen"] = new(PasswordSSHKeyGenAction)
 	PasswordPluginActions["rsakeygen"] = new(RsaKeyGenAction)
+	PasswordPluginActions["randpassgen"] = new(RandPasswordGenAction)
 }
 
 type PasswordPlugin struct {
@@ -118,6 +119,27 @@ type RsaKeyGenOutput struct {
 	PublicKey  string `json:"publicKey,omitempty"`
 }
 
+type RandPasswordGenInputs struct {
+	Inputs []*RandPasswordGenInput `json:"inputs,omitempty"`
+}
+
+type RandPasswordGenInput struct {
+	CallBackParameter
+	Guid string `json:"guid,omitempty"`
+	Seed string `json:"seed,omitempty"`
+}
+
+type RandPasswordGenOutputs struct {
+	Outputs []*RandPasswordGenOutput `json:"outputs,omitempty"`
+}
+
+type RandPasswordGenOutput struct {
+	CallBackParameter
+	Result
+	Guid     string `json:"guid,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
 type PasswordEncodeAction struct {
 	Language string
 }
@@ -131,6 +153,10 @@ type PasswordSSHKeyGenAction struct {
 }
 
 type RsaKeyGenAction struct {
+	Language string
+}
+
+type RandPasswordGenAction struct {
 	Language string
 }
 
@@ -442,4 +468,48 @@ func formatRsaKeyToString(inputBytes []byte) (output string) {
 		output = output + v
 	}
 	return
+}
+
+func (action *RandPasswordGenAction) SetAcceptLanguage(language string) {
+	action.Language = language
+}
+
+func (action *RandPasswordGenAction) CheckParam(input *RandPasswordGenInput) error {
+	if input.Guid == "" {
+		return getParamEmptyError(action.Language, "guid")
+	}
+	return nil
+}
+
+func (action *RandPasswordGenAction) ReadParam(param interface{}) (interface{}, error) {
+	var inputs RsaKeyGenInputs
+	if err := UnmarshalJson(param, &inputs); err != nil {
+		return nil, err
+	}
+	return inputs, nil
+}
+
+func (action *RandPasswordGenAction) Do(input interface{}) (interface{}, error) {
+	inputs, _ := input.(RandPasswordGenInputs)
+	outputs := RandPasswordGenOutputs{Outputs: []*RandPasswordGenOutput{}}
+	var finalErr error
+	for _, input := range inputs.Inputs {
+		output := RandPasswordGenOutput{
+			Guid: input.Guid,
+		}
+		output.CallBackParameter.Parameter = input.CallBackParameter.Parameter
+		output.Result.Code = RESULT_CODE_SUCCESS
+		if err := action.CheckParam(input); err != nil {
+			output.Result.Code = RESULT_CODE_ERROR
+			output.Result.Message = err.Error()
+			finalErr = err
+			outputs.Outputs = append(outputs.Outputs, &output)
+			continue
+		}
+		input.Seed = getEncryptSeed(input.Seed)
+		tmpRandPwd := createRandomPassword()
+		output.Password, _ = AesEnPassword(input.Guid, input.Seed, tmpRandPwd, DEFALT_CIPHER)
+		outputs.Outputs = append(outputs.Outputs, &output)
+	}
+	return &outputs, finalErr
 }
