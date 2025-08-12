@@ -1,11 +1,11 @@
 package plugins
 
 import (
-	"encoding/base64"
 	"fmt"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"strings"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 const (
@@ -145,9 +145,7 @@ func (action *AddUserAction) Do(input interface{}) (interface{}, error) {
 			password = createRandomPassword()
 		}
 
-		// 使用 base64 编码密码以避免特殊字符问题
-		passwordBase64 := base64.StdEncoding.EncodeToString([]byte(password))
-		execArg += " --password '" + passwordBase64 + "'"
+		execArg += " --password '" + password + "'"
 
 		if input.UserGroup != "" {
 			execArg += " --group '" + input.UserGroup + "'"
@@ -447,9 +445,7 @@ func (action *ChangeUserPasswordAction) Do(input interface{}) (interface{}, erro
 		}
 		execArg := fmt.Sprintf("--action change_password --user '%s'", input.UserName)
 
-		// 使用 base64 编码密码以避免特殊字符问题
-		passwordBase64 := base64.StdEncoding.EncodeToString([]byte(password))
-		execArg += " --password '" + passwordBase64 + "'"
+		execArg += " --password '" + password + "'"
 
 		result, err := executeS3Script("user_manage.sh", input.Target, runAs, execArg, "", action.Language)
 		if err != nil {
