@@ -59,6 +59,7 @@ var (
 	ApiConcurrentNum                int
 	VariableNullCheck               bool
 	GlobalEncryptSeed               string
+	MysqlCharacterMb4Enable         bool
 )
 
 var CIPHER_MAP = map[string]string{
@@ -531,6 +532,10 @@ func InitEnvParam() {
 		VariableNullCheck = false
 	}
 	GlobalEncryptSeed = os.Getenv("ENCRYPT_SEED")
+	mb4Enable := strings.ToLower(os.Getenv("SALTSTACK_CHARSET_MB4_ENABLE"))
+	if mb4Enable == "y" || mb4Enable == "yes" || mb4Enable == "true" {
+		MysqlCharacterMb4Enable = true
+	}
 }
 
 func checkIllegalParam(input string) bool {
