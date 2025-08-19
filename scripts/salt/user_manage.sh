@@ -138,7 +138,7 @@ addUser(){
             groupId="-g "$GROUP_ID 
         fi
 
-	group=""
+	    group=""
         if [[ -n $GROUP ]]; then
             group="-g "$GROUP
 	    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
