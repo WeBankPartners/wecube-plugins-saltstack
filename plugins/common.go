@@ -182,6 +182,7 @@ type SaltApiRequest struct {
 	Function   string   `json:"fun,omitempty"`
 	Args       []string `json:"arg,omitempty"`
 	FullReturn bool     `json:"full_return,omitempty"`
+	Timeout    int      `json:"timeout,omitempty"`
 }
 
 type callSaltApiResults struct {
@@ -216,7 +217,9 @@ func doCallSaltApi(serviceUrl string, request SaltApiRequest, language string, t
 			InsecureSkipVerify: true,
 		},
 	}
-
+	if request.Timeout <= 0 {
+		request.Timeout = 1800
+	}
 	bytesJson, jsonMarshalErr := json.Marshal(request)
 	if jsonMarshalErr != nil {
 		err = fmt.Errorf("json marshal request data fail,%s ", jsonMarshalErr.Error())
