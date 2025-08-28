@@ -134,6 +134,9 @@ func execSqlScript(hostName string, port string, userName string, password strin
 	if MysqlCharacterMb4Enable {
 		argv = append(argv, "--default-character-set=utf8mb4")
 	}
+	if MysqlSSLEnable {
+		argv = append(argv, "--ssl")
+	}
 
 	if databaseName != "" {
 		argv = append(argv, "-D"+databaseName)

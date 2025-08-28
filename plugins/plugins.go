@@ -71,6 +71,7 @@ type PluginRequest struct {
 	Name         string
 	Action       string
 	Parameters   interface{}
+	RequsetId    string
 }
 
 type PluginResponse struct {
@@ -92,7 +93,7 @@ func Process(pluginRequest *PluginRequest) (*PluginResponse, error) {
 		}
 	}()
 
-	log.Logger.Info("Request start ---------------->>", log.String("plugin", pluginRequest.Name), log.String("action", pluginRequest.Action))
+	log.Logger.Info("Request start ---------------->>", log.String("reqId", pluginRequest.RequsetId), log.String("plugin", pluginRequest.Name), log.String("action", pluginRequest.Action))
 
 	plugin, err := getPluginByName(pluginRequest.Name)
 	if err != nil {

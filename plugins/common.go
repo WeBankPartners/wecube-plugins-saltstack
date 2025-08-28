@@ -60,6 +60,7 @@ var (
 	VariableNullCheck               bool
 	GlobalEncryptSeed               string
 	MysqlCharacterMb4Enable         bool
+	MysqlSSLEnable                  bool
 )
 
 var CIPHER_MAP = map[string]string{
@@ -538,6 +539,10 @@ func InitEnvParam() {
 	mb4Enable := strings.ToLower(os.Getenv("SALTSTACK_CHARSET_MB4_ENABLE"))
 	if mb4Enable == "y" || mb4Enable == "yes" || mb4Enable == "true" {
 		MysqlCharacterMb4Enable = true
+	}
+	mysqlSSLEnable := strings.ToLower(os.Getenv("SALTSTACK_MYSQL_SSL_ENABLE"))
+	if mysqlSSLEnable == "y" || mysqlSSLEnable == "yes" || mysqlSSLEnable == "true" {
+		MysqlSSLEnable = true
 	}
 }
 

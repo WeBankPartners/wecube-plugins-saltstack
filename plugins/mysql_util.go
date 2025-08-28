@@ -30,7 +30,11 @@ var DB *sql.DB
 
 func initDB(host, port, loginUser, loginPwd, dbName string) error {
 	var err error
-	path := strings.Join([]string{loginUser, ":", loginPwd, "@tcp(", host, ":", port, ")/", dbName, "?charset=utf8"}, "")
+	connParam := "?charset=utf8"
+	if MysqlSSLEnable {
+		connParam = "?tls=true&charset=utf8"
+	}
+	path := strings.Join([]string{loginUser, ":", loginPwd, "@tcp(", host, ":", port, ")/", dbName, connParam}, "")
 
 	DB, err = sql.Open("mysql", path)
 	if err != nil {
@@ -137,6 +141,9 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 		"-P" + port,
 		"-e",
 		cmd,
+	}
+	if MysqlSSLEnable {
+		argv = append([]string{"--ssl"}, argv...)
 	}
 	command := exec.Command("/usr/bin/mysql", argv...)
 	out, err := command.CombinedOutput()
