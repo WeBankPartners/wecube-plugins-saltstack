@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"sync"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 var ApplyDeploymentActions = make(map[string]Action)
@@ -60,6 +61,7 @@ type ApplyNewDeploymentInput struct {
 
 	SignFileSrc string `json:"signFileSrc,omitempty"`
 	SignFileDst string `json:"signFileDst,omitempty"`
+	Md5         string `json:"md5,omitempty"`
 }
 
 type ApplyNewDeploymentOutputs struct {
@@ -193,6 +195,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 
 	// replace apply variable
 	var variableReplaceOutputs interface{}
+	var copyFileMd5 string
 	if input.VariableFilePath != "" {
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
@@ -205,6 +208,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 					Seed:          input.Seed,
 					AppPublicKey:  input.AppPublicKey,
 					SysPrivateKey: input.SysPrivateKey,
+					Md5:           input.Md5,
 				},
 			},
 		}
@@ -217,6 +221,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
 	} else {
 		output.NewS3PkgPath = input.EndPoint
+		copyFileMd5 = input.Md5
 	}
 
 	// copy apply package
@@ -229,6 +234,7 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 				DestinationPath: input.DestinationPath,
 				Unpack:          "true",
 				FileOwner:       input.UserName,
+				Md5:             copyFileMd5,
 			},
 		},
 	}

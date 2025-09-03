@@ -44,6 +44,7 @@ type FileCopyInput struct {
 	DestinationPath string `json:"destinationPath,omitempty"`
 	Unpack          string `json:"unpack,omitempty"`
 	FileOwner       string `json:"fileOwner,omitempty"`
+	Md5             string `json:"md5,omitempty"`
 }
 
 type FileCopyOutputs struct {

@@ -68,6 +68,7 @@ type VariableReplaceInput struct {
 	AppPublicKey      string `json:"appPublicKey,omitempty"`
 	SysPrivateKey     string `json:"sysPrivateKey,omitempty"`
 	FileReplacePrefix string `json:"fileReplacePrefix,omitempty"`
+	Md5               string `json:"md5,omitempty"`
 }
 
 // VariableReplaceOutputs .
