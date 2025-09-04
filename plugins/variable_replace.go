@@ -192,18 +192,35 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err = os.MkdirAll(decompressDirName, os.ModePerm); err != nil {
 		return output, err
 	}
-
-	compressedFileFullPath, err := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
-	if err != nil {
-		return output, err
+	var compressedFileFullPath string
+	var useCacheFile bool
+	if input.Md5 != "" {
+		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language}
+		localFilePath, _, getCacheErr := GetGlobalCacheFile(&getFileParam)
+		if getCacheErr != nil {
+			log.Logger.Error("variableReplace get global cache file error", log.String("md5", input.Md5), log.String("endpoint", input.EndPoint), log.Error(getCacheErr))
+		} else {
+			compressedFileFullPath = localFilePath
+			useCacheFile = true
+		}
+	}
+	if compressedFileFullPath == "" {
+		compressedFileFullPath, err = downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
+		if err != nil {
+			return output, err
+		}
 	}
 
 	if err = bashDecompressFunc(compressedFileFullPath, decompressDirName); err != nil {
 		err = getUnpackFileError(action.Language, compressedFileFullPath, err)
-		os.RemoveAll(compressedFileFullPath)
+		if !useCacheFile {
+			os.RemoveAll(compressedFileFullPath)
+		}
 		return output, err
 	}
-	os.RemoveAll(compressedFileFullPath)
+	if !useCacheFile {
+		os.RemoveAll(compressedFileFullPath)
+	}
 
 	if input.FilePath != "" && input.VariableList != "" {
 		for _, filePath := range splitWithCustomFlag(input.FilePath) {
