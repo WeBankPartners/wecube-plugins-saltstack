@@ -386,6 +386,7 @@ type ApplyUpdateDeploymentInput struct {
 	SignFileSrc string `json:"signFileSrc,omitempty"`
 	SignFileDst string `json:"signFileDst,omitempty"`
 	ClearPath   string `json:"clearPath,omitempty"`
+	Md5         string `json:"md5,omitempty"`
 }
 
 type ApplyUpdateDeploymentOutputs struct {
@@ -526,6 +527,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 
 	// replace apply variable
 	var variableReplaceOutputs interface{}
+	var copyFileMd5 string
 	if input.VariableFilePath != "" {
 		variableReplaceRequest := VariableReplaceInputs{
 			Inputs: []VariableReplaceInput{
@@ -538,6 +540,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 					Seed:          input.Seed,
 					AppPublicKey:  input.AppPublicKey,
 					SysPrivateKey: input.SysPrivateKey,
+					Md5:           input.Md5,
 				},
 			},
 		}
@@ -550,6 +553,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
 	} else {
 		output.NewS3PkgPath = input.EndPoint
+		copyFileMd5 = input.Md5
 	}
 
 	// backup dest dir to tar guid.tar.gz
@@ -627,6 +631,7 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 				DestinationPath: input.DestinationPath,
 				Unpack:          "true",
 				FileOwner:       input.UserName,
+				Md5:             copyFileMd5,
 			},
 		},
 	}
