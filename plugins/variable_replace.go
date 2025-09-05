@@ -195,7 +195,7 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	var compressedFileFullPath string
 	var useCacheFile bool
 	if input.Md5 != "" {
-		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language}
+		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language, Md5: input.Md5}
 		localFilePath, _, getCacheErr := GetGlobalCacheFile(&getFileParam)
 		if getCacheErr != nil {
 			log.Logger.Error("variableReplace get global cache file error", log.String("md5", input.Md5), log.String("endpoint", input.EndPoint), log.Error(getCacheErr))

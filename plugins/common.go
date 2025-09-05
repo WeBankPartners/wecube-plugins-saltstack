@@ -61,6 +61,7 @@ var (
 	GlobalEncryptSeed               string
 	MysqlCharacterMb4Enable         bool
 	MysqlSSLEnable                  bool
+	GlobalAppDeployChan             chan int
 )
 
 var CIPHER_MAP = map[string]string{
@@ -544,6 +545,11 @@ func InitEnvParam() {
 	if mysqlSSLEnable == "y" || mysqlSSLEnable == "yes" || mysqlSSLEnable == "true" {
 		MysqlSSLEnable = true
 	}
+	appDeployConcurrentNum, _ := strconv.Atoi(os.Getenv("SALTSTACK_APP_DEPLOY_CONCURRENT_NUM"))
+	if appDeployConcurrentNum <= 0 {
+		appDeployConcurrentNum = 8
+	}
+	GlobalAppDeployChan = make(chan int, appDeployConcurrentNum)
 }
 
 func checkIllegalParam(input string) bool {
@@ -683,4 +689,12 @@ func isContains(sList []string, t string) bool {
 		}
 	}
 	return false
+}
+
+func getAppDeployTicket() {
+	GlobalAppDeployChan <- 1
+}
+
+func releaseAppDeployTicket() {
+	<-GlobalAppDeployChan
 }

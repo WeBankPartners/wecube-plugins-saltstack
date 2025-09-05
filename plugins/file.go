@@ -170,7 +170,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 	var savePath string
 	var useCacheFile bool
 	if input.Md5 != "" {
-		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language, WithCopyToMaster: true}
+		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language, WithCopyToMaster: true, Md5: input.Md5}
 		_, saltMasterPath, getCacheErr := GetGlobalCacheFile(&getFileParam)
 		if getCacheErr != nil {
 			log.Logger.Error("copyFile get global cache file error", log.String("md5", input.Md5), log.String("endpoint", input.EndPoint), log.Error(getCacheErr))

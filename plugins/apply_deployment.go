@@ -311,7 +311,9 @@ func (action *ApplyNewDeploymentAction) Do(input interface{}) (interface{}, erro
 	for i, input := range inputs.Inputs {
 		wg.Add(1)
 		go func(tmpInput ApplyNewDeploymentInput, index int) {
+			getAppDeployTicket()
 			output, err := action.applyNewDeployment(tmpInput)
+			releaseAppDeployTicket()
 			outputChan <- ApplyNewDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
 		}(input, i)
@@ -708,7 +710,9 @@ func (action *ApplyUpdateDeploymentAction) Do(input interface{}) (interface{}, e
 	for i, input := range inputs.Inputs {
 		wg.Add(1)
 		go func(tmpInput ApplyUpdateDeploymentInput, index int) {
+			getAppDeployTicket()
 			output, err := action.applyUpdateDeployment(tmpInput)
+			releaseAppDeployTicket()
 			outputChan <- ApplyUpdateDeploymentThreadObj{Data: output, Err: err, Index: index}
 			wg.Done()
 		}(input, i)

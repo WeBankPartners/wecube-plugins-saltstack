@@ -148,6 +148,7 @@ type FileCacheObj struct {
 func (f *FileCacheObj) UpdateUsedTime() (localFilePath string, err error) {
 	f.Lock.RLock()
 	f.LastUsedTime = time.Now().Unix()
+	localFilePath = f.FilePath
 	if f.ErrorMsg != "" {
 		err = fmt.Errorf(f.ErrorMsg)
 	}
@@ -157,7 +158,7 @@ func (f *FileCacheObj) UpdateUsedTime() (localFilePath string, err error) {
 
 func (f *FileCacheObj) Expired() (ok bool) {
 	f.Lock.RLock()
-	if (time.Now().Unix() - f.LastUsedTime) > 7200 {
+	if (time.Now().Unix() - f.LastUsedTime) > 3600 {
 		ok = true
 	}
 	f.Lock.RUnlock()
