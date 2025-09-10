@@ -186,9 +186,6 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 			err = tmpErr
 			return output, err
 		}
-
-		input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
-
 		savePath, err = saveFileToSaltMasterBaseDir(fileName)
 		os.Remove(fileName)
 		if err != nil {
@@ -196,6 +193,7 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 			return output, err
 		}
 	}
+	input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
 
 	//copy file
 	copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
