@@ -6,16 +6,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/plugins"
+	"github.com/dgrijalva/jwt-go"
 )
 
 func init() {
@@ -68,7 +69,7 @@ func routeDispatcher(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Logger.Debug("Handle success", log.JsonObj("response", pluginResponse))
 		}
-		log.Logger.Info("Request end ----------------<<", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]), log.Float64("cost_second", time.Now().Sub(start).Seconds()))
+		log.Logger.Info("Request end ----------------<<", log.String("reqId", pluginRequest.RequsetId), log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]), log.Float64("cost_second", time.Now().Sub(start).Seconds()))
 		write(w, pluginResponse)
 	} else {
 		log.Logger.Info("Request token illegal ----------------!!", log.String("url", r.RequestURI), log.String("method", r.Method), log.String("ip", strings.Split(r.RemoteAddr, ":")[0]))
@@ -93,6 +94,7 @@ func parsePluginRequest(r *http.Request) *plugins.PluginRequest {
 		pluginInput.Action = pathStrings[4]
 	}
 	pluginInput.Parameters = r.Body
+	pluginInput.RequsetId = fmt.Sprintf("req_%d", time.Now().UnixNano())
 	return &pluginInput
 }
 

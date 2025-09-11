@@ -2,12 +2,13 @@ package plugins
 
 import (
 	"fmt"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 func StartCleanInterval() {
@@ -25,6 +26,7 @@ func StartCleanInterval() {
 	for {
 		go cleanLocalPackage(UNCOMPRESSED_DIR)
 		go cleanLocalPackage(UPLOADS3FILE_DIR)
+		go cleanCacheFiles()
 		<-t
 	}
 }

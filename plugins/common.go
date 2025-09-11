@@ -59,6 +59,9 @@ var (
 	ApiConcurrentNum                int
 	VariableNullCheck               bool
 	GlobalEncryptSeed               string
+	MysqlCharacterMb4Enable         bool
+	MysqlSSLEnable                  bool
+	GlobalAppDeployChan             chan int
 )
 
 var CIPHER_MAP = map[string]string{
@@ -181,6 +184,7 @@ type SaltApiRequest struct {
 	Function   string   `json:"fun,omitempty"`
 	Args       []string `json:"arg,omitempty"`
 	FullReturn bool     `json:"full_return,omitempty"`
+	Timeout    int      `json:"timeout,omitempty"`
 }
 
 type callSaltApiResults struct {
@@ -215,7 +219,9 @@ func doCallSaltApi(serviceUrl string, request SaltApiRequest, language string, t
 			InsecureSkipVerify: true,
 		},
 	}
-
+	if request.Timeout <= 0 {
+		request.Timeout = 1800
+	}
 	bytesJson, jsonMarshalErr := json.Marshal(request)
 	if jsonMarshalErr != nil {
 		err = fmt.Errorf("json marshal request data fail,%s ", jsonMarshalErr.Error())
@@ -531,6 +537,19 @@ func InitEnvParam() {
 		VariableNullCheck = false
 	}
 	GlobalEncryptSeed = os.Getenv("ENCRYPT_SEED")
+	mb4Enable := strings.ToLower(os.Getenv("SALTSTACK_CHARSET_MB4_ENABLE"))
+	if mb4Enable == "y" || mb4Enable == "yes" || mb4Enable == "true" {
+		MysqlCharacterMb4Enable = true
+	}
+	mysqlSSLEnable := strings.ToLower(os.Getenv("SALTSTACK_MYSQL_SSL_ENABLE"))
+	if mysqlSSLEnable == "y" || mysqlSSLEnable == "yes" || mysqlSSLEnable == "true" {
+		MysqlSSLEnable = true
+	}
+	appDeployConcurrentNum, _ := strconv.Atoi(os.Getenv("SALTSTACK_APP_DEPLOY_CONCURRENT_NUM"))
+	if appDeployConcurrentNum <= 0 {
+		appDeployConcurrentNum = 8
+	}
+	GlobalAppDeployChan = make(chan int, appDeployConcurrentNum)
 }
 
 func checkIllegalParam(input string) bool {
@@ -670,4 +689,12 @@ func isContains(sList []string, t string) bool {
 		}
 	}
 	return false
+}
+
+func getAppDeployTicket() {
+	GlobalAppDeployChan <- 1
+}
+
+func releaseAppDeployTicket() {
+	<-GlobalAppDeployChan
 }

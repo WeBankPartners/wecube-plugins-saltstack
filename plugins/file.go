@@ -44,6 +44,7 @@ type FileCopyInput struct {
 	DestinationPath string `json:"destinationPath,omitempty"`
 	Unpack          string `json:"unpack,omitempty"`
 	FileOwner       string `json:"fileOwner,omitempty"`
+	Md5             string `json:"md5,omitempty"`
 }
 
 type FileCopyOutputs struct {
@@ -166,27 +167,40 @@ func (action *FileCopyAction) copyFile(input *FileCopyInput) (output FileCopyOut
 			return output, err
 		}
 	}
-
-	fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
-	if tmpErr != nil {
-		log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
-		err = tmpErr
-		return output, err
+	var savePath string
+	var useCacheFile bool
+	if input.Md5 != "" {
+		getFileParam := DownloadFileParam{Endpoint: input.EndPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: action.Language, WithCopyToMaster: true, Md5: input.Md5}
+		_, saltMasterPath, getCacheErr := GetGlobalCacheFile(&getFileParam)
+		if getCacheErr != nil {
+			log.Logger.Error("copyFile get global cache file error", log.String("md5", input.Md5), log.String("endpoint", input.EndPoint), log.Error(getCacheErr))
+		} else {
+			savePath = saltMasterPath
+			useCacheFile = true
+		}
 	}
-
+	if savePath == "" {
+		fileName, tmpErr := downloadS3File(input.EndPoint, DefaultS3Key, DefaultS3Password, true, action.Language)
+		if tmpErr != nil {
+			log.Logger.Error("Download s3 file", log.String("path", input.EndPoint), log.Error(tmpErr))
+			err = tmpErr
+			return output, err
+		}
+		savePath, err = saveFileToSaltMasterBaseDir(fileName)
+		os.Remove(fileName)
+		if err != nil {
+			err = getS3DownloadError(action.Language, input.EndPoint, fmt.Sprintf("move download file to salt-dir error:%s", err.Error()))
+			return output, err
+		}
+	}
 	input.DestinationPath = buildFileDestinationPath(input.EndPoint, input.DestinationPath)
-
-	savePath, tmpErr := saveFileToSaltMasterBaseDir(fileName)
-	os.Remove(fileName)
-	if tmpErr != nil {
-		err = getS3DownloadError(action.Language, input.EndPoint, fmt.Sprintf("move download file to salt-dir error:%s", tmpErr.Error()))
-		return output, err
-	}
 
 	//copy file
 	copyRequest, err := action.deriveCopyFileRequest("salt://base/"+filepath.Base(savePath), input)
 	_, err = CallSaltApi("https://127.0.0.1:8080", *copyRequest, action.Language)
-	os.Remove(savePath)
+	if !useCacheFile {
+		os.Remove(savePath)
+	}
 	if err != nil {
 		return output, err
 	}

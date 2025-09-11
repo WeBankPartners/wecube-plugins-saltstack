@@ -12,9 +12,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"math/rand"
 	"sync"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 func uploadS3File(endPoint, accessKey, secretKey, language string) (string, error) {

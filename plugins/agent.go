@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
@@ -315,17 +316,41 @@ func (action *MinionInstallAction) installMinion(input *AgentInstallInput) (outp
 	return output, err
 }
 
+type AgentInstallThreadObj struct {
+	Data  AgentInstallOutput
+	Err   error
+	Index int
+}
+
 func (action *MinionInstallAction) Do(input interface{}) (interface{}, error) {
 	agents, _ := input.(AgentInstallInputs)
 	outputs := AgentInstallOutputs{}
 	var finalErr error
-	for _, agent := range agents.Inputs {
-		agentInstallOutput, err := action.installMinion(&agent)
-		if err != nil {
-			log.Logger.Error("Install minion action", log.Error(err))
-			finalErr = err
+	outputChan := make(chan AgentInstallThreadObj, len(agents.Inputs))
+	concurrentChan := make(chan int, ApiConcurrentNum)
+	wg := sync.WaitGroup{}
+	for i, agent := range agents.Inputs {
+		concurrentChan <- 1
+		wg.Add(1)
+		go func(tmpInput AgentInstallInput, index int) {
+			output, err := action.installMinion(&tmpInput)
+			outputChan <- AgentInstallThreadObj{Data: output, Err: err, Index: index}
+			wg.Done()
+			<-concurrentChan
+		}(agent, i)
+		outputs.Outputs = append(outputs.Outputs, AgentInstallOutput{})
+	}
+	wg.Wait()
+	for {
+		if len(outputChan) == 0 {
+			break
 		}
-		outputs.Outputs = append(outputs.Outputs, agentInstallOutput)
+		tmpOutput := <-outputChan
+		if tmpOutput.Err != nil {
+			log.Logger.Error("Install minion action", log.Error(tmpOutput.Err))
+			finalErr = tmpOutput.Err
+		}
+		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
 	}
 
 	return &outputs, finalErr

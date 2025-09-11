@@ -75,7 +75,7 @@ parse_args(){
             shift
         ;;
         --password)
-            export USER_PWD=$(decode_password "$2")
+            export USER_PWD=$2
             shift
         ;;
         --group)
@@ -138,7 +138,7 @@ addUser(){
             groupId="-g "$GROUP_ID 
         fi
 
-	group=""
+	    group=""
         if [[ -n $GROUP ]]; then
             group="-g "$GROUP
 	    grep -qw ^$GROUP /etc/group || groupadd $GROUP $groupId
@@ -156,7 +156,7 @@ addUser(){
             mkdir -p $USER_HOME
             fi
         fi
-        useradd $USER_NAME $uid $home -m -p $USER_PWD $group
+        useradd $USER_NAME  $uid $home -m -p $(echo $USER_PWD | openssl passwd -1 -stdin) $group
     fi   
 }
 

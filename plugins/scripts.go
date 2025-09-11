@@ -119,35 +119,41 @@ func (action *RunScriptAction) CheckParam(input RunScriptInput) error {
 	return nil
 }
 
-// why not move? TODO
 func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 	var err error
-	content, err := ioutil.ReadFile(fileName)
+	targetFilePath := SCRIPT_SAVE_PATH + "script-" + getRandString()
+	_, err = exec.Command("/bin/cp", "-f", fileName, targetFilePath).Output()
 	if err != nil {
-		return "", fmt.Errorf("read %s fail,%s", fileName, err.Error())
+		err = fmt.Errorf("cp file file %s to %s fail,%s ", fileName, targetFilePath, err.Error())
 	}
+	return targetFilePath, err
 
-	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
-	if err != nil {
-		return "", fmt.Errorf("create tmp file fail,%s", err.Error())
-	}
+	// content, err := ioutil.ReadFile(fileName)
+	// if err != nil {
+	// 	return "", fmt.Errorf("read %s fail,%s", fileName, err.Error())
+	// }
 
-	defer func() {
-		if err != nil {
-			defer os.Remove(tmpFile.Name())
-		}
-	}()
+	// tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
+	// if err != nil {
+	// 	return "", fmt.Errorf("create tmp file fail,%s", err.Error())
+	// }
 
-	if _, err = tmpFile.Write(content); err != nil {
-		return "", fmt.Errorf("write content to tmp file fail,%s", err.Error())
-	}
+	// defer func() {
+	// 	if err != nil {
+	// 		defer os.Remove(tmpFile.Name())
+	// 	}
+	// }()
 
-	if err = tmpFile.Close(); err != nil {
-		return "", fmt.Errorf("close tmp file fail,%s", err.Error())
-	}
+	// if _, err = tmpFile.Write(content); err != nil {
+	// 	return "", fmt.Errorf("write content to tmp file fail,%s", err.Error())
+	// }
 
-	fullPath := tmpFile.Name()
-	return fullPath, err
+	// if err = tmpFile.Close(); err != nil {
+	// 	return "", fmt.Errorf("close tmp file fail,%s", err.Error())
+	// }
+
+	// fullPath := tmpFile.Name()
+	// return fullPath, err
 }
 
 func executeS3Script(fileName string, target string, runAs string, execArg string, cwd string, language string) (string, error) {
