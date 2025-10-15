@@ -3,9 +3,10 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 	"strconv"
 	"strings"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
 // MountInfo object from salt disk.usage --out json
@@ -307,9 +308,18 @@ func (action *HostInfoAction) collectHostInfo(input *HostInfoInput) (output Host
 	}
 	log.Logger.Debug("build host info -> hwaddrInterfaces", log.JsonObj("hwaddrInterfaces", hwaddrInterfaces))
 
+	// MB -> GB
+	var memTotal int
+	if minionInfo.MemTotal > 0 {
+		memTotal = minionInfo.MemTotal / 1024
+		if minionInfo.MemTotal > (memTotal * 1024) {
+			memTotal = memTotal + 1
+		}
+	}
+
 	output.HostInfo = HostInfo{
 		NumCpus:          minionInfo.NumCpus,
-		MemTotal:         minionInfo.MemTotal,
+		MemTotal:         memTotal,
 		DiskTotal:        diskTotal,
 		Os:               fmt.Sprintf("%s %s", minionInfo.Os, minionInfo.Osrelease),
 		Kernel:           fmt.Sprintf("%s %s", minionInfo.Kernel, minionInfo.Kernelrelease),
