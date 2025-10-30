@@ -181,56 +181,62 @@ func GetGlobalCacheFile(param *DownloadFileParam) (localFilePath, saltMasterPath
 	existFileCache, loadOk := GlobalFileCacheMap.LoadOrStore(param.Md5, fileCache)
 	if loadOk {
 		fileCache = existFileCache.(*FileCacheObj)
-		if localFilePath, err = fileCache.UpdateUsedTime(); err != nil {
-			err = fmt.Errorf("get cache file fail,%s ", err.Error())
-			return
-		}
-		if param.WithCopyToMaster {
-			saltMasterPath = fileCache.GetMasterBasepPath()
-			if saltMasterPath == "" {
-				savePath, tmpErr := saveFileToSaltMasterBaseDir(localFilePath)
-				if tmpErr != nil {
-					err = fmt.Errorf("save cache file to master base dir fail,%s ", tmpErr.Error())
-				} else {
-					fileCache.SaltMasterPath = savePath
-					saltMasterPath = savePath
+		_, checkFileErr := os.Stat(fileCache.FilePath)
+		if os.IsNotExist(checkFileErr) {
+			GlobalFileCacheMap.Delete(param.Md5)
+			log.Logger.Warn("GetGlobalCacheFile check cache file not exist", log.String("md5", param.Md5), log.String("localFilePath", localFilePath))
+		} else {
+			if localFilePath, err = fileCache.UpdateUsedTime(); err != nil {
+				err = fmt.Errorf("get cache file fail,%s ", err.Error())
+				return
+			}
+			if param.WithCopyToMaster {
+				saltMasterPath = fileCache.GetMasterBasepPath()
+				if saltMasterPath == "" {
+					savePath, tmpErr := saveFileToSaltMasterBaseDir(localFilePath)
+					if tmpErr != nil {
+						err = fmt.Errorf("save cache file to master base dir fail,%s ", tmpErr.Error())
+					} else {
+						fileCache.SaltMasterPath = savePath
+						saltMasterPath = savePath
+					}
 				}
 			}
+			log.Logger.Info("GetGlobalCacheFile get cache", log.String("md5", param.Md5), log.String("localFilePath", localFilePath), log.String("saltMasterPath", saltMasterPath))
+			return
 		}
-		log.Logger.Info("GetGlobalCacheFile get cache", log.String("md5", param.Md5), log.String("localFilePath", localFilePath), log.String("saltMasterPath", saltMasterPath))
+	}
+	fileCache.Lock.Lock()
+	localFilePath, downloadErr := downloadS3File(param.Endpoint, param.AccessKey, param.SecretKey, param.RandName, param.RequestLanguage)
+	if downloadErr != nil {
+		err = fmt.Errorf("download cache file fail,%s ", downloadErr.Error())
+		fileCache.ErrorMsg = err.Error()
 	} else {
-		fileCache.Lock.Lock()
-		localFilePath, downloadErr := downloadS3File(param.Endpoint, param.AccessKey, param.SecretKey, param.RandName, param.RequestLanguage)
-		if downloadErr != nil {
-			err = fmt.Errorf("download cache file fail,%s ", downloadErr.Error())
+		localFileMd5 := countMd5WithCmd(localFilePath)
+		if localFileMd5 != param.Md5 {
+			err = fmt.Errorf("download cache file fail with md5 check,expectMd5:%s realMd5:%s ", param.Md5, localFileMd5)
+			os.Remove(localFilePath)
 			fileCache.ErrorMsg = err.Error()
 		} else {
-			localFileMd5 := countMd5WithCmd(localFilePath)
-			if localFileMd5 != param.Md5 {
-				err = fmt.Errorf("download cache file fail with md5 check,expectMd5:%s realMd5:%s ", param.Md5, localFileMd5)
-				os.Remove(localFilePath)
-				fileCache.ErrorMsg = err.Error()
-			} else {
-				fileCache.FilePath = localFilePath
-				fileCache.LastUsedTime = time.Now().Unix()
-			}
+			fileCache.FilePath = localFilePath
+			fileCache.LastUsedTime = time.Now().Unix()
 		}
-		if param.WithCopyToMaster && err == nil {
-			savePath, tmpErr := saveFileToSaltMasterBaseDir(localFilePath)
-			if tmpErr != nil {
-				err = fmt.Errorf("save cache file to master base dir fail,%s ", tmpErr.Error())
-			} else {
-				fileCache.SaltMasterPath = savePath
-				saltMasterPath = savePath
-			}
-		}
-		fileCache.Lock.Unlock()
-		if err != nil {
-			GlobalFileCacheMap.Delete(param.Md5)
-			log.Logger.Error("GetGlobalCacheFile error", log.String("md5", param.Md5), log.String("endpoint", param.Endpoint), log.Error(err))
+	}
+	if param.WithCopyToMaster && err == nil {
+		savePath, tmpErr := saveFileToSaltMasterBaseDir(localFilePath)
+		if tmpErr != nil {
+			err = fmt.Errorf("save cache file to master base dir fail,%s ", tmpErr.Error())
 		} else {
-			log.Logger.Info("GetGlobalCacheFile set cache", log.String("md5", param.Md5), log.String("localFilePath", localFilePath), log.String("saltMasterPath", saltMasterPath))
+			fileCache.SaltMasterPath = savePath
+			saltMasterPath = savePath
 		}
+	}
+	fileCache.Lock.Unlock()
+	if err != nil {
+		GlobalFileCacheMap.Delete(param.Md5)
+		log.Logger.Error("GetGlobalCacheFile error", log.String("md5", param.Md5), log.String("endpoint", param.Endpoint), log.Error(err))
+	} else {
+		log.Logger.Info("GetGlobalCacheFile set cache", log.String("md5", param.Md5), log.String("localFilePath", localFilePath), log.String("saltMasterPath", saltMasterPath))
 	}
 	return
 }
