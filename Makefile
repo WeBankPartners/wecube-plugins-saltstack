@@ -1,6 +1,6 @@
 current_dir=$(shell pwd)
 version=$(PLUGIN_VERSION)
-project_name=$(shell basename "${current_dir}")
+project_name=wecube-plugins-saltstack
 
 APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
 PORT_BINDING={{ALLOCATE_PORT}}:8082
