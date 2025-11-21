@@ -4,6 +4,12 @@ project_name=$(shell basename "${current_dir}")
 
 APP_HOME=src/github.com/WeBankPartners/wecube-plugins-saltstack
 PORT_BINDING={{ALLOCATE_PORT}}:8082
+ARCH ?= x86_64
+ifeq ($(ARCH), arm64)
+	package_name=$(project_name)-$(PLUGIN_VERSION)-arm64.zip
+else
+	package_name=$(project_name)-$(PLUGIN_VERSION).zip
+endif
 
 fmt:
 	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) -w /go/src/github.com/WeBankPartners/$(project_name)/  golang:1.19.1 go fmt ./...
@@ -17,16 +23,28 @@ build: clean
 	chmod +x ./build/*.sh
 	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) golang:1.19.1 /bin/bash /go/src/github.com/WeBankPartners/$(project_name)/build/build.sh
 
+build_arm64: clean
+	chmod +x ./build/*.sh
+	docker run --rm -v $(current_dir):/go/src/github.com/WeBankPartners/$(project_name) --name build_$(project_name) --platform linux/arm64 golang:1.25.4-arm64 /bin/bash /go/src/github.com/WeBankPartners/$(project_name)/build/build.sh
+
 image: build
 	docker build -t $(project_name):$(version) .
+
+image_arm64: build_arm64
+	docker buildx build -f Dockerfile-arm64 --platform linux/arm64 --load -t $(project_name):$(version) .
      
-package: image
+package:
+    ifeq ($(ARCH), arm64)
+	    $(MAKE) image_arm64
+    else
+	    $(MAKE) image
+    endif
 	sed 's/{{PLUGIN_VERSION}}/$(version)/' ./build/register.xml.tpl > ./register.xml
 	sed -i 's/{{IMAGENAME}}/$(project_name):$(version)/g' ./register.xml
 	sed -i 's/{{CONTAINERNAME}}/$(project_name)-$(version)/g' ./register.xml
 	sed -i 's/{{PORTBINDING}}/$(PORT_BINDING)/' ./register.xml
 	docker save -o image.tar $(project_name):$(version)
-	zip  $(project_name)-$(version).zip image.tar register.xml
+	zip  $(package_name) image.tar register.xml
 	rm -rf $(project_name)
 	rm -f register.xml
 	rm -rf ./*.tar
@@ -35,9 +53,9 @@ package: image
 upload: package
 	$(eval container_id:=$(shell docker run -v $(current_dir):/package -itd --entrypoint=/bin/sh minio/mc))
 	docker exec $(container_id) mc config host add wecubeS3 $(s3_server_url) $(s3_access_key) $(s3_secret_key)
-	docker exec $(container_id) mc cp /package/$(project_name)-$(version).zip wecubeS3/wecube-plugin-package-bucket
+	docker exec $(container_id) mc cp /package/$(package_name) wecubeS3/wecube-plugin-package-bucket
 	docker rm -f $(container_id)
-	rm -rf $(project_name)-$(version).zip
+	rm -f $(package_name)
 
 push: image
 	docker login -u $(dockerhub_user) -p $(dockerhub_pass) $(dockerhub_server)

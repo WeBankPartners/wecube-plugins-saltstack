@@ -4,7 +4,7 @@ set -e -x
 #if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 #    DIRTY="_dirty"
 #fi
-
+git config --global --add safe.directory '*'
 COMMIT=$(git rev-parse --short HEAD)
 GIT_TAG=$(git tag -l --contains HEAD | head -n 1)
 
