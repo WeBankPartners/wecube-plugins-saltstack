@@ -4,14 +4,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 )
 
 const (
@@ -62,7 +63,8 @@ func newSaltApiToken() error {
 	}
 
 	data := url.Values{}
-	data.Set("eauth", "pam")
+	// data.Set("eauth", "pam")
+	data.Set("eauth", "sharedsecret")
 	data.Set("username", userName)
 	data.Set("password", passwd)
 
