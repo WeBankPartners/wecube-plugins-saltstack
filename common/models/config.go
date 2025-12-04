@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -41,6 +42,7 @@ type GlobalConfig struct {
 var (
 	Config     *GlobalConfig
 	CoreJwtKey string
+	ArchMode   string
 )
 
 func InitConfig(cfg string) error {
@@ -64,5 +66,6 @@ func InitConfig(cfg string) error {
 	}
 	Config = &c
 	CoreJwtKey = os.Getenv("JWT_SIGNING_KEY")
+	ArchMode = runtime.GOARCH
 	return nil
 }

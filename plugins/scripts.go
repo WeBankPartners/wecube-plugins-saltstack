@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
+	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 )
 
 const (
@@ -179,8 +180,9 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 	if !SaltResetEnv {
 		request.Args = append(request.Args, "reset_system_locale=False")
 	}
-
-	request.Args = append(request.Args, "shell=true")
+	if models.ArchMode == "arm64" {
+		request.Args = append(request.Args, "shell=true")
+	}
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
