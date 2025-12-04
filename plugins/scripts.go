@@ -180,6 +180,8 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 		request.Args = append(request.Args, "reset_system_locale=False")
 	}
 
+	request.Args = append(request.Args, "shell=true")
+
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
 		return "", err
