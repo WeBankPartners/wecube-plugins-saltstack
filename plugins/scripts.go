@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
-	"github.com/WeBankPartners/wecube-plugins-saltstack/common/models"
 )
 
 const (
@@ -25,6 +24,7 @@ const (
 )
 
 var ScriptPluginActions = make(map[string]Action)
+var GlocalTargetArchMap = new(sync.Map)
 
 func init() {
 	ScriptPluginActions["run"] = new(RunScriptAction)
@@ -180,9 +180,12 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 	if !SaltResetEnv {
 		request.Args = append(request.Args, "reset_system_locale=False")
 	}
-	if models.ArchMode == "arm64" {
+	if checkTargetHostArch(target, language) {
 		request.Args = append(request.Args, "shell=true")
 	}
+	// if models.ArchMode == "arm64" {
+	// 	request.Args = append(request.Args, "shell=true")
+	// }
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
@@ -388,6 +391,12 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 			break
 		}
 	case END_POINT_TYPE_S3, END_POINT_TYPE_USER_PARAM:
+		tmpFileBytes, tmpFileErr := os.ReadFile(scriptPath)
+		if tmpFileErr != nil {
+			log.Logger.Error("----- file not exists", log.String("file", scriptPath), log.Error(tmpFileErr))
+		} else {
+			log.Logger.Info("----- file exists", log.String("file", scriptPath), log.String("content", string(tmpFileBytes)))
+		}
 		result, err = executeS3Script(filepath.Base(scriptPath), input.Target, input.RunAs, input.ExecArg, input.WorkDir, language)
 		//os.Remove(scriptPath)
 		if err != nil {
@@ -415,9 +424,14 @@ func runScript(scriptPath string, input RunScriptInput, language string) (string
 }
 
 func writeScriptContentToTempFile(content string) (fileName string, err error) {
-	tmpFile, err := ioutil.TempFile(SCRIPT_SAVE_PATH, "script-")
+	tmpFile, err := os.CreateTemp(SCRIPT_SAVE_PATH, "script-")
 	if err != nil {
 		err = fmt.Errorf("New tmp file error,%s ", err.Error())
+		return fileName, err
+	}
+
+	if err = os.Chmod(tmpFile.Name(), 0644); err != nil {
+		err = fmt.Errorf("Chomd 0644 to tmp file error,%s ", err.Error())
 		return fileName, err
 	}
 
@@ -544,8 +558,10 @@ func (action *RunScriptAction) Do(input interface{}) (interface{}, error) {
 			finalErr = tmpOutput.Err
 		}
 		outputs.Outputs[tmpOutput.Index] = tmpOutput.Data
-		for _, tmpScriptPath := range tmpOutput.TmpScriptPathList {
-			os.Remove(tmpScriptPath)
+		if tmpOutput.Err == nil {
+			for _, tmpScriptPath := range tmpOutput.TmpScriptPathList {
+				os.Remove(tmpScriptPath)
+			}
 		}
 	}
 
@@ -732,4 +748,42 @@ func (action *SSHRunScriptAction) Do(input interface{}) (interface{}, error) {
 	}
 
 	return &outputs, finalErr
+}
+
+func checkTargetHostArch(target, language string) (isArm64 bool) {
+	isArm64 = false
+	if archValue, ok := GlocalTargetArchMap.Load(target); ok {
+		if archValue == "arm64" {
+			isArm64 = true
+		}
+		return
+	}
+	log.Logger.Info("Check target host arch", log.String("target", target))
+	request := SaltApiRequest{}
+	request.Client = "local"
+	request.TargetType = "ipcidr"
+	request.Target = target
+	request.Function = "cmd.run"
+	request.FullReturn = true
+	cmdRun := fmt.Sprintf("/bin/bash -c 'uname -m'")
+	request.Args = append(request.Args, cmdRun)
+	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
+	if err != nil {
+		log.Logger.Error("Check target host arch error", log.Error(err))
+		return
+	}
+	saltApiResult, err := parseSaltApiCmdRunCallResult(result)
+	if err != nil {
+		log.Logger.Error("Check target host arch,parse salt api result error", log.Error(err))
+		return
+	}
+	getArch := "amd64"
+	for _, v := range saltApiResult.Results[0] {
+		if strings.Contains(v.RetDetail, "aarch64") || strings.Contains(v.RetDetail, "arm") {
+			isArm64 = true
+			getArch = "arm64"
+		}
+	}
+	GlocalTargetArchMap.Store(target, getArch)
+	return
 }
