@@ -158,6 +158,34 @@ func saveFileToSaltMasterBaseDir(fileName string) (string, error) {
 }
 
 func executeS3Script(fileName string, target string, runAs string, execArg string, cwd string, language string) (string, error) {
+	if checkTargetHostArch(target, language) {
+		// copy shell file to target
+		copyRequest := SaltApiRequest{Client: "local", TargetType: "ipcidr", Target: target, Function: "cp.get_file", Args: []string{}}
+		copyRequest.Args = append(copyRequest.Args, "salt://base/"+fileName)
+		distFilePath := fmt.Sprintf("/tmp/salt/%s_%d", fileName, time.Now().UnixNano())
+		copyRequest.Args = append(copyRequest.Args, distFilePath)
+		copyRequest.Args = append(copyRequest.Args, "makedirs=true")
+		copyRequest.Args = append(copyRequest.Args, "gzip=5")
+		_, copyCallErr := CallSaltApi("https://127.0.0.1:8080", copyRequest, language)
+		if copyCallErr != nil {
+			return "", fmt.Errorf("copy script file:%s to target:%s fail,%s ", distFilePath, target, copyCallErr.Error())
+		}
+		execArg = strings.ReplaceAll(execArg, "'", "")
+		execResult, execErr := executeLocalScript(distFilePath, target, runAs, execArg, language)
+		if execErr != nil {
+			return execResult, execErr
+		} else {
+			// clear target shell file
+			clearRequest := SaltApiRequest{Client: "local", TargetType: "ipcidr", Target: target, Function: "cmd.run", Args: []string{}}
+			clearRequest.Args = append(clearRequest.Args, "rm -f "+distFilePath)
+			_, clearCallErr := CallSaltApi("https://127.0.0.1:8080", clearRequest, language)
+			if clearCallErr != nil {
+				log.Logger.Warn("try to clear script target file fail ", log.String("distFilePath", distFilePath), log.Error(clearCallErr))
+			}
+			return execResult, nil
+		}
+	}
+
 	request := SaltApiRequest{}
 	request.Client = "local"
 	request.TargetType = "ipcidr"
@@ -180,12 +208,6 @@ func executeS3Script(fileName string, target string, runAs string, execArg strin
 	if !SaltResetEnv {
 		request.Args = append(request.Args, "reset_system_locale=False")
 	}
-	if checkTargetHostArch(target, language) {
-		request.Args = append(request.Args, "shell=true")
-	}
-	// if models.ArchMode == "arm64" {
-	// 	request.Args = append(request.Args, "shell=true")
-	// }
 
 	result, err := CallSaltApi("https://127.0.0.1:8080", request, language)
 	if err != nil {
