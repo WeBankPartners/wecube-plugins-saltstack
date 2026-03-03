@@ -347,6 +347,8 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 		return output, err
 	}
 
+	err = clearDB(input.Host, input.Port, input.UserName, password, input.DatabaseName, action.Language)
+
 	return output, err
 }
 

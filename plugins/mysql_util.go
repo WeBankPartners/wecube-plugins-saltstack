@@ -117,6 +117,28 @@ func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName, language string)
 	return rows.Next(), nil
 }
 
+func clearDB(host, port, loginUser, loginPwd, dbName, language string) error {
+	// initDB param dbName = "mysql", not getUserByDB.dbName
+	err := initDB(host, port, loginUser, loginPwd, "mysql")
+	if err != nil {
+		return getMysqlConnectError(language, err)
+	}
+
+	querySql := fmt.Sprintf("SELECT 1 FROM mysql.db WHERE Db = '%s'", dbName)
+	rows, err := DB.Query(querySql)
+	if err != nil {
+		return fmt.Errorf("Query mysql database fail,%s ", err.Error())
+	}
+	if rows.Next() {
+		_, err = DB.Exec(fmt.Sprintf("DELETE FROM mysql.db WHERE Db= '%s'", dbName))
+		if err != nil {
+			return fmt.Errorf("try to delete mysql.db='%s' fail,%s ", dbName, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func checkUserExistOrNot(host, port, loginUser, loginPwd, userName, language string) (bool, error) {
 	// initDB param dbName = "mysql".
 	err := initDB(host, port, loginUser, loginPwd, "mysql")
