@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+
 	"github.com/WeBankPartners/wecube-plugins-saltstack/common/log"
 )
 
@@ -233,6 +234,7 @@ type DeleteMysqlDatabaseInput struct {
 	// database info
 	DatabaseName      string `json:"databaseName,omitempty"`
 	DatabaseOwnerGuid string `json:"databaseOwnerGuid,omitempty"`
+	RemovePrivileges  string `json:"removePrivileges,omitempty"`
 }
 
 type DeleteMysqlDatabaseOutputs struct {
@@ -280,6 +282,9 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabaseCheckParam(input Del
 	if input.DatabaseOwnerGuid == "" {
 		return getParamEmptyError(action.Language, "databaseOwnerGuid")
 	}
+	if input.RemovePrivileges == "" {
+		input.RemovePrivileges = "Y"
+	}
 
 	return nil
 }
@@ -316,7 +321,7 @@ func (action *DeleteMysqlDatabaseAction) deleteMysqlDatabase(input *DeleteMysqlD
 	if err != nil {
 		return output, err
 	}
-	if dbIsExist == true {
+	if dbIsExist == true && input.RemovePrivileges == "Y" {
 		var users []string
 		users, err = getAllUserByDB(input.Host, input.Port, input.UserName, password, input.DatabaseName, action.Language)
 		if err != nil {
