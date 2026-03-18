@@ -164,8 +164,8 @@ func runDatabaseCommand(host string, port string, loginUser string, loginPwd str
 		"-e",
 		cmd,
 	}
-	if MysqlSSLEnable {
-		argv = append([]string{"--ssl"}, argv...)
+	if !MysqlSSLEnable {
+		argv = append([]string{"--ssl-mode=DISABLED"}, argv...)
 	}
 	command := exec.Command("/usr/bin/mysql", argv...)
 	out, err := command.CombinedOutput()
