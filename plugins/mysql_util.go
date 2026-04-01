@@ -108,7 +108,7 @@ func checkDBExistOrNot(host, port, loginUser, loginPwd, dbName, language string)
 		return false, getMysqlConnectError(language, err)
 	}
 
-	rows, err := DB.Query("SHOW DATABASES LIKE ?", dbName)
+	rows, err := DB.Query(fmt.Sprintf("SHOW DATABASES LIKE '%s'", dbName))
 	if err != nil {
 		return false, fmt.Errorf("Query mysql database fail,%s ", err.Error())
 	}
