@@ -193,34 +193,32 @@ func (action *ApplyNewDeploymentAction) applyNewDeployment(input ApplyNewDeploym
 	output.UserDetail = userAddOutputs.(*AddUserOutputs).Outputs[0].Detail
 	output.Password = userAddOutputs.(*AddUserOutputs).Outputs[0].Password
 
-	// replace apply variable
+	// replace apply variable. 没有差异化变量文件时，variable replace 会把原包上传到 S3，s3PkgPath 仍是 S3 地址。
 	var variableReplaceOutputs interface{}
 	var copyFileMd5 string
-	if input.VariableFilePath != "" {
-		variableReplaceRequest := VariableReplaceInputs{
-			Inputs: []VariableReplaceInput{
-				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
-					// EncryptVariblePrefix: input.EncryptVariblePrefix,
-					Seed:          input.Seed,
-					AppPublicKey:  input.AppPublicKey,
-					SysPrivateKey: input.SysPrivateKey,
-					Md5:           input.Md5,
-				},
+	variableReplaceRequest := VariableReplaceInputs{
+		Inputs: []VariableReplaceInput{
+			VariableReplaceInput{
+				Guid:         input.Guid,
+				EndPoint:     input.EndPoint,
+				FilePath:     input.VariableFilePath,
+				VariableList: input.VariableList,
+				// EncryptVariblePrefix: input.EncryptVariblePrefix,
+				Seed:          input.Seed,
+				AppPublicKey:  input.AppPublicKey,
+				SysPrivateKey: input.SysPrivateKey,
+				Md5:           input.Md5,
 			},
-		}
+		},
+	}
 
-		log.Logger.Debug("App deploy", log.String("step", "replace variable"), log.JsonObj("param", variableReplaceRequest))
-		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
-		if err != nil {
-			return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
-		}
-		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-	} else {
-		output.NewS3PkgPath = input.EndPoint
+	log.Logger.Debug("App deploy", log.String("step", "replace variable"), log.JsonObj("param", variableReplaceRequest))
+	variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
+	if err != nil {
+		return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
+	}
+	output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+	if skipVariableReplace(input.VariableFilePath, input.VariableList) {
 		copyFileMd5 = input.Md5
 	}
 
@@ -527,34 +525,32 @@ func (action *ApplyUpdateDeploymentAction) applyUpdateDeployment(input ApplyUpda
 	}
 	output.RunStopScriptDetail = runStopScriptOutputs.(*RunScriptOutputs).Outputs[0].Detail
 
-	// replace apply variable
+	// replace apply variable. 没有差异化变量文件时，variable replace 会把原包上传到 S3，s3PkgPath 仍是 S3 地址。
 	var variableReplaceOutputs interface{}
 	var copyFileMd5 string
-	if input.VariableFilePath != "" {
-		variableReplaceRequest := VariableReplaceInputs{
-			Inputs: []VariableReplaceInput{
-				VariableReplaceInput{
-					Guid:         input.Guid,
-					EndPoint:     input.EndPoint,
-					FilePath:     input.VariableFilePath,
-					VariableList: input.VariableList,
-					// EncryptVariblePrefix: input.EncryptVariblePrefix,
-					Seed:          input.Seed,
-					AppPublicKey:  input.AppPublicKey,
-					SysPrivateKey: input.SysPrivateKey,
-					Md5:           input.Md5,
-				},
+	variableReplaceRequest := VariableReplaceInputs{
+		Inputs: []VariableReplaceInput{
+			VariableReplaceInput{
+				Guid:         input.Guid,
+				EndPoint:     input.EndPoint,
+				FilePath:     input.VariableFilePath,
+				VariableList: input.VariableList,
+				// EncryptVariblePrefix: input.EncryptVariblePrefix,
+				Seed:          input.Seed,
+				AppPublicKey:  input.AppPublicKey,
+				SysPrivateKey: input.SysPrivateKey,
+				Md5:           input.Md5,
 			},
-		}
+		},
+	}
 
-		log.Logger.Debug("App update", log.String("step", "variable replace"), log.JsonObj("param", variableReplaceRequest))
-		variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
-		if err != nil {
-			return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
-		}
-		output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
-	} else {
-		output.NewS3PkgPath = input.EndPoint
+	log.Logger.Debug("App update", log.String("step", "variable replace"), log.JsonObj("param", variableReplaceRequest))
+	variableReplaceOutputs, err = replaceApplyVariable(variableReplaceRequest)
+	if err != nil {
+		return output, fmt.Errorf("Replace variable fail,%s ", err.Error())
+	}
+	output.NewS3PkgPath = variableReplaceOutputs.(*VariableReplaceOutputs).Outputs[0].NewS3PkgPath
+	if skipVariableReplace(input.VariableFilePath, input.VariableList) {
 		copyFileMd5 = input.Md5
 	}
 

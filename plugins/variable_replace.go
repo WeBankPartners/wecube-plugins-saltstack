@@ -116,6 +116,102 @@ func (action *VariableReplaceAction) CheckParam(input VariableReplaceInput) erro
 	return nil
 }
 
+func skipVariableReplace(filePath, variableList string) bool {
+	return filePath == "" || variableList == ""
+}
+
+// uploadOriginalPackageToS3 下载原包并上传到 S3，不改包内容。
+// 目标地址与变量替换后的包一致：优先 S3_SERVER_URL/salt-tmp，否则沿用原地址所在目录。
+func uploadOriginalPackageToS3(endPoint, md5, language string) (string, error) {
+	packageName, err := getPackageNameFromEndpoint(endPoint)
+	if err != nil {
+		return "", err
+	}
+	if !strings.Contains(packageName, ".") {
+		return "", getS3UploadError(language, endPoint, fmt.Sprintf("package name %s is unvaliable", packageName))
+	}
+
+	newS3Endpoint := getNewS3EndpointName(endPoint, packageName)
+	if newS3Endpoint == endPoint {
+		log.Logger.Info("Original package is already at the s3 target, skip re-upload", log.String("endpoint", endPoint))
+		return endPoint, nil
+	}
+
+	localFilePath, useCacheFile, err := downloadOriginalPackage(endPoint, md5, language)
+	if err != nil {
+		return "", err
+	}
+	if err = ensureDirExist(UPLOADS3FILE_DIR); err != nil {
+		if !useCacheFile {
+			os.RemoveAll(localFilePath)
+		}
+		return "", getS3UploadError(language, newS3Endpoint, fmt.Sprintf("create upload path error: %s", err.Error()))
+	}
+
+	targetPath := UPLOADS3FILE_DIR + packageName
+	if err = stagePackageForUpload(localFilePath, targetPath, !useCacheFile); err != nil {
+		if !useCacheFile {
+			os.RemoveAll(localFilePath)
+		}
+		return "", getS3UploadError(language, newS3Endpoint, fmt.Sprintf("stage original package error: %s", err.Error()))
+	}
+
+	log.Logger.Info("Upload original package to s3 without variable replace", log.String("file", newS3Endpoint))
+	if _, err = uploadS3File(newS3Endpoint, DefaultS3Key, DefaultS3Password, language); err != nil {
+		return "", err
+	}
+	return newS3Endpoint, nil
+}
+
+func downloadOriginalPackage(endPoint, md5, language string) (localFilePath string, useCacheFile bool, err error) {
+	if md5 != "" {
+		getFileParam := DownloadFileParam{Endpoint: endPoint, AccessKey: DefaultS3Key, SecretKey: DefaultS3Password, RandName: true, RequestLanguage: language, Md5: md5}
+		cachedPath, _, getCacheErr := GetGlobalCacheFile(&getFileParam)
+		if getCacheErr != nil {
+			log.Logger.Error("upload original package get global cache file error", log.String("md5", md5), log.String("endpoint", endPoint), log.Error(getCacheErr))
+		} else {
+			return cachedPath, true, nil
+		}
+	}
+	localFilePath, err = downloadS3File(endPoint, DefaultS3Key, DefaultS3Password, true, language)
+	return localFilePath, false, err
+}
+
+func stagePackageForUpload(srcPath, destPath string, removeSrc bool) error {
+	if srcPath == destPath {
+		return nil
+	}
+	if removeSrc {
+		if err := os.Rename(srcPath, destPath); err == nil {
+			return nil
+		}
+	}
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	dst, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	_, copyErr := io.Copy(dst, src)
+	closeErr := dst.Close()
+	if copyErr != nil {
+		os.Remove(destPath)
+		return copyErr
+	}
+	if closeErr != nil {
+		os.Remove(destPath)
+		return closeErr
+	}
+	if removeSrc {
+		os.Remove(srcPath)
+	}
+	return nil
+}
+
 func getNewS3EndpointName(endpoint string, newPackageName string) string {
 	index := strings.LastIndexAny(endpoint, "/")
 	if DefaultS3TmpAddress != "" {
@@ -152,8 +248,15 @@ func (action *VariableReplaceAction) variableReplace(input *VariableReplaceInput
 	if err != nil {
 		return output, err
 	}
-	if input.FilePath == "" || input.VariableList == "" {
-		output.NewS3PkgPath = input.EndPoint
+	if skipVariableReplace(input.FilePath, input.VariableList) {
+		// 下游取原包和取 S3 包的认证不同。没有差异化变量文件时仍把原包上传到 S3，
+		// 不做解包、变量替换和重新压包，输出的 s3PkgPath 统一为 S3 地址。
+		newS3Endpoint, uploadErr := uploadOriginalPackageToS3(input.EndPoint, input.Md5, action.Language)
+		if uploadErr != nil {
+			err = uploadErr
+			return output, err
+		}
+		output.NewS3PkgPath = newS3Endpoint
 		return output, err
 	}
 	input.Seed = getEncryptSeed(input.Seed)
