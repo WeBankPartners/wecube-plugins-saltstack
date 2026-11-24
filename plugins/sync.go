@@ -24,10 +24,15 @@ var (
 	requestCoreNonce = "salt"
 )
 
+type ResourceServer struct {
+	Host          string    `json:"host"`                    
+}
+
+
 type coreHostDto struct {
 	Status  string   `json:"status"`
 	Message string   `json:"message"`
-	Data    []string `json:"data"`
+	Data    []ResourceServer `json:"data"`
 }
 
 func SyncClusterList() {
@@ -72,8 +77,8 @@ func SyncClusterList() {
 	var tmpClusterIps string
 	var problemCluster bool
 	for _, v := range coreResult.Data {
-		if v != MasterHostIp {
-			//tmpClusterIps += fmt.Sprintf("  - %s\n", v)
+		if v.Host != MasterHostIp {
+			//tmpClusterIps += fmt.Sprintf("  - %s\n", v.Host)
 			ClusterList = append(ClusterList, v)
 		}else{
 			problemCluster = true
