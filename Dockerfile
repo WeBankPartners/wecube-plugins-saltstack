@@ -34,7 +34,12 @@ RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/salt/remove_master_unused_key.sh \
     && chmod +x $APP_HOME/scripts/salt/uninstall_minion.sh \
     && chmod +x $APP_HOME/scripts/rsautil.sh \
-    && chmod +x $APP_HOME/scripts/rsa_gen.sh
+    && chmod +x $APP_HOME/scripts/rsa_gen.sh \
+    && yum install -y wget xz libaio ncurses-compat-libs \
+    && wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.0-linux-glibc2.17-x86_64-minimal.tar.xz \
+    && tar -xvf mysql-8.4.0-linux-glibc2.17-x86_64-minimal.tar.xz -C /opt  \
+    && mv /usr/bin/mysql /usr/bin/mysql5.6  \
+    && ln -s /opt/mysql-8.4.0-linux-glibc2.17-x86_64-minimal/bin/mysql /usr/bin/mysql
 
 COPY wecube-plugins-saltstack $APP_HOME/
 
