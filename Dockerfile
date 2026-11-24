@@ -36,6 +36,7 @@ RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/rsautil.sh \
     && chmod +x $APP_HOME/scripts/rsa_gen.sh \
     && curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.tencentyun.com/repo/centos7_base.repo \
+    && rm -f /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel-testing.repo \
     && yum clean all \
     && yum makecache \
     && yum install -y wget xz libaio ncurses-compat-libs \
