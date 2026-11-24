@@ -35,9 +35,9 @@ RUN chmod +x  /start.sh \
     && chmod +x $APP_HOME/scripts/salt/uninstall_minion.sh \
     && chmod +x $APP_HOME/scripts/rsautil.sh \
     && chmod +x $APP_HOME/scripts/rsa_gen.sh \
-    && sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*  \
-    && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://mirrors.aliyun.com/centos-vault|g' /etc/yum.repos.d/CentOS-* \
-    && yum clean all && yum makecache  \
+    && curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.tencent.com/repo/centos7_base.repo \
+    && yum clean all \
+    && yum makecache \
     && yum install -y wget xz libaio ncurses-compat-libs \
     && wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.0-linux-glibc2.17-x86_64-minimal.tar.xz \
     && tar -xvf mysql-8.4.0-linux-glibc2.17-x86_64-minimal.tar.xz -C /opt  \
