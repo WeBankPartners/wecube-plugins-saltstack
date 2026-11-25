@@ -37,6 +37,10 @@ mkdir -p /data/minio
 mkdir -p /tmp
 ./wecube-plugins-saltstack&
 /usr/bin/salt-master&
+
+if ! grep -q "expire_responses" "/etc/salt/master.d/api.conf"; then
+    sed -i '/^[[:space:]]*port:/a\ expire_responses: False' /etc/salt/master.d/api.conf
+fi
 /usr/bin/salt-api&
 
 while  /bin/true
